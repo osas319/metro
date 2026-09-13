@@ -1,0 +1,13 @@
+# Derleme çıktıları
+build/
+build-*/
+.cache/
+ccache/
+
+# IDE / editör
+.vscode/
+.idea/
+compile_commands.json
+
+# İşletim sistemi
+.DS_Store
