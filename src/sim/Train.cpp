@@ -12,7 +12,7 @@ void Train::update(float dt, bool throttle, bool brake, bool signalClear) {
 
   if (mDoorsOpen || !signalClear) throttle = false;
   float accelerationValue = throttle ? acceleration : -rollingResistance;
-  if (brake) accelerationValue = -serviceBrake;
+  if (brake || !signalClear) accelerationValue = -serviceBrake;
   mSpeed = std::clamp(mSpeed + accelerationValue * dt, 0.0f, maxSpeed);
   mPosition += mSpeed * dt;
 }

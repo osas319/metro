@@ -89,7 +89,8 @@ cmake/                CMake yardımcı modülleri
 - [ ] Aşama 4: yolcu simülasyonu (navmesh kalabalık), ses, tam hat
 
 Mevcut prototipte Jolt öncesi tren hareketi, kapı durumu ve 8 bloklu temel
-işgal/sinyal mantığı çalışır durumdadır. Bunlar Faz 2-3 için geçici çekirdek
+işgal/sinyal mantığı çalışır durumdadır. Kırmızı sinyal ön blok için servis
+frenini zorlar. Bunlar Faz 2-3 için geçici çekirdek
 simülasyon katmanıdır; gerçek hat geometrisi ve fizik entegrasyonu geldiğinde
 yerine genişletilecektir.
 
