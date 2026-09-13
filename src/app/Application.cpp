@@ -31,7 +31,10 @@ bool Application::init() {
                                      station.initialWaitingPassengers);
   mPhysics = sim::PhysicsWorld(
       {.fixedStep = station.physicsFixedStep,
-       .maxSubsteps = station.physicsMaxSubsteps});
+       .maxSubsteps = station.physicsMaxSubsteps,
+       .trainWidth = station.trainWidth,
+       .trainHeight = station.trainHeight,
+       .trackGauge = station.trackGauge});
   mPhysics.reset(mTrain.position());
   if (station.stops.empty()) {
     mRoute.buildBlockStops(station.blockCount, station.routeLength);

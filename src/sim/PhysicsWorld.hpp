@@ -12,6 +12,9 @@ public:
   struct Settings {
     float fixedStep = 1.0f / 60.0f;
     size_t maxSubsteps = 4;
+    float trainWidth = 2.8f;
+    float trainHeight = 3.2f;
+    float trackGauge = 2.4f;
   };
 
   PhysicsWorld();

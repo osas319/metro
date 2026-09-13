@@ -70,7 +70,7 @@ void EnsureJoltInitialized() {
 } // namespace
 
 struct PhysicsWorld::JoltState {
-  JoltState()
+  JoltState(float trainWidth, float trainHeight, float trackGauge)
       : tempAllocator(4 * 1024 * 1024),
         jobSystem(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers,
                   std::max(1u, std::thread::hardware_concurrency() - 1)),
@@ -89,7 +89,8 @@ struct PhysicsWorld::JoltState {
         JPH::Quat::sIdentity(), JPH::EMotionType::Static, 0);
     groundBody = bodies.CreateAndAddBody(groundSettings, JPH::EActivation::DontActivate);
 
-    const JPH::BoxShapeSettings trainShape(JPH::Vec3(1.4f, 1.6f, 3.0f));
+    const JPH::BoxShapeSettings trainShape(
+        JPH::Vec3(trainWidth * 0.5f, trainHeight * 0.5f, trackGauge * 0.8f));
     JPH::BodyCreationSettings trainSettings(
         trainShape.Create().Get(), JPH::RVec3::sZero(), JPH::Quat::sIdentity(),
         JPH::EMotionType::Kinematic, 1);
@@ -121,7 +122,15 @@ PhysicsWorld::PhysicsWorld(Settings settings) : mSettings(settings) {
   }
   if (mSettings.maxSubsteps == 0) mSettings.maxSubsteps = 1;
   EnsureJoltInitialized();
-  mJolt = std::make_unique<JoltState>();
+  if (!std::isfinite(mSettings.trainWidth) || mSettings.trainWidth <= 0.0f)
+    mSettings.trainWidth = 2.8f;
+  if (!std::isfinite(mSettings.trainHeight) || mSettings.trainHeight <= 0.0f)
+    mSettings.trainHeight = 3.2f;
+  if (!std::isfinite(mSettings.trackGauge) || mSettings.trackGauge <= 0.0f)
+    mSettings.trackGauge = 2.4f;
+  mJolt = std::make_unique<JoltState>(mSettings.trainWidth,
+                                      mSettings.trainHeight,
+                                      mSettings.trackGauge);
 }
 
 PhysicsWorld::~PhysicsWorld() = default;

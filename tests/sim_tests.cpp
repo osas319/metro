@@ -45,7 +45,11 @@ int main() {
   assert(physics.interpolationAlpha() >= 0.0f &&
          physics.interpolationAlpha() < 1.0f);
   metro::sim::PhysicsWorld guardedPhysics(
-      {.fixedStep = 0.0f, .maxSubsteps = 0});
+      {.fixedStep = 0.0f,
+       .maxSubsteps = 0,
+       .trainWidth = -1.0f,
+       .trainHeight = 0.0f,
+       .trackGauge = std::numeric_limits<float>::quiet_NaN()});
   assert(guardedPhysics.fixedStep() > 0.0f);
   guardedPhysics.step(0.1f, fixedStepTrain, true, false, true, 100.0f);
   assert(guardedPhysics.interpolationAlpha() >= 0.0f &&
