@@ -1,0 +1,19 @@
+{
+  "name": "Kadikoy",
+  "line": "M4",
+  "units": "meters",
+  "up_axis": "Y",
+  "meshes": "meshes",
+  "materials": "materials",
+  "textures": "textures",
+  "lightmaps": "lightmaps",
+  "spawn": {
+    "position": [0.0, 1.7, 0.0],
+    "yaw": 90.0,
+    "pitch": 0.0
+  },
+  "platform": {
+    "edge_position": [0.0, 0.0, 0.0],
+    "stop_position": [0.0, 0.0, 0.0]
+  }
+}

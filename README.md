@@ -77,3 +77,8 @@ cmake/                CMake yardımcı modülleri
 - [ ] Aşama 2: Jolt fiziği + Kadıköy istasyonu sahnesi
 - [ ] Aşama 3: tren fiziği, sinyal/blok sistemi, kapı/peron mantığı
 - [ ] Aşama 4: yolcu simülasyonu (navmesh kalabalık), ses, tam hat
+
+Kadıköy asset pipeline başlangıç manifesti:
+`assets/stations/kadikoy/station.json`. Manifest metre birimini, glTF eksen
+konvansiyonunu, asset klasörlerini ve kamera/peron başlangıç noktalarını tanımlar;
+loader entegrasyonu sahne sistemiyle birlikte eklenecektir.
