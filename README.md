@@ -79,6 +79,8 @@ Ray açıklığı `track_gauge` alanıyla ayarlanabilir; raylar hattın merkezin
 simetrik yerleştirilir.
 Placeholder tren gövdesi `train_width` ve `train_height` alanlarıyla ray
 ölçeğine göre ayarlanabilir.
+`platform.edge_position` placeholder peron grubunun dünya konumunu,
+`platform.stop_position` ise tren gövdesinin başlangıç hizasını belirler.
 Terminal durağında mevcut yolcular iner ve iniş sayacı simülasyon telemetrisi
 olarak tutulur.
 
