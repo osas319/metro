@@ -140,6 +140,9 @@ cmake/                CMake yardımcı modülleri
 - [x] Aşama 2: Jolt fiziği + Kadıköy prosedürel istasyon sahnesi
 - [x] Aşama 3: tren fiziği, sinyal/blok sistemi, kapı/peron mantığı
 - [ ] Aşama 4: yolcu simülasyonu (navmesh kalabalık), ses, tam hat
+  - Yolcu hedefleri ve doğrusal navgraph tamamlandı.
+  - Kapı, durak varışı ve terminal servis olayları için backend-bağımsız ses olay kuyruğu eklendi.
+  - Gerçek yaya ajanları, ses backend'i ve tam hat asset/streaming çalışmaları devam ediyor.
 
 Mevcut prototipte Tren hareketi, sabit zaman adımlı fizik dünyası,
 kapı durumu ve 8 bloklu temel
