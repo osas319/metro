@@ -33,7 +33,7 @@ struct Camera {
   }
 
   glm::mat4 getProjectionMatrix(float aspect) const {
-    glm::mat4 proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 1000.0f);
+    glm::mat4 proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 5000.0f);
     // Vulkan Y is down, GLM uses OpenGL's Y up
     proj[1][1] *= -1;
     return proj;
