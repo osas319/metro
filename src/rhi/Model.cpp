@@ -5,6 +5,8 @@
 
 #define CGLTF_IMPLEMENTATION
 #include <cgltf/cgltf.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <stdexcept>
 #include <cstring>
 
@@ -97,6 +99,17 @@ bool Model::load(VulkanContext& ctx, VkCommandPool pool, const std::string& path
 
   for (size_t m = 0; m < data->meshes_count; ++m) {
     const cgltf_mesh& mesh = data->meshes[m];
+    glm::mat4 nodeTransform(1.0f);
+    for (size_t n = 0; n < data->nodes_count; ++n) {
+      if (data->nodes[n].mesh == &mesh) {
+        float matrix[16];
+        cgltf_node_transform_world(&data->nodes[n], matrix);
+        nodeTransform = glm::make_mat4(matrix);
+        break;
+      }
+    }
+    const glm::mat3 normalTransform =
+        glm::transpose(glm::inverse(glm::mat3(nodeTransform)));
     
     for (size_t p = 0; p < mesh.primitives_count; ++p) {
       const cgltf_primitive& prim = mesh.primitives[p];
@@ -133,9 +146,24 @@ bool Model::load(VulkanContext& ctx, VkCommandPool pool, const std::string& path
 
         for (size_t i = 0; i < vertexCount; ++i) {
           cgltf_accessor_read_float(posAcc, i, vertices[currentSize + i].pos, 3);
+          const glm::vec4 transformedPosition =
+              nodeTransform * glm::vec4(vertices[currentSize + i].pos[0],
+                                        vertices[currentSize + i].pos[1],
+                                        vertices[currentSize + i].pos[2], 1.0f);
+          vertices[currentSize + i].pos[0] = transformedPosition.x;
+          vertices[currentSize + i].pos[1] = transformedPosition.y;
+          vertices[currentSize + i].pos[2] = transformedPosition.z;
           
           if (normAcc) {
             cgltf_accessor_read_float(normAcc, i, vertices[currentSize + i].normal, 3);
+            const glm::vec3 transformedNormal =
+                glm::normalize(normalTransform *
+                               glm::vec3(vertices[currentSize + i].normal[0],
+                                         vertices[currentSize + i].normal[1],
+                                         vertices[currentSize + i].normal[2]));
+            vertices[currentSize + i].normal[0] = transformedNormal.x;
+            vertices[currentSize + i].normal[1] = transformedNormal.y;
+            vertices[currentSize + i].normal[2] = transformedNormal.z;
           } else {
             vertices[currentSize + i].normal[0] = 0.0f;
             vertices[currentSize + i].normal[1] = 1.0f;
