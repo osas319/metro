@@ -149,6 +149,11 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
       initialWaiting >= 0.0f) {
     parsed.initialWaitingPassengers = static_cast<size_t>(initialWaiting);
   }
+  if (parsed.initialWaitingPassengers > parsed.passengerCapacity) {
+    METRO_ERROR("Station manifest baslangic yolcu sayisi kapasiteyi asiyor: %s",
+                path.c_str());
+    return false;
+  }
   float stopDwellSeconds = parsed.stopDwellSeconds;
   if (readNumber(source, "stop_dwell_seconds", stopDwellSeconds) &&
       stopDwellSeconds >= 0.0f) {
