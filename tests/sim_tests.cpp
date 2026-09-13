@@ -40,6 +40,12 @@ int main() {
   assert(fixedStepTrain.position() > 0.0f);
   assert(physics.interpolationAlpha() >= 0.0f &&
          physics.interpolationAlpha() < 1.0f);
+  metro::sim::PhysicsWorld guardedPhysics(
+      {.fixedStep = 0.0f, .maxSubsteps = 0});
+  assert(guardedPhysics.fixedStep() > 0.0f);
+  guardedPhysics.step(0.1f, fixedStepTrain, true, false, true, 100.0f);
+  assert(guardedPhysics.interpolationAlpha() >= 0.0f &&
+         guardedPhysics.interpolationAlpha() < 1.0f);
 
   metro::sim::BlockSignal signal(3);
   assert(signal.blockCount() == 3);
