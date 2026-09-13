@@ -3,10 +3,12 @@
 #include "sim/PassengerSystem.hpp"
 #include "sim/Route.hpp"
 #include "sim/PhysicsWorld.hpp"
+#include "sim/PassengerNavGraph.hpp"
 #include "app/StationManifest.hpp"
 
 #include <cassert>
 #include <limits>
+#include <vector>
 
 int main() {
   metro::sim::Train train;
@@ -114,6 +116,14 @@ int main() {
   assert(stopPassengers.onboard() < 8);
   stopPassengers.serviceStop(3, 4, true);
   assert(stopPassengers.onboard() == 0);
+
+  metro::sim::PassengerNavGraph navGraph;
+  assert(navGraph.buildLinear(4, 900.0f));
+  assert(navGraph.nodeCount() == 4);
+  assert(navGraph.node(4) == nullptr);
+  const auto navPath = navGraph.shortestPath(0, 3);
+  assert((navPath == std::vector<size_t>{0, 1, 2, 3}));
+  assert(navGraph.shortestPath(3, 3).size() == 1);
 
   metro::sim::Route route;
   route.buildBlockStops(3, 900.0f);
