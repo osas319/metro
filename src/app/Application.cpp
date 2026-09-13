@@ -102,6 +102,12 @@ void Application::update(float dt) {
 
   const bool throttle = mKeyboardState[SDL_SCANCODE_UP];
   const bool brake = mKeyboardState[SDL_SCANCODE_DOWN];
+  if (mKeyboardState[SDL_SCANCODE_O] && mTrain.speed() < 0.05f) {
+    mTrain.setDoorsOpen(true);
+  }
+  if (mKeyboardState[SDL_SCANCODE_C]) {
+    mTrain.setDoorsOpen(false);
+  }
   mTrain.update(dt, throttle, brake);
 
   if (!mMouseCaptured) return;
@@ -161,6 +167,7 @@ int Application::run() {
       METRO_INFO("fps: %.1f", double(frameCount) / secs);
       METRO_INFO("tren: %.1f km/saat, konum %.1f m",
                  mTrain.speed() * 3.6f, mTrain.position());
+      METRO_INFO("kapi: %s", mTrain.doorsOpen() ? "acik" : "kapali");
       frameCount = 0;
       lastStatsNs = nowNs;
     }
