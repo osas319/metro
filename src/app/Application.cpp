@@ -21,6 +21,9 @@ bool Application::init() {
           station)) {
     return false;
   }
+  mCamera.position = station.spawnPosition;
+  mCamera.yaw = station.spawnYaw;
+  mCamera.pitch = station.spawnPitch;
 
   entt::registry registry;
   auto entity = registry.create();
