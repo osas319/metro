@@ -15,4 +15,10 @@ bool AudioEventQueue::tryPop(Event& event) {
   return true;
 }
 
+size_t AudioEventQueue::drain() {
+  const size_t count = mEvents.size();
+  mEvents.clear();
+  return count;
+}
+
 } // namespace metro::audio

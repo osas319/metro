@@ -26,6 +26,7 @@ private:
   void shutdown();
   void handleEvent(const SDL_Event& e);
   void update(float dt);
+  void consumeAudioEvents();
 
   SDL_Window* mWindow = nullptr;
   rhi::VulkanContext mContext;

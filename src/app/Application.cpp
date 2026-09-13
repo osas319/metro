@@ -210,6 +210,7 @@ void Application::update(float dt) {
       if (mStopDwellSeconds >= stopDwellLimit) {
         mTrain.requestDoorsOpen(false, false);
         mAudioEvents.push({audio::EventType::DoorClosed, servicedStop});
+        mAudioEvents.push({audio::EventType::TrainDeparted, servicedStop});
         mStopDwellSeconds = 0.0f;
       }
     }
@@ -219,6 +220,7 @@ void Application::update(float dt) {
   if (atTerminal) mTerminalServiced = true;
   mPassengers.update(dt, mTrain.doorsOpen(), mTrain.speed() < 0.05f,
                     !atTerminal);
+  consumeAudioEvents();
 
   if (!mMouseCaptured) return;
 
@@ -227,12 +229,28 @@ void Application::update(float dt) {
       mKeyboardState[SDL_SCANCODE_RSHIFT]) {
     velocity *= 3.0f;
   }
+
   if (mKeyboardState[SDL_SCANCODE_W]) mCamera.position += mCamera.getFront() * velocity;
   if (mKeyboardState[SDL_SCANCODE_S]) mCamera.position -= mCamera.getFront() * velocity;
   if (mKeyboardState[SDL_SCANCODE_A]) mCamera.position -= mCamera.getRight() * velocity;
   if (mKeyboardState[SDL_SCANCODE_D]) mCamera.position += mCamera.getRight() * velocity;
   if (mKeyboardState[SDL_SCANCODE_Q]) mCamera.position.y -= velocity;
   if (mKeyboardState[SDL_SCANCODE_E]) mCamera.position.y += velocity;
+}
+
+void Application::consumeAudioEvents() {
+  audio::Event event{};
+  while (mAudioEvents.tryPop(event)) {
+    const char* name = "bilinmeyen";
+    switch (event.type) {
+    case audio::EventType::DoorOpened: name = "kapi_acildi"; break;
+    case audio::EventType::DoorClosed: name = "kapi_kapandi"; break;
+    case audio::EventType::StopArrived: name = "duraga_varildi"; break;
+    case audio::EventType::TerminalServiced: name = "terminal_servisi"; break;
+    case audio::EventType::TrainDeparted: name = "tren_hareketi"; break;
+    }
+    METRO_INFO("ses olayi: %s (durak %zu)", name, event.stopIndex);
+  }
 }
 
 int Application::run() {

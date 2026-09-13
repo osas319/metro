@@ -167,6 +167,9 @@ int main() {
   assert(audioEvent.type == metro::audio::EventType::DoorOpened);
   assert(audioEvents.tryPop(audioEvent));
   assert(audioEvents.pending() == 0);
+  audioEvents.push({metro::audio::EventType::TrainDeparted, 1});
+  assert(audioEvents.drain() == 1);
+  assert(audioEvents.pending() == 0);
 
   metro::sim::Route route;
   route.buildBlockStops(3, 900.0f);
