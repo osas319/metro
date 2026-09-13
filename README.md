@@ -142,6 +142,7 @@ cmake/                CMake yardımcı modülleri
 - [ ] Aşama 4: yolcu simülasyonu (navmesh kalabalık), ses, tam hat
   - Yolcu hedefleri ve doğrusal navgraph tamamlandı.
   - Navgraph üzerinde deterministik yürüyen yolcu ajanları eklendi.
+  - Yürüyen ajanların interpolasyon konumları placeholder sahnesinde cyan marker olarak çiziliyor.
   - Kapı, durak varışı ve terminal servis olayları için backend-bağımsız ses olay kuyruğu eklendi.
   - `door_opened`, `door_closed`, `stop_arrived`, `terminal_serviced`,
     `train_departed` ve `signal_changed` olayları uygulama döngüsünde tüketiliyor.
