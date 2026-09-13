@@ -28,7 +28,11 @@ bool Application::init() {
   mSignal.resize(station.blockCount);
   mRouteLength = station.routeLength;
   mPassengers = sim::PassengerSystem(station.passengerCapacity);
-  mRoute.buildBlockStops(station.blockCount, station.routeLength);
+  if (station.stops.empty()) {
+    mRoute.buildBlockStops(station.blockCount, station.routeLength);
+  } else {
+    mRoute.setStops(station.stops);
+  }
   mStopDwellSecondsLimit = station.stopDwellSeconds;
   mTrain.setParameters(station.trainParameters);
   mBlockLength = station.routeLength /

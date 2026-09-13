@@ -53,6 +53,10 @@ int main() {
   assert(route.nextStopPosition(300.0f, 900.0f) == 600.0f);
   assert(route.nextStopPosition(900.0f, 900.0f) == 900.0f);
   assert(route.nextStop(0.0f, 900.0f).name == "M4 duragi 1");
+  route.setStops({{"Kadikoy", 0.0f}, {"Pendik", 450.0f},
+                  {"Sabiha Gokcen Havalimani", 900.0f}});
+  assert(route.stopCount() == 3);
+  assert(route.nextStop(0.0f, 900.0f).name == "Pendik");
   signal.setOccupied(1, true);
   assert(!signal.canEnter(1));
   signal.resize(5);

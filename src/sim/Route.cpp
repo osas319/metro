@@ -1,6 +1,7 @@
 #include "sim/Route.hpp"
 
 #include <algorithm>
+#include <utility>
 
 namespace metro::sim {
 
@@ -15,6 +16,16 @@ void Route::buildBlockStops(size_t blockCount, float routeLength) {
     mStops.push_back({"M4 duragi " + std::to_string(i), spacing * i});
   }
   mStops.push_back({"Sabiha Gokcen", routeLength});
+}
+
+void Route::setStops(std::vector<Stop> stops) {
+  if (stops.size() < 2) return;
+  for (size_t i = 1; i < stops.size(); ++i) {
+    if (stops[i].name.empty() || stops[i].position <= stops[i - 1].position) {
+      return;
+    }
+  }
+  mStops = std::move(stops);
 }
 
 float Route::nextStopPosition(float currentPosition, float routeLength) const {

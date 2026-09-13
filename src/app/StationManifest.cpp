@@ -58,6 +58,36 @@ bool readVector3(const std::string& source, const char* key, glm::vec3& value) {
   return true;
 }
 
+bool readStops(const std::string& source, std::vector<sim::Stop>& stops) {
+  const size_t key = source.find("\"stops\"");
+  if (key == std::string::npos) return false;
+  size_t cursor = source.find('[', key);
+  const size_t end = cursor == std::string::npos ? std::string::npos
+                                                  : source.find(']', cursor);
+  if (cursor == std::string::npos || end == std::string::npos) return false;
+
+  std::vector<sim::Stop> parsed;
+  while (cursor < end) {
+    const size_t objectStart = source.find('{', cursor);
+    if (objectStart == std::string::npos || objectStart >= end) break;
+    const size_t objectEnd = source.find('}', objectStart);
+    if (objectEnd == std::string::npos || objectEnd > end) return false;
+    const std::string object = source.substr(objectStart, objectEnd - objectStart + 1);
+    sim::Stop stop;
+    if (!readString(object, "name", stop.name) ||
+        !readNumber(object, "position", stop.position) ||
+        stop.position < 0.0f ||
+        (!parsed.empty() && stop.position <= parsed.back().position)) {
+      return false;
+    }
+    parsed.push_back(std::move(stop));
+    cursor = objectEnd + 1;
+  }
+  if (parsed.size() < 2) return false;
+  stops = std::move(parsed);
+  return true;
+}
+
 } // namespace
 
 bool StationManifest::load(const std::string& path, StationManifest& out) {
@@ -109,6 +139,11 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
   readNumber(source, "service_brake_mps2", parsed.trainParameters.serviceBrake);
   readNumber(source, "rolling_resistance_mps2",
              parsed.trainParameters.rollingResistance);
+  if (source.find("\"stops\"") != std::string::npos &&
+      !readStops(source, parsed.stops)) {
+    METRO_ERROR("Station manifest durak listesi gecersiz: %s", path.c_str());
+    return false;
+  }
 
   out = std::move(parsed);
   METRO_INFO("Station manifest: %s (%s), mesh dizini: %s",

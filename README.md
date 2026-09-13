@@ -72,10 +72,10 @@ Kapasite `station.json` içindeki `passenger_capacity` alanından değiştirileb
 Terminal durağında mevcut yolcular iner ve iniş sayacı simülasyon telemetrisi
 olarak tutulur.
 
-Rota, manifestteki blok sayısı ve toplam uzunluktan çok duraklı geçici bir
-çizelge üretir. Tren her ara durakta servis freniyle durur; gerçek M4 durak
-isimleri ve koordinatları geldiğinde bu üretilen çizelge veri tabanlı listeyle
-değiştirilecektir.
+Rota, manifestteki `stops` listesiyle veri tabanlı durak konumlarını kullanır.
+Kadıköy manifesti M4 hattının Kadıköy-Sabiha Gökçen arasındaki durak adlarını
+ve prototip metre konumlarını içerir. Liste verilmezse geriye dönük uyumluluk
+için blok sayısından eşit aralıklı geçici duraklar üretilir.
 Ara duraklarda kapılar 3 saniye açık kalır ve otomatik kapanır; terminal
 durağında kapılar açık bırakılır.
 Ara durak süresi `station.json` içindeki `stop_dwell_seconds` alanından

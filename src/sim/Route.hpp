@@ -14,6 +14,7 @@ struct Stop {
 class Route {
 public:
   void buildBlockStops(size_t blockCount, float routeLength);
+  void setStops(std::vector<Stop> stops);
   float nextStopPosition(float currentPosition, float routeLength) const;
   const Stop& nextStop(float currentPosition, float routeLength) const;
   const std::vector<Stop>& stops() const { return mStops; }

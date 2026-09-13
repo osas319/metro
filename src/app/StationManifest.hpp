@@ -1,7 +1,9 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <glm/vec3.hpp>
+#include "sim/Route.hpp"
 #include "sim/Train.hpp"
 
 namespace metro::app {
@@ -21,6 +23,7 @@ struct StationManifest {
   size_t passengerCapacity = 320;
   float stopDwellSeconds = 3.0f;
   sim::Train::Parameters trainParameters;
+  std::vector<sim::Stop> stops;
 
   static bool load(const std::string& path, StationManifest& out);
 };
