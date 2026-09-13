@@ -19,6 +19,7 @@ public:
   void updateWalkingAgents(float dt);
   const std::vector<PassengerAgent>& walkingAgents() const { return mAgents; }
   size_t activeWalkingAgents() const;
+  size_t removeArrivedWalkingAgents();
   void clearWalkingAgents() { mAgents.clear(); }
   void serviceStop(size_t stopIndex, size_t stopCount, bool terminal);
   void setBoardingDestination(size_t destinationStop);

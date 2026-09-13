@@ -45,6 +45,16 @@ size_t PassengerSystem::activeWalkingAgents() const {
   return active;
 }
 
+size_t PassengerSystem::removeArrivedWalkingAgents() {
+  const size_t before = mAgents.size();
+  mAgents.erase(
+      std::remove_if(mAgents.begin(), mAgents.end(), [](const PassengerAgent& agent) {
+        return agent.state() == PassengerAgent::State::Arrived;
+      }),
+      mAgents.end());
+  return before - mAgents.size();
+}
+
 void PassengerSystem::unloadAtTerminal() {
   mAlightedTotal += mOnboard;
   mWaiting += mOnboard;
