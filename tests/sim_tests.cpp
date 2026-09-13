@@ -173,6 +173,8 @@ int main() {
   audioEvents.push({metro::audio::EventType::SignalChanged, 2});
   assert(audioEvents.tryPop(audioEvent));
   assert(audioEvent.type == metro::audio::EventType::SignalChanged);
+  assert(std::string(metro::audio::eventName(audioEvent.type)) ==
+         "signal_changed");
 
   metro::sim::Route route;
   route.buildBlockStops(3, 900.0f);

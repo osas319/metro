@@ -2,6 +2,18 @@
 
 namespace metro::audio {
 
+const char* eventName(EventType type) {
+  switch (type) {
+  case EventType::DoorOpened: return "door_opened";
+  case EventType::DoorClosed: return "door_closed";
+  case EventType::StopArrived: return "stop_arrived";
+  case EventType::TerminalServiced: return "terminal_serviced";
+  case EventType::TrainDeparted: return "train_departed";
+  case EventType::SignalChanged: return "signal_changed";
+  }
+  return "unknown";
+}
+
 void AudioEventQueue::push(Event event) {
   constexpr size_t maxPendingEvents = 256;
   if (mEvents.size() >= maxPendingEvents) mEvents.pop_front();

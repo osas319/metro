@@ -245,16 +245,8 @@ void Application::update(float dt) {
 void Application::consumeAudioEvents() {
   audio::Event event{};
   while (mAudioEvents.tryPop(event)) {
-    const char* name = "bilinmeyen";
-    switch (event.type) {
-    case audio::EventType::DoorOpened: name = "kapi_acildi"; break;
-    case audio::EventType::DoorClosed: name = "kapi_kapandi"; break;
-    case audio::EventType::StopArrived: name = "duraga_varildi"; break;
-    case audio::EventType::TerminalServiced: name = "terminal_servisi"; break;
-    case audio::EventType::TrainDeparted: name = "tren_hareketi"; break;
-    case audio::EventType::SignalChanged: name = "sinyal_degisti"; break;
-    }
-    METRO_INFO("ses olayi: %s (durak %zu)", name, event.stopIndex);
+    METRO_INFO("ses olayi: %s (durak %zu)",
+               audio::eventName(event.type), event.stopIndex);
   }
 }
 

@@ -14,6 +14,8 @@ enum class EventType {
   SignalChanged
 };
 
+const char* eventName(EventType type);
+
 struct Event {
   EventType type;
   size_t stopIndex = 0;
