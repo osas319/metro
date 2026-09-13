@@ -87,7 +87,7 @@ unsigned JoltWorkerCount() {
 
 struct PhysicsWorld::JoltState {
   JoltState(float trainWidth, float trainHeight, float trackGauge,
-            float routeLength, float platformWidth)
+            float routeLength, float platformWidth, float columnSpacing)
       : tempAllocator(4 * 1024 * 1024),
         jobSystem(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers,
                 JoltWorkerCount()),
@@ -148,6 +148,21 @@ struct PhysicsWorld::JoltState {
         throw std::runtime_error("Jolt ray body olusturulamadi");
       railBodies.push_back(railBody);
     }
+
+    const JPH::BoxShapeSettings columnShape(JPH::Vec3(0.35f, 2.8f, 0.35f));
+    for (float z = -columnSpacing; z > -routeLength; z -= columnSpacing) {
+      for (float x : {-platformWidth - 3.0f, platformWidth + 3.0f}) {
+        JPH::BodyCreationSettings columnSettings(
+            columnShape.Create().Get(), JPH::RVec3(x, 1.2, z),
+            JPH::Quat::sIdentity(), JPH::EMotionType::Static, 0);
+        const JPH::BodyID columnBody =
+            bodies.CreateAndAddBody(columnSettings,
+                                    JPH::EActivation::DontActivate);
+        if (columnBody.IsInvalid())
+          throw std::runtime_error("Jolt kolon body olusturulamadi");
+        columnBodies.push_back(columnBody);
+      }
+    }
   }
 
   ~JoltState() {
@@ -163,6 +178,12 @@ struct PhysicsWorld::JoltState {
       }
     }
     for (const JPH::BodyID body : railBodies) {
+      if (!body.IsInvalid()) {
+        bodies.RemoveBody(body);
+        bodies.DestroyBody(body);
+      }
+    }
+    for (const JPH::BodyID body : columnBodies) {
       if (!body.IsInvalid()) {
         bodies.RemoveBody(body);
         bodies.DestroyBody(body);
@@ -202,6 +223,7 @@ struct PhysicsWorld::JoltState {
   JPH::BodyID trainBody;
   std::vector<JPH::BodyID> platformBodies;
   std::vector<JPH::BodyID> railBodies;
+  std::vector<JPH::BodyID> columnBodies;
 };
 
 PhysicsWorld::PhysicsWorld() : PhysicsWorld(Settings{}) {}
@@ -223,10 +245,14 @@ PhysicsWorld::PhysicsWorld(Settings settings) : mSettings(settings) {
   if (!std::isfinite(mSettings.platformWidth) ||
       mSettings.platformWidth <= 0.0f)
     mSettings.platformWidth = 4.0f;
+  if (!std::isfinite(mSettings.columnSpacing) ||
+      mSettings.columnSpacing <= 0.0f)
+    mSettings.columnSpacing = 24.0f;
   mJolt = std::make_unique<JoltState>(mSettings.trainWidth,
                                       mSettings.trainHeight,
                                       mSettings.trackGauge, mSettings.routeLength,
-                                      mSettings.platformWidth);
+                                      mSettings.platformWidth,
+                                      mSettings.columnSpacing);
 }
 
 PhysicsWorld::~PhysicsWorld() = default;

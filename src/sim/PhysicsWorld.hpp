@@ -17,6 +17,7 @@ public:
     float trackGauge = 2.4f;
     float routeLength = 2000.0f;
     float platformWidth = 4.0f;
+    float columnSpacing = 24.0f;
   };
 
   PhysicsWorld();

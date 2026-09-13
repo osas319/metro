@@ -36,7 +36,8 @@ bool Application::init() {
        .trainHeight = station.trainHeight,
        .trackGauge = station.trackGauge,
        .routeLength = station.routeLength,
-       .platformWidth = station.platformWidth});
+       .platformWidth = station.platformWidth,
+       .columnSpacing = station.columnSpacing});
   mPhysics.reset(mTrain.position());
   if (station.stops.empty()) {
     mRoute.buildBlockStops(station.blockCount, station.routeLength);
