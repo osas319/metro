@@ -150,7 +150,11 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     }
   }
   float routeLength = parsed.routeLength;
-  if (readNumber(source, "route_length", routeLength) && routeLength > 0.0f) {
+  if (source.find("\"route_length\"") != std::string::npos) {
+    if (!readPositiveNumber(source, "route_length", routeLength)) {
+      METRO_ERROR("Station manifest rota uzunlugu gecersiz: %s", path.c_str());
+      return false;
+    }
     parsed.routeLength = routeLength;
   }
   if (source.find("\"passenger_capacity\"") != std::string::npos) {
@@ -175,8 +179,13 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     return false;
   }
   float stopDwellSeconds = parsed.stopDwellSeconds;
-  if (readNumber(source, "stop_dwell_seconds", stopDwellSeconds) &&
-      stopDwellSeconds >= 0.0f) {
+  if (source.find("\"stop_dwell_seconds\"") != std::string::npos) {
+    if (!readNumber(source, "stop_dwell_seconds", stopDwellSeconds) ||
+        stopDwellSeconds < 0.0f) {
+      METRO_ERROR("Station manifest genel dwell suresi gecersiz: %s",
+                  path.c_str());
+      return false;
+    }
     parsed.stopDwellSeconds = stopDwellSeconds;
   }
   for (const auto& parameter : {

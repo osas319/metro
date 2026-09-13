@@ -86,5 +86,7 @@ int main() {
   assert(station.initialWaitingPassengers == 24);
   assert(station.blockCount == 8);
   assert(station.passengerCapacity == 320);
+  assert(station.routeLength == 2000.0f);
+  assert(station.stopDwellSeconds == 3.0f);
   return 0;
 }
