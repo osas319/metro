@@ -66,6 +66,9 @@ Tren dururken **O** kapıları açar, **C** kapatır; kapılar açıkken çekiş
 uygulanmaz.
 Terminale ulaşan tren otomatik durur ve kapılarını açar; yolcu transferi
 terminal durağında kendiliğinden başlar.
+Kapı açma komutu trenin durmasını ve bir durak platformuyla hizalanmasını
+gerektirir; hareket halindeyken kapı açma reddedilir, kapatma her zaman
+mümkündür.
 
 İstasyon durağında kapılar açıkken yolcular yarım saniyede bir biner; kapasite
 tren başına 320 yolcuyla sınırlıdır. Bu geçici sistem ileride navmesh ve
@@ -132,15 +135,14 @@ cmake/                CMake yardımcı modülleri
 - [x] Aşama 0: SDL3 + Wayland pencere → Vulkan instance/device/swapchain → üçgen
 - [x] Aşama 1: kamera + glTF mesh yükleme + PBR (metallic-roughness)
 - [x] Aşama 2: Jolt fiziği + Kadıköy prosedürel istasyon sahnesi
-- [ ] Aşama 3: tren fiziği, sinyal/blok sistemi, kapı/peron mantığı
+- [x] Aşama 3: tren fiziği, sinyal/blok sistemi, kapı/peron mantığı
 - [ ] Aşama 4: yolcu simülasyonu (navmesh kalabalık), ses, tam hat
 
-Mevcut prototipte Jolt öncesi tren hareketi, sabit zaman adımlı fizik dünyası,
+Mevcut prototipte Tren hareketi, sabit zaman adımlı fizik dünyası,
 kapı durumu ve 8 bloklu temel
 işgal/sinyal mantığı çalışır durumdadır. Kırmızı sinyal ön blok için servis
-frenini zorlar. Bunlar Faz 2-3 için geçici çekirdek
-simülasyon katmanıdır; gerçek hat geometrisi ve fizik entegrasyonu geldiğinde
-yerine genişletilecektir.
+frenini zorlar. Tren ayrıca yaklaşan durak/terminal için servis fren mesafesini
+önceden hesaplar ve hedefte deterministik olarak durur.
 Fizik dünyasının `physics_fixed_step` ve `physics_max_substeps` değerleri
 manifestten ayarlanabilir; değerler belirtilmezse 60 Hz ve 4 alt-adım kullanılır.
 Render karesinde tren konumu, sabit adımlar arasındaki accumulator oranıyla
