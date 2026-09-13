@@ -1,6 +1,7 @@
 #include "app/Application.hpp"
 
 #include <SDL3/SDL.h>
+#include <algorithm>
 #include <cstdlib>
 #include <entt/entt.hpp>
 
@@ -28,6 +29,8 @@ bool Application::init() {
   mRouteLength = station.routeLength;
   mPassengers = sim::PassengerSystem(station.passengerCapacity);
   mRoute.buildBlockStops(station.blockCount, station.routeLength);
+  mBlockLength = station.routeLength /
+                 static_cast<float>(std::max<size_t>(station.blockCount, 1));
 
   entt::registry registry;
   auto entity = registry.create();
@@ -115,7 +118,9 @@ void Application::update(float dt) {
   if (mKeyboardState[SDL_SCANCODE_C]) {
     mTrain.setDoorsOpen(false);
   }
-  const size_t currentBlock = static_cast<size_t>(mTrain.position() / 250.0f);
+  const size_t currentBlock =
+      std::min(static_cast<size_t>(mTrain.position() / mBlockLength),
+               mSignal.blockCount() - 1);
   for (size_t block = 0; block < mSignal.blockCount(); ++block) {
     mSignal.setOccupied(block, block == currentBlock);
   }
@@ -206,7 +211,9 @@ int Application::run() {
       METRO_INFO("kapi: %s", mTrain.doorsOpen() ? "acik" : "kapali");
       METRO_INFO("yolcu: %zu trende, %zu bekliyor",
                  mPassengers.onboard(), mPassengers.waiting());
-      const size_t statsBlock = static_cast<size_t>(mTrain.position() / 250.0f);
+      const size_t statsBlock =
+          std::min(static_cast<size_t>(mTrain.position() / mBlockLength),
+                   mSignal.blockCount() - 1);
       const size_t statsNextBlock = statsBlock + 1;
       METRO_INFO("sinyal: blok %zu %s", statsNextBlock,
                  statsNextBlock < mSignal.blockCount() &&

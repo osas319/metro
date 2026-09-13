@@ -37,6 +37,7 @@ private:
   sim::Train mTrain;
   sim::BlockSignal mSignal{8};
   float mRouteLength = 2000.0f;
+  float mBlockLength = 250.0f;
   sim::PassengerSystem mPassengers{320};
   sim::Route mRoute;
   bool mTerminalServiced = false;
