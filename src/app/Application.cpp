@@ -239,13 +239,8 @@ int Application::run() {
       renderCamera.yaw = -90.0f;
       renderCamera.pitch = -4.0f;
     }
-    std::vector<bool> occupiedBlocks;
-    occupiedBlocks.reserve(mSignal.blockCount());
-    for (size_t block = 0; block < mSignal.blockCount(); ++block) {
-      occupiedBlocks.push_back(
-          mSignal.aspect(block) == sim::SignalAspect::Stop);
-    }
-    mRenderer.drawFrame(renderCamera, renderTrainPosition, occupiedBlocks);
+    mRenderer.drawFrame(renderCamera, renderTrainPosition,
+                        mSignal.occupiedBlocks());
     ++frameCount;
 
     if (nowNs - lastStatsNs >= Uint64(2e9)) {

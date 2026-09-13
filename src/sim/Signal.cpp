@@ -22,4 +22,8 @@ bool BlockSignal::canEnter(size_t block) const {
   return aspect(block) == SignalAspect::Proceed;
 }
 
+std::vector<bool> BlockSignal::occupiedBlocks() const {
+  return mOccupied;
+}
+
 } // namespace metro::sim

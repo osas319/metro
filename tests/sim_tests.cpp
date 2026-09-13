@@ -109,6 +109,11 @@ int main() {
   signal.setOccupied(1, true);
   assert(!signal.canEnter(1));
   assert(signal.canEnter(5));
+  const auto occupiedBlocks = signal.occupiedBlocks();
+  assert(occupiedBlocks.size() == 3);
+  assert(!occupiedBlocks[0]);
+  assert(occupiedBlocks[1]);
+  assert(!occupiedBlocks[2]);
   signal.resize(5);
   assert(signal.blockCount() == 5);
   assert(signal.canEnter(1));
