@@ -73,6 +73,8 @@ Başlangıçta peronda bekleyen yolcu sayısı `initial_waiting_passengers` ile,
 renderer modeli ise `model` alanıyla belirlenebilir. `model` için göreli yollar
 proje kökünden çözülür; `METRO_MODEL_PATH` tanımlıysa manifest değerini geçersiz
 kılar.
+Placeholder peron genişliği `platform_width` alanından metre cinsinden okunur;
+zemin, peron ve tavan geometrisi `route_length` boyunca otomatik uzatılır.
 Terminal durağında mevcut yolcular iner ve iniş sayacı simülasyon telemetrisi
 olarak tutulur.
 
