@@ -125,10 +125,39 @@ struct PhysicsWorld::JoltState {
     }
   }
 
+  ~JoltState() {
+    JPH::BodyInterface& bodies = physicsSystem.GetBodyInterface();
+    if (!trainBody.IsInvalid()) {
+      bodies.RemoveBody(trainBody);
+      bodies.DestroyBody(trainBody);
+    }
+    for (const JPH::BodyID body : platformBodies) {
+      if (!body.IsInvalid()) {
+        bodies.RemoveBody(body);
+        bodies.DestroyBody(body);
+      }
+    }
+    if (!groundBody.IsInvalid()) {
+      bodies.RemoveBody(groundBody);
+      bodies.DestroyBody(groundBody);
+    }
+  }
+
   void syncTrain(float position, float deltaTime) {
+    if (!std::isfinite(position) || !std::isfinite(deltaTime) ||
+        deltaTime <= 0.0f || trainBody.IsInvalid()) {
+      return;
+    }
     physicsSystem.GetBodyInterface().MoveKinematic(
         trainBody, JPH::RVec3(0.0, 0.0, -position),
         JPH::Quat::sIdentity(), deltaTime);
+  }
+
+  void resetTrain(float position) {
+    if (!std::isfinite(position) || trainBody.IsInvalid()) return;
+    physicsSystem.GetBodyInterface().SetPositionAndRotation(
+        trainBody, JPH::RVec3(0.0, 0.0, -position),
+        JPH::Quat::sIdentity(), JPH::EActivation::DontActivate);
   }
 
   JPH::TempAllocatorImpl tempAllocator;
@@ -176,6 +205,7 @@ void PhysicsWorld::reset(float trainPosition) {
   mAccumulator = 0.0f;
   mPreviousTrainPosition =
       std::isfinite(trainPosition) ? trainPosition : 0.0f;
+  mJolt->resetTrain(mPreviousTrainPosition);
 }
 
 void PhysicsWorld::step(float frameDelta, Train& train, bool throttle,
