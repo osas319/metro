@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <stdexcept>
 #include <thread>
 #include <vector>
@@ -20,6 +21,13 @@
 namespace metro::sim {
 
 namespace {
+
+bool JoltAssertFailed(const char* expression, const char* message,
+                      const char* file, JPH::uint line) {
+  std::fprintf(stderr, "Jolt assert: %s (%s) at %s:%u\n", expression,
+               message != nullptr ? message : "", file, line);
+  return true;
+}
 
 class ObjectLayerPairFilter final : public JPH::ObjectLayerPairFilter {
 public:
@@ -62,6 +70,7 @@ public:
 void EnsureJoltInitialized() {
   static const bool initialized = [] {
     JPH::RegisterDefaultAllocator();
+    JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = JoltAssertFailed;)
     JPH::Factory::sInstance = new JPH::Factory();
     JPH::RegisterTypes();
     return true;
@@ -123,6 +132,22 @@ struct PhysicsWorld::JoltState {
         throw std::runtime_error("Jolt platform body olusturulamadi");
       platformBodies.push_back(platformBody);
     }
+
+    const JPH::BoxShapeSettings railShape(
+        JPH::Vec3(0.06f, 0.08f, routeLength * 0.5f));
+    railBodies.reserve(2);
+    for (float x : {-trackGauge * 0.5f, trackGauge * 0.5f}) {
+      JPH::BodyCreationSettings railSettings(
+          railShape.Create().Get(),
+          JPH::RVec3(x, -1.25, -routeLength * 0.5),
+          JPH::Quat::sIdentity(), JPH::EMotionType::Static, 0);
+      const JPH::BodyID railBody =
+          bodies.CreateAndAddBody(railSettings,
+                                  JPH::EActivation::DontActivate);
+      if (railBody.IsInvalid())
+        throw std::runtime_error("Jolt ray body olusturulamadi");
+      railBodies.push_back(railBody);
+    }
   }
 
   ~JoltState() {
@@ -132,6 +157,12 @@ struct PhysicsWorld::JoltState {
       bodies.DestroyBody(trainBody);
     }
     for (const JPH::BodyID body : platformBodies) {
+      if (!body.IsInvalid()) {
+        bodies.RemoveBody(body);
+        bodies.DestroyBody(body);
+      }
+    }
+    for (const JPH::BodyID body : railBodies) {
       if (!body.IsInvalid()) {
         bodies.RemoveBody(body);
         bodies.DestroyBody(body);
@@ -170,6 +201,7 @@ struct PhysicsWorld::JoltState {
   JPH::BodyID groundBody;
   JPH::BodyID trainBody;
   std::vector<JPH::BodyID> platformBodies;
+  std::vector<JPH::BodyID> railBodies;
 };
 
 PhysicsWorld::PhysicsWorld() : PhysicsWorld(Settings{}) {}
