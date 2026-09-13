@@ -154,6 +154,10 @@ int main() {
   assert(walkingPassengers.activeWalkingAgents() == 0);
   assert(walkingPassengers.removeArrivedWalkingAgents() == 1);
   assert(walkingPassengers.walkingAgents().empty());
+  walkingPassengers.addWalkingAgent(0, 2, 300.0f);
+  walkingPassengers.updateWalkingAgents(2.0f);
+  walkingPassengers.serviceStop(1, 4, false);
+  assert(walkingPassengers.walkingAgents().empty());
   metro::audio::AudioEventQueue audioEvents;
   audioEvents.push({metro::audio::EventType::DoorOpened, 1});
   audioEvents.push({metro::audio::EventType::StopArrived, 1});

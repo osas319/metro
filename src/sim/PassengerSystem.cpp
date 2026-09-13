@@ -61,6 +61,7 @@ void PassengerSystem::unloadAtTerminal() {
   mOnboard = 0;
   mTransferTimer = 0.0f;
   mDestinationCounts.clear();
+  clearWalkingAgents();
 }
 
 void PassengerSystem::serviceStop(size_t stopIndex, size_t stopCount,
@@ -69,6 +70,7 @@ void PassengerSystem::serviceStop(size_t stopIndex, size_t stopCount,
     unloadAtTerminal();
     return;
   }
+  removeArrivedWalkingAgents();
   if (stopCount < 2 || stopIndex == 0 || stopIndex >= stopCount - 1) return;
 
   const size_t alighting =
