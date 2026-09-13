@@ -9,6 +9,7 @@
 #include "sim/Signal.hpp"
 #include "sim/PassengerSystem.hpp"
 #include "sim/Route.hpp"
+#include "sim/PhysicsWorld.hpp"
 #include <SDL3/SDL.h>
 
 namespace metro::app {
@@ -35,6 +36,7 @@ private:
   // Kamera ve Girdi
   Camera mCamera;
   sim::Train mTrain;
+  sim::PhysicsWorld mPhysics;
   sim::BlockSignal mSignal{8};
   float mRouteLength = 2000.0f;
   float mBlockLength = 250.0f;

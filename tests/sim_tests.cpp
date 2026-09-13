@@ -2,6 +2,7 @@
 #include "sim/Train.hpp"
 #include "sim/PassengerSystem.hpp"
 #include "sim/Route.hpp"
+#include "sim/PhysicsWorld.hpp"
 #include "app/StationManifest.hpp"
 
 #include <cassert>
@@ -32,6 +33,13 @@ int main() {
   largeFrameTrain.update(10.0f, true, false, true, 5.0f);
   assert(largeFrameTrain.position() == 5.0f);
   assert(largeFrameTrain.speed() == 0.0f);
+
+  metro::sim::PhysicsWorld physics;
+  metro::sim::Train fixedStepTrain;
+  physics.step(0.5f, fixedStepTrain, true, false, true, 100.0f);
+  assert(fixedStepTrain.position() > 0.0f);
+  assert(physics.interpolationAlpha() >= 0.0f &&
+         physics.interpolationAlpha() < 1.0f);
 
   metro::sim::BlockSignal signal(3);
   assert(signal.blockCount() == 3);

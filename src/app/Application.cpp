@@ -140,7 +140,7 @@ void Application::update(float dt) {
   const float stopDwellLimit = upcomingStop.dwellSeconds >= 0.0f
                                    ? upcomingStop.dwellSeconds
                                    : mStopDwellSecondsLimit;
-  mTrain.update(dt, throttle, brake, signalClear, stopTarget);
+  mPhysics.step(dt, mTrain, throttle, brake, signalClear, stopTarget);
   const bool atStop = mTrain.position() >= stopTarget - 0.5f &&
                       mTrain.position() <= stopTarget + 0.5f &&
                       mTrain.speed() < 0.05f;

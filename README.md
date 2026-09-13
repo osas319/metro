@@ -122,7 +122,8 @@ cmake/                CMake yardımcı modülleri
 - [ ] Aşama 3: tren fiziği, sinyal/blok sistemi, kapı/peron mantığı
 - [ ] Aşama 4: yolcu simülasyonu (navmesh kalabalık), ses, tam hat
 
-Mevcut prototipte Jolt öncesi tren hareketi, kapı durumu ve 8 bloklu temel
+Mevcut prototipte Jolt öncesi tren hareketi, sabit zaman adımlı fizik dünyası,
+kapı durumu ve 8 bloklu temel
 işgal/sinyal mantığı çalışır durumdadır. Kırmızı sinyal ön blok için servis
 frenini zorlar. Bunlar Faz 2-3 için geçici çekirdek
 simülasyon katmanıdır; gerçek hat geometrisi ve fizik entegrasyonu geldiğinde
