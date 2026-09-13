@@ -122,6 +122,9 @@ void Application::update(float dt) {
   const bool signalClear = nextBlock < mSignal.blockCount() &&
                            mSignal.canEnter(nextBlock);
   mTrain.update(dt, throttle, brake, signalClear, mRouteLength);
+  if (mTrain.position() >= mRouteLength && mTrain.speed() < 0.05f) {
+    mTrain.setDoorsOpen(true);
+  }
   mPassengers.update(dt, mTrain.doorsOpen(), mTrain.speed() < 0.05f);
 
   if (!mMouseCaptured) return;

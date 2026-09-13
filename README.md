@@ -52,6 +52,8 @@ Model 0-80 km/saat aralığında hızlanır ve konumu metre cinsinden ilerletir;
 bu bağımlılıksız model ileride Jolt tabanlı hat fiziğiyle değiştirilecektir.
 Tren dururken **O** kapıları açar, **C** kapatır; kapılar açıkken çekiş
 uygulanmaz.
+Terminale ulaşan tren otomatik durur ve kapılarını açar; yolcu transferi
+terminal durağında kendiliğinden başlar.
 
 İstasyon durağında kapılar açıkken yolcular yarım saniyede bir biner; kapasite
 tren başına 320 yolcuyla sınırlıdır. Bu geçici sistem ileride navmesh ve
