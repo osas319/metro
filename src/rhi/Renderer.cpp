@@ -577,6 +577,9 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
     const float stopPosition = mStopPositions[stopIndex];
     if (stopPosition < 0.0f || stopPosition > mRouteLength) continue;
     const bool terminal = stopIndex + 1 == mStopPositions.size();
+    const bool nextStop = stopPosition > trainPosition + 0.5f &&
+                          (stopIndex == 0 ||
+                           mStopPositions[stopIndex - 1] <= trainPosition + 0.5f);
     instances.push_back(
         {glm::scale(
              glm::translate(
@@ -585,6 +588,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                                          -stopPosition)),
              glm::vec3(0.18f, 1.5f, 0.18f)),
          terminal ? glm::vec4(0.90f, 0.18f, 0.10f, 1.0f)
+                  : nextStop ? glm::vec4(0.15f, 0.85f, 1.0f, 1.0f)
                   : glm::vec4(0.95f, 0.65f, 0.08f, 1.0f),
          0.4f});
     instances.push_back(
@@ -595,6 +599,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                                          -stopPosition)),
              glm::vec3(0.08f, 0.08f, 0.08f)),
          terminal ? glm::vec4(1.0f, 0.18f, 0.08f, 1.0f)
+                  : nextStop ? glm::vec4(0.20f, 0.90f, 1.0f, 1.0f)
                   : glm::vec4(1.0f, 0.82f, 0.18f, 1.0f),
          0.25f});
   }
