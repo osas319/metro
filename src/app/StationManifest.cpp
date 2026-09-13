@@ -148,6 +148,24 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     if (std::filesystem::exists(manifestModel))
       parsed.modelPath = manifestModel.lexically_normal().string();
   }
+  readString(source, "navmesh", parsed.navmeshPath);
+  if (!parsed.navmeshPath.empty() &&
+      !std::filesystem::path(parsed.navmeshPath).is_absolute() &&
+      !std::filesystem::exists(parsed.navmeshPath)) {
+    const auto manifestNavmesh =
+        std::filesystem::path(path).parent_path() / parsed.navmeshPath;
+    if (std::filesystem::exists(manifestNavmesh))
+      parsed.navmeshPath = manifestNavmesh.lexically_normal().string();
+  }
+  readString(source, "audio_directory", parsed.audioDirectory);
+  if (!parsed.audioDirectory.empty() &&
+      !std::filesystem::path(parsed.audioDirectory).is_absolute() &&
+      !std::filesystem::exists(parsed.audioDirectory)) {
+    const auto manifestAudio =
+        std::filesystem::path(path).parent_path() / parsed.audioDirectory;
+    if (std::filesystem::exists(manifestAudio))
+      parsed.audioDirectory = manifestAudio.lexically_normal().string();
+  }
   if (source.find("\"position\"") != std::string::npos &&
       !readVector3(source, "position", parsed.spawnPosition)) {
     METRO_ERROR("Station manifest spawn konumu gecersiz: %s", path.c_str());
