@@ -147,6 +147,8 @@ hareketi daha akıcı kalır.
 Jolt Physics v5.2.0 sabit commit ile `third_party/JoltPhysics` submodule'ü
 olarak bağlanır. Uygulama ve test hedefleri yalnızca Jolt çekirdek kütüphanesini
 derler; örnekler, viewer ve Jolt test uygulamaları kapalıdır.
+`PhysicsWorld`, her fixed-step'te Jolt `PhysicsSystem` güncellemesini çalıştırır
+ve manifest ölçülerinden zemin, iki platform ve kinematik tren gövdeleri kurar.
 
 Kadıköy asset pipeline başlangıç manifesti:
 `assets/stations/kadikoy/station.json`. Manifest metre birimini, glTF eksen
