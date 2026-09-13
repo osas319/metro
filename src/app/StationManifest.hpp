@@ -2,6 +2,7 @@
 
 #include <string>
 #include <glm/vec3.hpp>
+#include "sim/Train.hpp"
 
 namespace metro::app {
 
@@ -19,6 +20,7 @@ struct StationManifest {
   float routeLength = 2000.0f;
   size_t passengerCapacity = 320;
   float stopDwellSeconds = 3.0f;
+  sim::Train::Parameters trainParameters;
 
   static bool load(const std::string& path, StationManifest& out);
 };

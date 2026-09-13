@@ -104,6 +104,11 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
       stopDwellSeconds >= 0.0f) {
     parsed.stopDwellSeconds = stopDwellSeconds;
   }
+  readNumber(source, "max_speed_mps", parsed.trainParameters.maxSpeed);
+  readNumber(source, "acceleration_mps2", parsed.trainParameters.acceleration);
+  readNumber(source, "service_brake_mps2", parsed.trainParameters.serviceBrake);
+  readNumber(source, "rolling_resistance_mps2",
+             parsed.trainParameters.rollingResistance);
 
   out = std::move(parsed);
   METRO_INFO("Station manifest: %s (%s), mesh dizini: %s",

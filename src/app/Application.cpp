@@ -30,6 +30,7 @@ bool Application::init() {
   mPassengers = sim::PassengerSystem(station.passengerCapacity);
   mRoute.buildBlockStops(station.blockCount, station.routeLength);
   mStopDwellSecondsLimit = station.stopDwellSeconds;
+  mTrain.setParameters(station.trainParameters);
   mBlockLength = station.routeLength /
                  static_cast<float>(std::max<size_t>(station.blockCount, 1));
 
