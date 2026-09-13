@@ -154,6 +154,12 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     METRO_ERROR("Station manifest spawn pitch gecersiz: %s", path.c_str());
     return false;
   }
+  if (parsed.spawnPitch < -89.0f || parsed.spawnPitch > 89.0f ||
+      parsed.spawnYaw < -360.0f || parsed.spawnYaw > 360.0f) {
+    METRO_ERROR("Station manifest kamera acisi aralik disinda: %s",
+                path.c_str());
+    return false;
+  }
   if (source.find("\"block_count\"") != std::string::npos) {
     if (!readNonNegativeInteger(source, "block_count", parsed.blockCount) ||
         parsed.blockCount == 0) {
