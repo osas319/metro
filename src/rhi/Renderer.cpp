@@ -59,9 +59,10 @@ VkFormat Renderer::pickDepthFormat() const {
 }
 
 bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
-                    const std::string& manifestModelPath) {
+                    const std::string& manifestModelPath, float routeLength) {
   mCtx = &ctx;
   mWindow = window;
+  mRouteLength = routeLength > 0.0f ? routeLength : 2000.0f;
   const char* environmentModel = std::getenv("METRO_MODEL_PATH");
 
   try {
@@ -521,23 +522,23 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
     float roughness;
   };
   const SceneInstance instances[] = {
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)),
-                  glm::vec3(10.0f, 0.15f, 1000.0f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, -mRouteLength * 0.5f)),
+                  glm::vec3(10.0f, 0.15f, mRouteLength * 0.5f)),
        glm::vec4(0.32f, 0.36f, 0.42f, 1.0f), 0.9f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-4.0f, -0.2f, 0.0f)),
-                  glm::vec3(0.8f, 0.3f, 1000.0f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-4.0f, -0.2f, -mRouteLength * 0.5f)),
+                  glm::vec3(0.8f, 0.3f, mRouteLength * 0.5f)),
        glm::vec4(0.55f, 0.58f, 0.62f, 1.0f), 0.75f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, -0.2f, 0.0f)),
-                  glm::vec3(0.8f, 0.3f, 1000.0f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, -0.2f, -mRouteLength * 0.5f)),
+                  glm::vec3(0.8f, 0.3f, mRouteLength * 0.5f)),
        glm::vec4(0.55f, 0.58f, 0.62f, 1.0f), 0.75f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 4.0f, 0.0f)),
-                  glm::vec3(10.0f, 0.15f, 1000.0f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 4.0f, -mRouteLength * 0.5f)),
+                  glm::vec3(10.0f, 0.15f, mRouteLength * 0.5f)),
        glm::vec4(0.20f, 0.24f, 0.30f, 1.0f), 0.95f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.2f, -1.25f, 0.0f)),
-                  glm::vec3(0.08f, 0.08f, 1000.0f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.2f, -1.25f, -mRouteLength * 0.5f)),
+                  glm::vec3(0.08f, 0.08f, mRouteLength * 0.5f)),
        glm::vec4(0.72f, 0.74f, 0.78f, 1.0f), 0.35f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(1.2f, -1.25f, 0.0f)),
-                  glm::vec3(0.08f, 0.08f, 1000.0f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(1.2f, -1.25f, -mRouteLength * 0.5f)),
+                  glm::vec3(0.08f, 0.08f, mRouteLength * 0.5f)),
        glm::vec4(0.72f, 0.74f, 0.78f, 1.0f), 0.35f},
       {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-7.0f, 1.2f, -12.0f)),
                   glm::vec3(0.35f, 2.8f, 0.35f)),

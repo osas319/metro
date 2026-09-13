@@ -45,7 +45,8 @@ public:
   static constexpr uint32_t MaxFramesInFlight = 2;
 
   bool init(VulkanContext& ctx, SDL_Window* window,
-            const std::string& manifestModelPath = {});
+            const std::string& manifestModelPath = {},
+            float routeLength = 2000.0f);
   void shutdown();
 
   // Bir kareyi uçur (acquire → record → submit → present).
@@ -93,6 +94,7 @@ private:
   std::vector<VkDescriptorSet> mDescriptorSets;
 
   Model mModel;
+  float mRouteLength = 2000.0f;
 
   VkCommandPool mCommandPool = VK_NULL_HANDLE;
   // Tüm per-frame senkronizasyon nesneleri swapchain image sayısına göre
