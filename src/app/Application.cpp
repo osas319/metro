@@ -73,6 +73,8 @@ bool Application::init() {
     METRO_ERROR("SDL_Init: %s", SDL_GetError());
     return false;
   }
+  if (!SDL_InitSubSystem(SDL_INIT_AUDIO) || !mAudioBackend.init())
+    METRO_WARN("Ses backend'i baslatilamadi: %s", SDL_GetError());
   METRO_INFO("SDL video driver: %s", SDL_GetCurrentVideoDriver());
 
   mWindow = SDL_CreateWindow(
@@ -252,6 +254,7 @@ void Application::update(float dt) {
 void Application::consumeAudioEvents() {
   audio::Event event{};
   while (mAudioEvents.tryPop(event)) {
+    mAudioBackend.play(event.type);
     METRO_INFO("ses olayi: %s (durak %zu)",
                audio::eventName(event.type), event.stopIndex);
   }
@@ -347,6 +350,7 @@ int Application::run() {
 }
 
 void Application::shutdown() {
+  mAudioBackend.shutdown();
   mRenderer.shutdown();
   mContext.shutdown();
   if (mWindow != nullptr) {

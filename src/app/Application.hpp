@@ -12,6 +12,7 @@
 #include "sim/PhysicsWorld.hpp"
 #include "sim/PassengerNavGraph.hpp"
 #include "audio/AudioEventQueue.hpp"
+#include "audio/AudioBackend.hpp"
 #include <SDL3/SDL.h>
 
 namespace metro::app {
@@ -48,6 +49,7 @@ private:
   sim::Route mRoute;
   sim::PassengerNavGraph mPassengerNav;
   audio::AudioEventQueue mAudioEvents;
+  audio::AudioBackend mAudioBackend;
   bool mTerminalServiced = false;
   size_t mLastServicedStop = static_cast<size_t>(-1);
   size_t mLastSignalBlock = static_cast<size_t>(-1);
