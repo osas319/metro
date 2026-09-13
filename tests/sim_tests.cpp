@@ -67,6 +67,10 @@ int main() {
                   {"Invalid terminal", 400.0f}});
   assert(route.stopCount() == 3);
   assert(route.nextStop(0.0f, 900.0f).name == "Pendik");
+  route.setStops({{"Invalid", -1.0f}, {"Terminal", 900.0f}});
+  assert(route.stopCount() == 3);
+  route.setStops({{"Invalid", 0.0f}, {"Terminal", 900.0f, -2.0f}});
+  assert(route.stopCount() == 3);
   signal.setOccupied(1, true);
   assert(!signal.canEnter(1));
   assert(signal.canEnter(5));

@@ -19,9 +19,13 @@ void Route::buildBlockStops(size_t blockCount, float routeLength) {
 }
 
 void Route::setStops(std::vector<Stop> stops) {
-  if (stops.size() < 2) return;
+  if (stops.size() < 2 || stops.front().position < 0.0f ||
+      stops.front().dwellSeconds < -1.0f) {
+    return;
+  }
   for (size_t i = 1; i < stops.size(); ++i) {
-    if (stops[i].name.empty() || stops[i].position <= stops[i - 1].position) {
+    if (stops[i].name.empty() || stops[i].position <= stops[i - 1].position ||
+        stops[i].dwellSeconds < -1.0f) {
       return;
     }
   }
