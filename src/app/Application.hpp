@@ -37,6 +37,7 @@ private:
   sim::BlockSignal mSignal{8};
   float mRouteLength = 2000.0f;
   sim::PassengerSystem mPassengers{320};
+  bool mTerminalServiced = false;
   bool mMouseCaptured = false;
   const bool* mKeyboardState = nullptr;
 };

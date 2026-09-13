@@ -19,4 +19,11 @@ void PassengerSystem::update(float dt, bool doorsOpen, bool trainStopped) {
   }
 }
 
+void PassengerSystem::unloadAtTerminal() {
+  mAlightedTotal += mOnboard;
+  mWaiting += mOnboard;
+  mOnboard = 0;
+  mTransferTimer = 0.0f;
+}
+
 } // namespace metro::sim

@@ -37,6 +37,9 @@ int main() {
   assert(passengers.onboard() == 2);
   passengers.update(1.0f, true, true);
   assert(passengers.onboard() == 2);
+  passengers.unloadAtTerminal();
+  assert(passengers.onboard() == 0);
+  assert(passengers.alightedTotal() == 2);
   signal.setOccupied(1, true);
   assert(!signal.canEnter(1));
   signal.resize(5);

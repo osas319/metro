@@ -124,6 +124,10 @@ void Application::update(float dt) {
   mTrain.update(dt, throttle, brake, signalClear, mRouteLength);
   if (mTrain.position() >= mRouteLength && mTrain.speed() < 0.05f) {
     mTrain.setDoorsOpen(true);
+    if (!mTerminalServiced) {
+      mPassengers.unloadAtTerminal();
+      mTerminalServiced = true;
+    }
   }
   mPassengers.update(dt, mTrain.doorsOpen(), mTrain.speed() < 0.05f);
 
