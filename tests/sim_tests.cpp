@@ -41,6 +41,8 @@ int main() {
   passengers.unloadAtTerminal();
   assert(passengers.onboard() == 0);
   assert(passengers.alightedTotal() == 2);
+  passengers.update(1.0f, true, true, false);
+  assert(passengers.onboard() == 0);
 
   metro::sim::Route route;
   route.buildBlockStops(3, 900.0f);

@@ -4,8 +4,9 @@
 
 namespace metro::sim {
 
-void PassengerSystem::update(float dt, bool doorsOpen, bool trainStopped) {
-  if (!doorsOpen || !trainStopped) return;
+void PassengerSystem::update(float dt, bool doorsOpen, bool trainStopped,
+                             bool allowBoarding) {
+  if (!doorsOpen || !trainStopped || !allowBoarding) return;
 
   mTransferTimer += dt;
   constexpr float transferInterval = 0.5f;

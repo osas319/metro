@@ -8,7 +8,8 @@ class PassengerSystem {
 public:
   explicit PassengerSystem(size_t capacity = 320) : mCapacity(capacity) {}
 
-  void update(float dt, bool doorsOpen, bool trainStopped);
+  void update(float dt, bool doorsOpen, bool trainStopped,
+              bool allowBoarding = true);
   void unloadAtTerminal();
   size_t onboard() const { return mOnboard; }
   size_t waiting() const { return mWaiting; }

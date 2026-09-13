@@ -152,7 +152,8 @@ void Application::update(float dt) {
     mPassengers.unloadAtTerminal();
     mTerminalServiced = true;
   }
-  mPassengers.update(dt, mTrain.doorsOpen(), mTrain.speed() < 0.05f);
+  mPassengers.update(dt, mTrain.doorsOpen(), mTrain.speed() < 0.05f,
+                    !atTerminal);
 
   if (!mMouseCaptured) return;
 
