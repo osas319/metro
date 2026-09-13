@@ -25,6 +25,7 @@ bool Application::init() {
   mCamera.yaw = station.spawnYaw;
   mCamera.pitch = station.spawnPitch;
   mSignal.resize(station.blockCount);
+  mRouteLength = station.routeLength;
 
   entt::registry registry;
   auto entity = registry.create();
@@ -119,7 +120,7 @@ void Application::update(float dt) {
   const size_t nextBlock = currentBlock + 1;
   const bool signalClear = nextBlock < mSignal.blockCount() &&
                            mSignal.canEnter(nextBlock);
-  mTrain.update(dt, throttle, brake, signalClear);
+  mTrain.update(dt, throttle, brake, signalClear, mRouteLength);
 
   if (!mMouseCaptured) return;
 

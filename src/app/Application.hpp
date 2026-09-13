@@ -34,6 +34,7 @@ private:
   Camera mCamera;
   sim::Train mTrain;
   sim::BlockSignal mSignal{8};
+  float mRouteLength = 2000.0f;
   bool mMouseCaptured = false;
   const bool* mKeyboardState = nullptr;
 };

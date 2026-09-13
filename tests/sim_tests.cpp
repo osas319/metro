@@ -19,6 +19,12 @@ int main() {
   assert(signalTrain.speed() == 0.0f);
   assert(signalTrain.position() == 0.0f);
 
+  metro::sim::Train terminalTrain;
+  terminalTrain.update(1.0f, true, false, true, 0.5f);
+  terminalTrain.update(1.0f, true, false, true, 0.5f);
+  assert(terminalTrain.position() <= 0.5f);
+  assert(terminalTrain.speed() == 0.0f);
+
   metro::sim::BlockSignal signal(3);
   assert(signal.blockCount() == 3);
   assert(signal.canEnter(1));

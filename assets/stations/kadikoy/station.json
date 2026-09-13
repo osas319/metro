@@ -2,6 +2,7 @@
   "name": "Kadikoy",
   "line": "M4",
   "block_count": 8,
+  "route_length": 2000.0,
   "units": "meters",
   "up_axis": "Y",
   "meshes": "meshes",
