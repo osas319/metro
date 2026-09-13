@@ -9,6 +9,8 @@
 #include <Jolt/Core/JobSystemThreadPool.h>
 #include <Jolt/Core/TempAllocator.h>
 #include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/RegisterTypes.h>
 
 #include "sim/Train.hpp"
@@ -79,6 +81,25 @@ struct PhysicsWorld::JoltState {
     objectLayerPairFilter = std::make_unique<ObjectLayerPairFilter>();
     physicsSystem.Init(4096, 0, 4096, 4096, *broadPhaseLayerInterface,
                        *objectVsBroadPhaseLayerFilter, *objectLayerPairFilter);
+
+    JPH::BodyInterface& bodies = physicsSystem.GetBodyInterface();
+    const JPH::BoxShapeSettings groundShape(JPH::Vec3(500.0f, 0.5f, 500.0f));
+    JPH::BodyCreationSettings groundSettings(
+        groundShape.Create().Get(), JPH::RVec3(0.0, -1.5, 0.0),
+        JPH::Quat::sIdentity(), JPH::EMotionType::Static, 0);
+    groundBody = bodies.CreateAndAddBody(groundSettings, JPH::EActivation::DontActivate);
+
+    const JPH::BoxShapeSettings trainShape(JPH::Vec3(1.4f, 1.6f, 3.0f));
+    JPH::BodyCreationSettings trainSettings(
+        trainShape.Create().Get(), JPH::RVec3::sZero(), JPH::Quat::sIdentity(),
+        JPH::EMotionType::Kinematic, 1);
+    trainBody = bodies.CreateAndAddBody(trainSettings, JPH::EActivation::Activate);
+  }
+
+  void syncTrain(float position, float deltaTime) {
+    physicsSystem.GetBodyInterface().MoveKinematic(
+        trainBody, JPH::RVec3(0.0, 0.0, -position),
+        JPH::Quat::sIdentity(), deltaTime);
   }
 
   JPH::TempAllocatorImpl tempAllocator;
@@ -88,6 +109,8 @@ struct PhysicsWorld::JoltState {
   std::unique_ptr<ObjectVsBroadPhaseLayerFilter>
       objectVsBroadPhaseLayerFilter;
   std::unique_ptr<ObjectLayerPairFilter> objectLayerPairFilter;
+  JPH::BodyID groundBody;
+  JPH::BodyID trainBody;
 };
 
 PhysicsWorld::PhysicsWorld() : PhysicsWorld(Settings{}) {}
@@ -121,10 +144,11 @@ void PhysicsWorld::step(float frameDelta, Train& train, bool throttle,
   while (mAccumulator >= mSettings.fixedStep &&
          substeps++ < mSettings.maxSubsteps) {
     mPreviousTrainPosition = train.position();
-    mJolt->physicsSystem.Update(mSettings.fixedStep, 1, &mJolt->tempAllocator,
-                                &mJolt->jobSystem);
     train.update(mSettings.fixedStep, throttle, brake, signalClear,
                  routeLength);
+    mJolt->syncTrain(train.position(), mSettings.fixedStep);
+    mJolt->physicsSystem.Update(mSettings.fixedStep, 1, &mJolt->tempAllocator,
+                                &mJolt->jobSystem);
     mAccumulator -= mSettings.fixedStep;
   }
 }
