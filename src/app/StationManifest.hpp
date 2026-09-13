@@ -21,6 +21,7 @@ struct StationManifest {
   float spawnPitch = 0.0f;
   size_t blockCount = 8;
   float routeLength = 2000.0f;
+  float platformWidth = 4.0f;
   size_t passengerCapacity = 320;
   size_t initialWaitingPassengers = 24;
   float stopDwellSeconds = 3.0f;

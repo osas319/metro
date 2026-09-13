@@ -59,10 +59,12 @@ VkFormat Renderer::pickDepthFormat() const {
 }
 
 bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
-                    const std::string& manifestModelPath, float routeLength) {
+                    const std::string& manifestModelPath, float routeLength,
+                    float platformWidth) {
   mCtx = &ctx;
   mWindow = window;
   mRouteLength = routeLength > 0.0f ? routeLength : 2000.0f;
+  mPlatformWidth = platformWidth > 0.0f ? platformWidth : 4.0f;
   const char* environmentModel = std::getenv("METRO_MODEL_PATH");
 
   try {
@@ -523,12 +525,13 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
   };
   const SceneInstance instances[] = {
       {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, -mRouteLength * 0.5f)),
-                  glm::vec3(10.0f, 0.15f, mRouteLength * 0.5f)),
+                  glm::vec3(mPlatformWidth * 2.0f + 2.0f, 0.15f,
+                            mRouteLength * 0.5f)),
        glm::vec4(0.32f, 0.36f, 0.42f, 1.0f), 0.9f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-4.0f, -0.2f, -mRouteLength * 0.5f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-mPlatformWidth, -0.2f, -mRouteLength * 0.5f)),
                   glm::vec3(0.8f, 0.3f, mRouteLength * 0.5f)),
        glm::vec4(0.55f, 0.58f, 0.62f, 1.0f), 0.75f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, -0.2f, -mRouteLength * 0.5f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(mPlatformWidth, -0.2f, -mRouteLength * 0.5f)),
                   glm::vec3(0.8f, 0.3f, mRouteLength * 0.5f)),
        glm::vec4(0.55f, 0.58f, 0.62f, 1.0f), 0.75f},
       {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 4.0f, -mRouteLength * 0.5f)),

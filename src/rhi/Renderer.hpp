@@ -46,7 +46,7 @@ public:
 
   bool init(VulkanContext& ctx, SDL_Window* window,
             const std::string& manifestModelPath = {},
-            float routeLength = 2000.0f);
+            float routeLength = 2000.0f, float platformWidth = 4.0f);
   void shutdown();
 
   // Bir kareyi uçur (acquire → record → submit → present).
@@ -95,6 +95,7 @@ private:
 
   Model mModel;
   float mRouteLength = 2000.0f;
+  float mPlatformWidth = 4.0f;
 
   VkCommandPool mCommandPool = VK_NULL_HANDLE;
   // Tüm per-frame senkronizasyon nesneleri swapchain image sayısına göre

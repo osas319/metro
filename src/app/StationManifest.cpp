@@ -175,6 +175,11 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     }
     parsed.routeLength = routeLength;
   }
+  if (source.find("\"platform_width\"") != std::string::npos &&
+      !readPositiveNumber(source, "platform_width", parsed.platformWidth)) {
+    METRO_ERROR("Station manifest peron genisligi gecersiz: %s", path.c_str());
+    return false;
+  }
   if (source.find("\"passenger_capacity\"") != std::string::npos) {
     if (!readNonNegativeInteger(source, "passenger_capacity",
                                 parsed.passengerCapacity) ||
