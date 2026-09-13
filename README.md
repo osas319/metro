@@ -50,6 +50,7 @@ kenarı, raylar ve taşıyıcı kolonlar olarak çoğaltır; mavi nesne tren
 placeholder'ıdır.
 Tren placeholder'ı simülasyondaki konumunu ray ekseninde takip eder; Yukarı
 okla çekiş verildiğinde sahnede ilerler, Aşağı okla frenlenir.
+Placeholder koridoru manifestteki 2000 metrelik prototip rotayı kapsar.
 
 Kamera: pencereye tıklayıp fareyi yakalayın; **WASD** yatay hareket, **Q/E**
 dikey hareket, **Shift** hızlı hareket, **ESC** fare yakalamayı bırakır.
