@@ -1,0 +1,31 @@
+#include "sim/Signal.hpp"
+#include "sim/Train.hpp"
+
+#include <cassert>
+
+int main() {
+  metro::sim::Train train;
+  train.update(1.0f, true, false);
+  assert(train.speed() > 0.0f);
+  assert(train.position() > 0.0f);
+
+  train.setDoorsOpen(true);
+  const float stoppedSpeed = train.speed();
+  train.update(1.0f, true, false);
+  assert(train.speed() < stoppedSpeed);
+
+  metro::sim::Train signalTrain;
+  signalTrain.update(1.0f, true, false, false);
+  assert(signalTrain.speed() == 0.0f);
+  assert(signalTrain.position() == 0.0f);
+
+  metro::sim::BlockSignal signal(3);
+  assert(signal.blockCount() == 3);
+  assert(signal.canEnter(1));
+  signal.setOccupied(1, true);
+  assert(!signal.canEnter(1));
+  signal.resize(5);
+  assert(signal.blockCount() == 5);
+  assert(signal.canEnter(1));
+  return 0;
+}

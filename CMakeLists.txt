@@ -5,6 +5,8 @@ project(Metro
   DESCRIPTION "İstanbul M4 metro simülasyonu — özel motor (Vulkan + Wayland)"
   LANGUAGES C CXX)
 
+include(CTest)
+
 # ---------------------------------------------------------------------------
 # Dil ve derleyici politikaları
 # C++20: derleyici desteği (GCC 13+) her yerde olgun; C++23 gereksinimimiz
@@ -83,3 +85,12 @@ target_link_libraries(metro PRIVATE
 
 # SPIR-V'ler derlenmeden exe kurulmasın
 add_dependencies(metro metro_shaders)
+
+if(BUILD_TESTING)
+  add_executable(metro_sim_tests
+    tests/sim_tests.cpp
+    src/sim/Train.cpp
+    src/sim/Signal.cpp)
+  target_include_directories(metro_sim_tests PRIVATE src)
+  add_test(NAME metro_sim_tests COMMAND metro_sim_tests)
+endif()
