@@ -69,6 +69,9 @@ terminal durağında kendiliğinden başlar.
 Kapı açma komutu trenin durmasını ve bir durak platformuyla hizalanmasını
 gerektirir; hareket halindeyken kapı açma reddedilir, kapatma her zaman
 mümkündür.
+Yolcu sistemi, rota duraklarından oluşturulan doğrusal bir navgraph üzerinde
+duraklar arası en kısa yolu sorgulayabilir; gerçek istasyon mesh üçgenleri
+geldiğinde bu düğümler navmesh yüzeyleriyle değiştirilecektir.
 
 İstasyon durağında kapılar açıkken yolcular yarım saniyede bir biner; kapasite
 tren başına 320 yolcuyla sınırlıdır. Bu geçici sistem ileride navmesh ve

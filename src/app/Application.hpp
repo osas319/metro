@@ -10,6 +10,7 @@
 #include "sim/PassengerSystem.hpp"
 #include "sim/Route.hpp"
 #include "sim/PhysicsWorld.hpp"
+#include "sim/PassengerNavGraph.hpp"
 #include <SDL3/SDL.h>
 
 namespace metro::app {
@@ -43,6 +44,7 @@ private:
   float mStopDwellSecondsLimit = 3.0f;
   sim::PassengerSystem mPassengers{320};
   sim::Route mRoute;
+  sim::PassengerNavGraph mPassengerNav;
   bool mTerminalServiced = false;
   size_t mLastServicedStop = static_cast<size_t>(-1);
   float mStopDwellSeconds = 0.0f;
