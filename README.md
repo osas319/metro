@@ -51,6 +51,8 @@ placeholder'ıdır.
 Tren placeholder'ı simülasyondaki konumunu ray ekseninde takip eder; Yukarı
 okla çekiş verildiğinde sahnede ilerler, Aşağı okla frenlenir.
 Placeholder koridoru manifestteki 2000 metrelik prototip rotayı kapsar.
+Fare yakalanmadığında kamera treni takip eder; pencereye tıklamak serbest
+kameraya geçiş yapar.
 
 Kamera: pencereye tıklayıp fareyi yakalayın; **WASD** yatay hareket, **Q/E**
 dikey hareket, **Shift** hızlı hareket, **ESC** fare yakalamayı bırakır.

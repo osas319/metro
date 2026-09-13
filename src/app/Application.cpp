@@ -200,7 +200,13 @@ int Application::run() {
     
     update(dt);
 
-    mRenderer.drawFrame(mCamera, mTrain.position());
+    Camera renderCamera = mCamera;
+    if (!mMouseCaptured) {
+      renderCamera.position = glm::vec3(0.0f, 2.4f, 8.0f - mTrain.position());
+      renderCamera.yaw = -90.0f;
+      renderCamera.pitch = -4.0f;
+    }
+    mRenderer.drawFrame(renderCamera, mTrain.position());
     ++frameCount;
 
     if (nowNs - lastStatsNs >= Uint64(2e9)) {
