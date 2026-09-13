@@ -572,8 +572,10 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
            glm::vec4(0.38f, 0.40f, 0.44f, 1.0f), 0.8f});
     }
   }
-  for (float stopPosition : mStopPositions) {
+  for (size_t stopIndex = 0; stopIndex < mStopPositions.size(); ++stopIndex) {
+    const float stopPosition = mStopPositions[stopIndex];
     if (stopPosition < 0.0f || stopPosition > mRouteLength) continue;
+    const bool terminal = stopIndex + 1 == mStopPositions.size();
     instances.push_back(
         {glm::scale(
              glm::translate(
@@ -581,7 +583,9 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                  sceneOffset + glm::vec3(mPlatformWidth + 1.0f, 1.5f,
                                          -stopPosition)),
              glm::vec3(0.18f, 1.5f, 0.18f)),
-         glm::vec4(0.95f, 0.65f, 0.08f, 1.0f), 0.4f});
+         terminal ? glm::vec4(0.90f, 0.18f, 0.10f, 1.0f)
+                  : glm::vec4(0.95f, 0.65f, 0.08f, 1.0f),
+         0.4f});
   }
   mModel.bind(cmd);
   for (const SceneInstance& instance : instances) {
