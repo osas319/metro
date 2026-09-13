@@ -56,6 +56,7 @@ uygulanmaz.
 İstasyon durağında kapılar açıkken yolcular yarım saniyede bir biner; kapasite
 tren başına 320 yolcuyla sınırlıdır. Bu geçici sistem ileride navmesh ve
 istasyon hedefleriyle genişletilecektir.
+Kapasite `station.json` içindeki `passenger_capacity` alanından değiştirilebilir.
 
 ## Klasör yapısı
 

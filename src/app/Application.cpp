@@ -26,6 +26,7 @@ bool Application::init() {
   mCamera.pitch = station.spawnPitch;
   mSignal.resize(station.blockCount);
   mRouteLength = station.routeLength;
+  mPassengers = sim::PassengerSystem(station.passengerCapacity);
 
   entt::registry registry;
   auto entity = registry.create();

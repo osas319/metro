@@ -89,6 +89,11 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     parsed.blockCount = static_cast<size_t>(blockCount);
   }
   readNumber(source, "route_length", parsed.routeLength);
+  float passengerCapacity = static_cast<float>(parsed.passengerCapacity);
+  if (readNumber(source, "passenger_capacity", passengerCapacity) &&
+      passengerCapacity >= 1.0f) {
+    parsed.passengerCapacity = static_cast<size_t>(passengerCapacity);
+  }
 
   out = std::move(parsed);
   METRO_INFO("Station manifest: %s (%s), mesh dizini: %s",

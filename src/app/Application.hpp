@@ -36,7 +36,7 @@ private:
   sim::Train mTrain;
   sim::BlockSignal mSignal{8};
   float mRouteLength = 2000.0f;
-  sim::PassengerSystem mPassengers;
+  sim::PassengerSystem mPassengers{320};
   bool mMouseCaptured = false;
   const bool* mKeyboardState = nullptr;
 };
