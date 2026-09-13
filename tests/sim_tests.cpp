@@ -90,5 +90,8 @@ int main() {
   assert(station.stopDwellSeconds == 3.0f);
   assert(station.trainParameters.serviceBrake >=
          station.trainParameters.acceleration);
+  assert(station.spawnPosition.y == 1.7f);
+  assert(station.spawnYaw == -90.0f);
+  assert(station.spawnPitch == 0.0f);
   return 0;
 }

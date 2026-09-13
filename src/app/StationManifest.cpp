@@ -139,9 +139,21 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     return false;
   }
   readString(source, "model", parsed.modelPath);
-  readVector3(source, "position", parsed.spawnPosition);
-  readNumber(source, "yaw", parsed.spawnYaw);
-  readNumber(source, "pitch", parsed.spawnPitch);
+  if (source.find("\"position\"") != std::string::npos &&
+      !readVector3(source, "position", parsed.spawnPosition)) {
+    METRO_ERROR("Station manifest spawn konumu gecersiz: %s", path.c_str());
+    return false;
+  }
+  if (source.find("\"yaw\"") != std::string::npos &&
+      !readNumber(source, "yaw", parsed.spawnYaw)) {
+    METRO_ERROR("Station manifest spawn yaw gecersiz: %s", path.c_str());
+    return false;
+  }
+  if (source.find("\"pitch\"") != std::string::npos &&
+      !readNumber(source, "pitch", parsed.spawnPitch)) {
+    METRO_ERROR("Station manifest spawn pitch gecersiz: %s", path.c_str());
+    return false;
+  }
   if (source.find("\"block_count\"") != std::string::npos) {
     if (!readNonNegativeInteger(source, "block_count", parsed.blockCount) ||
         parsed.blockCount == 0) {
