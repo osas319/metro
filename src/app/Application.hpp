@@ -8,6 +8,7 @@
 #include "sim/Train.hpp"
 #include "sim/Signal.hpp"
 #include "sim/PassengerSystem.hpp"
+#include "sim/Route.hpp"
 #include <SDL3/SDL.h>
 
 namespace metro::app {
@@ -37,6 +38,7 @@ private:
   sim::BlockSignal mSignal{8};
   float mRouteLength = 2000.0f;
   sim::PassengerSystem mPassengers{320};
+  sim::Route mRoute;
   bool mTerminalServiced = false;
   bool mMouseCaptured = false;
   const bool* mKeyboardState = nullptr;

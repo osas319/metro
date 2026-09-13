@@ -27,6 +27,7 @@ bool Application::init() {
   mSignal.resize(station.blockCount);
   mRouteLength = station.routeLength;
   mPassengers = sim::PassengerSystem(station.passengerCapacity);
+  mRoute.buildBlockStops(station.blockCount, station.routeLength);
 
   entt::registry registry;
   auto entity = registry.create();
@@ -121,8 +122,18 @@ void Application::update(float dt) {
   const size_t nextBlock = currentBlock + 1;
   const bool signalClear = nextBlock < mSignal.blockCount() &&
                            mSignal.canEnter(nextBlock);
-  mTrain.update(dt, throttle, brake, signalClear, mRouteLength);
-  if (mTrain.position() >= mRouteLength && mTrain.speed() < 0.05f) {
+  float nextStop = mRouteLength;
+  for (const sim::Stop& stop : mRoute.stops()) {
+    if (stop.position > mTrain.position() + 0.5f) {
+      nextStop = stop.position;
+      break;
+    }
+  }
+  const bool atStop = mTrain.position() >= nextStop - 0.5f &&
+                      mTrain.speed() < 0.05f;
+  mTrain.update(dt, throttle, brake, signalClear, nextStop);
+  if (atStop || (mTrain.position() >= mRouteLength &&
+                 mTrain.speed() < 0.05f)) {
     mTrain.setDoorsOpen(true);
     if (!mTerminalServiced) {
       mPassengers.unloadAtTerminal();

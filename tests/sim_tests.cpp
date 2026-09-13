@@ -1,6 +1,7 @@
 #include "sim/Signal.hpp"
 #include "sim/Train.hpp"
 #include "sim/PassengerSystem.hpp"
+#include "sim/Route.hpp"
 
 #include <cassert>
 
@@ -40,6 +41,12 @@ int main() {
   passengers.unloadAtTerminal();
   assert(passengers.onboard() == 0);
   assert(passengers.alightedTotal() == 2);
+
+  metro::sim::Route route;
+  route.buildBlockStops(3, 900.0f);
+  assert(route.stopCount() == 4);
+  assert(route.stops().front().position == 0.0f);
+  assert(route.stops().back().position == 900.0f);
   signal.setOccupied(1, true);
   assert(!signal.canEnter(1));
   signal.resize(5);

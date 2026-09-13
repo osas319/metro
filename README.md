@@ -62,6 +62,11 @@ Kapasite `station.json` içindeki `passenger_capacity` alanından değiştirileb
 Terminal durağında mevcut yolcular iner ve iniş sayacı simülasyon telemetrisi
 olarak tutulur.
 
+Rota, manifestteki blok sayısı ve toplam uzunluktan çok duraklı geçici bir
+çizelge üretir. Tren her ara durakta servis freniyle durur; gerçek M4 durak
+isimleri ve koordinatları geldiğinde bu üretilen çizelge veri tabanlı listeyle
+değiştirilecektir.
+
 ## Klasör yapısı
 
 ```
