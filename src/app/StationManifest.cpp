@@ -162,6 +162,13 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     METRO_ERROR("Station manifest durak listesi gecersiz: %s", path.c_str());
     return false;
   }
+  if (!parsed.stops.empty() &&
+      (std::abs(parsed.stops.front().position) > 0.01f ||
+       std::abs(parsed.stops.back().position - parsed.routeLength) > 0.01f)) {
+    METRO_ERROR("Station manifest duraklari rota sinirlariyla uyusmuyor: %s",
+                path.c_str());
+    return false;
+  }
 
   out = std::move(parsed);
   METRO_INFO("Station manifest: %s (%s), mesh dizini: %s",

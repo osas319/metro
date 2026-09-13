@@ -58,6 +58,10 @@ int main() {
                   {"Sabiha Gokcen Havalimani", 900.0f}});
   assert(route.stopCount() == 3);
   assert(route.nextStop(0.0f, 900.0f).name == "Pendik");
+  route.setStops({{"Invalid", 0.0f}, {"Out of order", 450.0f},
+                  {"Invalid terminal", 400.0f}});
+  assert(route.stopCount() == 3);
+  assert(route.nextStop(0.0f, 900.0f).name == "Pendik");
   signal.setOccupied(1, true);
   assert(!signal.canEnter(1));
   signal.resize(5);
