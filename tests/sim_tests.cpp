@@ -28,6 +28,11 @@ int main() {
   assert(terminalTrain.position() <= 0.5f);
   assert(terminalTrain.speed() == 0.0f);
 
+  metro::sim::Train largeFrameTrain;
+  largeFrameTrain.update(10.0f, true, false, true, 5.0f);
+  assert(largeFrameTrain.position() == 5.0f);
+  assert(largeFrameTrain.speed() == 0.0f);
+
   metro::sim::BlockSignal signal(3);
   assert(signal.blockCount() == 3);
   assert(signal.canEnter(1));

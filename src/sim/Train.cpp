@@ -16,10 +16,12 @@ void Train::update(float dt, bool throttle, bool brake, bool signalClear,
   if (brake || !signalClear) accelerationValue = -mParameters.serviceBrake;
   mSpeed = std::clamp(mSpeed + accelerationValue * dt, 0.0f,
                       mParameters.maxSpeed);
-  mPosition += mSpeed * dt;
-  if (routeLength > 0.0f && mPosition >= routeLength) {
+  const float nextPosition = mPosition + mSpeed * dt;
+  if (routeLength > 0.0f && nextPosition >= routeLength) {
     mPosition = routeLength;
     mSpeed = 0.0f;
+  } else {
+    mPosition = nextPosition;
   }
 }
 
