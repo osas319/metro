@@ -95,12 +95,16 @@ void Application::handleEvent(const SDL_Event& e) {
 }
 
 void Application::update(float dt) {
-  if (!mMouseCaptured) return;
-  
   if (mKeyboardState == nullptr) {
       int count = 0;
       mKeyboardState = SDL_GetKeyboardState(&count);
   }
+
+  const bool throttle = mKeyboardState[SDL_SCANCODE_UP];
+  const bool brake = mKeyboardState[SDL_SCANCODE_DOWN];
+  mTrain.update(dt, throttle, brake);
+
+  if (!mMouseCaptured) return;
 
   float velocity = mCamera.moveSpeed * dt;
   if (mKeyboardState[SDL_SCANCODE_LSHIFT] ||
@@ -155,6 +159,8 @@ int Application::run() {
     if (nowNs - lastStatsNs >= Uint64(2e9)) {
       const double secs = double(nowNs - lastStatsNs) / 1e9;
       METRO_INFO("fps: %.1f", double(frameCount) / secs);
+      METRO_INFO("tren: %.1f km/saat, konum %.1f m",
+                 mTrain.speed() * 3.6f, mTrain.position());
       frameCount = 0;
       lastStatsNs = nowNs;
     }

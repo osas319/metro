@@ -46,6 +46,10 @@ manifestteki temel alanları doğrular ve eksik/okunamayan dosyada durur.
 Kamera: pencereye tıklayıp fareyi yakalayın; **WASD** yatay hareket, **Q/E**
 dikey hareket, **Shift** hızlı hareket, **ESC** fare yakalamayı bırakır.
 
+Tren prototipi: **Yukarı ok** çekiş, **Aşağı ok** servis freni uygular.
+Model 0-80 km/saat aralığında hızlanır ve konumu metre cinsinden ilerletir;
+bu bağımlılıksız model ileride Jolt tabanlı hat fiziğiyle değiştirilecektir.
+
 ## Klasör yapısı
 
 ```
