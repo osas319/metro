@@ -1,5 +1,6 @@
 #include "sim/PassengerAgent.hpp"
 
+#include <glm/vec2.hpp>
 #include <cmath>
 #include <limits>
 #include <utility>
@@ -14,6 +15,18 @@ PassengerAgent::PassengerAgent(std::vector<size_t> path, float speed)
     mState = mPath.size() > 1 ? State::Walking : State::Arrived;
     if (mState == State::Arrived) mProgress = 1.0f;
   }
+}
+
+glm::vec2 PassengerAgent::position(const PassengerNavGraph& graph) const {
+  if (mPath.empty() || mPathIndex >= mPath.size()) return {};
+  const auto* from = graph.node(mPath[mPathIndex]);
+  if (from == nullptr) return {};
+  if (mPathIndex + 1 >= mPath.size() || mProgress <= 0.0f)
+    return {from->x, from->z};
+  const auto* to = graph.node(mPath[mPathIndex + 1]);
+  if (to == nullptr) return {from->x, from->z};
+  return {from->x + (to->x - from->x) * mProgress,
+          from->z + (to->z - from->z) * mProgress};
 }
 
 void PassengerAgent::update(float dt, const PassengerNavGraph& graph) {

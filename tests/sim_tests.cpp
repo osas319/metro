@@ -131,6 +131,8 @@ int main() {
   assert(walker.node() == 1);
   assert(walker.progress() == 0.0f);
   assert(walker.state() == metro::sim::PassengerAgent::State::Walking);
+  const auto walkerPosition = walker.position(navGraph);
+  assert(walkerPosition.y < -290.0f && walkerPosition.y > -310.0f);
   walker.update(2.0f, navGraph);
   assert(walker.node() == 3);
   assert(walker.progress() == 1.0f);

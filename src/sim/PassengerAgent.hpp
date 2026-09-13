@@ -2,6 +2,7 @@
 
 #include "sim/PassengerNavGraph.hpp"
 
+#include <glm/vec2.hpp>
 #include <cstddef>
 #include <vector>
 
@@ -20,6 +21,7 @@ public:
   float progress() const { return mProgress; }
   float speed() const { return mSpeed; }
   State state() const { return mState; }
+  glm::vec2 position(const PassengerNavGraph& graph) const;
 
 private:
   std::vector<size_t> mPath;
