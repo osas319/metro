@@ -69,9 +69,11 @@ int main() {
   assert(route.nextStop(0.0f, 900.0f).name == "Pendik");
   signal.setOccupied(1, true);
   assert(!signal.canEnter(1));
+  assert(signal.canEnter(5));
   signal.resize(5);
   assert(signal.blockCount() == 5);
   assert(signal.canEnter(1));
+  assert(signal.canEnter(5));
 
   metro::app::StationManifest station;
   assert(metro::app::StationManifest::load(

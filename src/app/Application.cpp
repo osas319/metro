@@ -237,7 +237,7 @@ int Application::run() {
                    mSignal.blockCount() - 1);
       const size_t statsNextBlock = statsBlock + 1;
       METRO_INFO("sinyal: blok %zu %s", statsNextBlock,
-                 statsNextBlock < mSignal.blockCount() &&
+                 statsNextBlock >= mSignal.blockCount() ||
                          mSignal.canEnter(statsNextBlock)
                      ? "yesil"
                      : "kirmizi");
