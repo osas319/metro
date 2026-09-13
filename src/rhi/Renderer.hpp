@@ -51,7 +51,8 @@ public:
             float trackGauge = 2.4f, float trainWidth = 2.8f,
             float trainHeight = 3.2f, float columnSpacing = 24.0f,
             const glm::vec3& platformEdgePosition = glm::vec3(0.0f),
-            const glm::vec3& stopPosition = glm::vec3(0.0f));
+            const glm::vec3& stopPosition = glm::vec3(0.0f),
+            const std::vector<float>& stopPositions = {});
   void shutdown();
 
   // Bir kareyi uçur (acquire → record → submit → present).
@@ -107,6 +108,7 @@ private:
   float mColumnSpacing = 24.0f;
   glm::vec3 mPlatformEdgePosition{0.0f};
   glm::vec3 mStopPosition{0.0f};
+  std::vector<float> mStopPositions;
 
   VkCommandPool mCommandPool = VK_NULL_HANDLE;
   // Tüm per-frame senkronizasyon nesneleri swapchain image sayısına göre

@@ -71,7 +71,14 @@ bool Application::init() {
                       station.trackGauge, station.trainWidth,
                       station.trainHeight, station.columnSpacing,
                       station.platformEdgePosition,
-                      station.stopPosition)) return false;
+                      station.stopPosition, [&station] {
+                        std::vector<float> positions;
+                        positions.reserve(station.stops.size());
+                        for (const sim::Stop& stop : station.stops) {
+                          positions.push_back(stop.position);
+                        }
+                        return positions;
+                      }())) return false;
 
   METRO_INFO("Pencere acildi; dongu basliyor (kapatmak icin pencereyi kapat)");
   METRO_INFO("Kontroller: Yukari=cekis Asagi=fren O/C=kapi Sol tik=fare ESC=serbest");

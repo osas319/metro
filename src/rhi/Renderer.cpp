@@ -63,7 +63,8 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
                     float platformWidth, float trackGauge, float trainWidth,
                     float trainHeight, float columnSpacing,
                     const glm::vec3& platformEdgePosition,
-                    const glm::vec3& stopPosition) {
+                    const glm::vec3& stopPosition,
+                    const std::vector<float>& stopPositions) {
   mCtx = &ctx;
   mWindow = window;
   mRouteLength = routeLength > 0.0f ? routeLength : 2000.0f;
@@ -74,6 +75,7 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
   mColumnSpacing = columnSpacing > 0.0f ? columnSpacing : 24.0f;
   mPlatformEdgePosition = platformEdgePosition;
   mStopPosition = stopPosition;
+  mStopPositions = stopPositions;
   const char* environmentModel = std::getenv("METRO_MODEL_PATH");
 
   try {
@@ -569,6 +571,17 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                glm::vec3(0.35f, 2.8f, 0.35f)),
            glm::vec4(0.38f, 0.40f, 0.44f, 1.0f), 0.8f});
     }
+  }
+  for (float stopPosition : mStopPositions) {
+    if (stopPosition < 0.0f || stopPosition > mRouteLength) continue;
+    instances.push_back(
+        {glm::scale(
+             glm::translate(
+                 glm::mat4(1.0f),
+                 sceneOffset + glm::vec3(mPlatformWidth + 1.0f, 1.5f,
+                                         -stopPosition)),
+             glm::vec3(0.18f, 1.5f, 0.18f)),
+         glm::vec4(0.95f, 0.65f, 0.08f, 1.0f), 0.4f});
   }
   mModel.bind(cmd);
   for (const SceneInstance& instance : instances) {
