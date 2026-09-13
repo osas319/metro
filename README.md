@@ -151,8 +151,9 @@ olarak bağlanır. Uygulama ve test hedefleri yalnızca Jolt çekirdek kütüpha
 derler; örnekler, viewer ve Jolt test uygulamaları kapalıdır.
 `PhysicsWorld`, her fixed-step'te Jolt `PhysicsSystem` güncellemesini çalıştırır
 ve manifest ölçülerinden zemin, iki platform ve kinematik tren gövdeleri kurar.
-İki rayın statik çarpışma gövdeleri de aynı `track_gauge` ve `route_length`
-ölçülerinden üretilir; gövde oluşturma ve kapanış hataları açıkça bildirilir.
+İki rayın ve kolonların statik çarpışma gövdeleri de aynı `track_gauge`,
+`route_length`, `platform_width` ve `column_spacing` ölçülerinden üretilir;
+gövde oluşturma ve kapanış hataları açıkça bildirilir.
 
 Kadıköy asset pipeline başlangıç manifesti:
 `assets/stations/kadikoy/station.json`. Manifest metre birimini, glTF eksen
