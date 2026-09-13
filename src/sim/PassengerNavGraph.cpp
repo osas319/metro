@@ -21,6 +21,23 @@ bool PassengerNavGraph::buildLinear(size_t stopCount, float routeLength) {
   return true;
 }
 
+bool PassengerNavGraph::buildFromStops(const std::vector<Stop>& stops) {
+  mNodes.clear();
+  if (stops.size() < 2) return false;
+  mNodes.resize(stops.size());
+  for (size_t i = 0; i < stops.size(); ++i) {
+    if (!std::isfinite(stops[i].position) ||
+        (i > 0 && stops[i].position <= stops[i - 1].position)) {
+      mNodes.clear();
+      return false;
+    }
+    mNodes[i].z = -stops[i].position;
+    if (i > 0) mNodes[i].neighbors.push_back(i - 1);
+    if (i + 1 < stops.size()) mNodes[i].neighbors.push_back(i + 1);
+  }
+  return true;
+}
+
 const PassengerNavGraph::Node* PassengerNavGraph::node(size_t index) const {
   return index < mNodes.size() ? &mNodes[index] : nullptr;
 }

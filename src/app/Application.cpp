@@ -44,7 +44,7 @@ bool Application::init() {
   } else {
     mRoute.setStops(station.stops);
   }
-  if (!mPassengerNav.buildLinear(mRoute.stopCount(), station.routeLength)) {
+  if (!mPassengerNav.buildFromStops(mRoute.stops())) {
     METRO_ERROR("Yolcu navgraph olusturulamadi");
     return false;
   }

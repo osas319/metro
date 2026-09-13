@@ -126,6 +126,11 @@ int main() {
   const auto navPath = navGraph.shortestPath(0, 3);
   assert((navPath == std::vector<size_t>{0, 1, 2, 3}));
   assert(navGraph.shortestPath(3, 3).size() == 1);
+  metro::sim::PassengerNavGraph manifestNav;
+  assert(manifestNav.buildFromStops(
+      {{"A", 0.0f}, {"B", 125.0f}, {"C", 900.0f}}));
+  assert(manifestNav.node(1)->z == -125.0f);
+  assert(!manifestNav.buildFromStops({{"A", 0.0f}, {"B", 0.0f}}));
   metro::sim::PassengerAgent walker(navGraph.shortestPath(0, 3), 300.0f);
   walker.update(1.0f, navGraph);
   assert(walker.node() == 1);

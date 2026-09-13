@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <vector>
+#include "sim/Route.hpp"
 
 namespace metro::sim {
 
@@ -14,6 +15,7 @@ public:
   };
 
   bool buildLinear(size_t stopCount, float routeLength);
+  bool buildFromStops(const std::vector<Stop>& stops);
   bool valid() const { return !mNodes.empty(); }
   size_t nodeCount() const { return mNodes.size(); }
   const Node* node(size_t index) const;
