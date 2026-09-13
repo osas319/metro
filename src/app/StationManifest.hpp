@@ -22,6 +22,9 @@ struct StationManifest {
   size_t blockCount = 8;
   float routeLength = 2000.0f;
   float platformWidth = 4.0f;
+  float trackGauge = 2.4f;
+  float trainWidth = 2.8f;
+  float trainHeight = 3.2f;
   size_t passengerCapacity = 320;
   size_t initialWaitingPassengers = 24;
   float stopDwellSeconds = 3.0f;

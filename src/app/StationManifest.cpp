@@ -180,6 +180,21 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     METRO_ERROR("Station manifest peron genisligi gecersiz: %s", path.c_str());
     return false;
   }
+  if (source.find("\"track_gauge\"") != std::string::npos &&
+      !readPositiveNumber(source, "track_gauge", parsed.trackGauge)) {
+    METRO_ERROR("Station manifest ray acikligi gecersiz: %s", path.c_str());
+    return false;
+  }
+  if (source.find("\"train_width\"") != std::string::npos &&
+      !readPositiveNumber(source, "train_width", parsed.trainWidth)) {
+    METRO_ERROR("Station manifest tren genisligi gecersiz: %s", path.c_str());
+    return false;
+  }
+  if (source.find("\"train_height\"") != std::string::npos &&
+      !readPositiveNumber(source, "train_height", parsed.trainHeight)) {
+    METRO_ERROR("Station manifest tren yuksekligi gecersiz: %s", path.c_str());
+    return false;
+  }
   if (source.find("\"passenger_capacity\"") != std::string::npos) {
     if (!readNonNegativeInteger(source, "passenger_capacity",
                                 parsed.passengerCapacity) ||

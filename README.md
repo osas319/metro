@@ -75,6 +75,10 @@ proje kökünden çözülür; `METRO_MODEL_PATH` tanımlıysa manifest değerini
 kılar.
 Placeholder peron genişliği `platform_width` alanından metre cinsinden okunur;
 zemin, peron ve tavan geometrisi `route_length` boyunca otomatik uzatılır.
+Ray açıklığı `track_gauge` alanıyla ayarlanabilir; raylar hattın merkezine göre
+simetrik yerleştirilir.
+Placeholder tren gövdesi `train_width` ve `train_height` alanlarıyla ray
+ölçeğine göre ayarlanabilir.
 Terminal durağında mevcut yolcular iner ve iniş sayacı simülasyon telemetrisi
 olarak tutulur.
 

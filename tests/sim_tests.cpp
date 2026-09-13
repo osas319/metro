@@ -118,6 +118,9 @@ int main() {
   assert(station.passengerCapacity == 320);
   assert(station.routeLength == 2000.0f);
   assert(station.platformWidth == 4.0f);
+  assert(station.trackGauge == 2.4f);
+  assert(station.trainWidth == 2.8f);
+  assert(station.trainHeight == 3.2f);
   assert(station.stopDwellSeconds == 3.0f);
   assert(station.physicsFixedStep > 0.016f &&
          station.physicsFixedStep < 0.017f);
