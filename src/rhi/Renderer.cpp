@@ -70,13 +70,16 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window) {
     createPipeline();
     createFramebuffers();
     createCommandObjects();
-    mModel.load(ctx, mCommandPool, "assets/box.glb");
+    const char* modelPath = std::getenv("METRO_MODEL_PATH");
+    mModel.load(ctx, mCommandPool, modelPath != nullptr ? modelPath : "assets/box.glb");
     createSyncObjects();
   } catch (const std::exception& e) {
     METRO_ERROR("Renderer init: %s", e.what());
     return false;
   }
-  METRO_INFO("Renderer hazir (PBR pipeline, model: box.glb, %u frame-in-flight)",
+  METRO_INFO("Renderer hazir (PBR pipeline, model: %s, %u frame-in-flight)",
+             std::getenv("METRO_MODEL_PATH") != nullptr ? std::getenv("METRO_MODEL_PATH")
+                                                        : "assets/box.glb",
              MaxFramesInFlight);
   return true;
 }

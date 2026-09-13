@@ -36,6 +36,12 @@ tools/container.sh shell        # container içinde bash
 Test/CI koşusu için: `METRO_AUTO_EXIT=5 tools/container.sh run` → uygulama
 5 saniye sonra kendini kapatır (kafasız doğrulama için).
 
+Varsayılan örnek model yerine başka bir glTF/GLB yüklemek için:
+`METRO_MODEL_PATH=assets/stations/kadikoy/meshes/platform.glb tools/container.sh run`.
+
+Kamera: pencereye tıklayıp fareyi yakalayın; **WASD** yatay hareket, **Q/E**
+dikey hareket, **Shift** hızlı hareket, **ESC** fare yakalamayı bırakır.
+
 ## Klasör yapısı
 
 ```
