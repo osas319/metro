@@ -46,6 +46,16 @@ int main() {
   guardedPhysics.step(0.1f, fixedStepTrain, true, false, true, 100.0f);
   assert(guardedPhysics.interpolationAlpha() >= 0.0f &&
          guardedPhysics.interpolationAlpha() < 1.0f);
+  guardedPhysics.reset();
+  assert(guardedPhysics.interpolationAlpha() == 0.0f);
+
+  metro::sim::Train guardedTrain;
+  guardedTrain.setParameters({.maxSpeed = -1.0f,
+                              .acceleration = 0.0f,
+                              .serviceBrake = 0.1f,
+                              .rollingResistance = -1.0f});
+  guardedTrain.update(1.0f, true, false);
+  assert(guardedTrain.speed() > 0.0f);
 
   metro::sim::BlockSignal signal(3);
   assert(signal.blockCount() == 3);

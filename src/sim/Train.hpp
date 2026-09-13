@@ -11,7 +11,7 @@ public:
     float rollingResistance = 0.08f;
   };
 
-  void setParameters(Parameters parameters) { mParameters = parameters; }
+  void setParameters(Parameters parameters);
   void update(float dt, bool throttle, bool brake, bool signalClear = true,
               float routeLength = 0.0f);
 
