@@ -144,6 +144,9 @@ manifestten ayarlanabilir; değerler belirtilmezse 60 Hz ve 4 alt-adım kullanı
 Render karesinde tren konumu, sabit adımlar arasındaki accumulator oranıyla
 interpolasyonlanır; bu sayede değişken ekran yenileme hızlarında kamera ve tren
 hareketi daha akıcı kalır.
+Jolt Physics v5.2.0 sabit commit ile `third_party/JoltPhysics` submodule'ü
+olarak bağlanır. Uygulama ve test hedefleri yalnızca Jolt çekirdek kütüphanesini
+derler; örnekler, viewer ve Jolt test uygulamaları kapalıdır.
 
 Kadıköy asset pipeline başlangıç manifesti:
 `assets/stations/kadikoy/station.json`. Manifest metre birimini, glTF eksen

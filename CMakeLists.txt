@@ -27,6 +27,12 @@ option(METRO_VALIDATION "Vulkan validation layer iste (geliştirme)" ON)
 # ---------------------------------------------------------------------------
 add_subdirectory(third_party/volk)   # hedef: volk (Vulkan loader'ı runtime'da yükler)
 add_subdirectory(third_party/glm)    # hedef: glm::glm
+set(TARGET_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(TARGET_HELLO_WORLD OFF CACHE BOOL "" FORCE)
+set(TARGET_PERFORMANCE_TEST OFF CACHE BOOL "" FORCE)
+set(TARGET_SAMPLES OFF CACHE BOOL "" FORCE)
+set(TARGET_VIEWER OFF CACHE BOOL "" FORCE)
+add_subdirectory(third_party/JoltPhysics/Build jolt-build EXCLUDE_FROM_ALL)
 # VMA header-only: include yolu aşağıda; tek implementation TU'si
 # src/rhi/VmaImpl.cpp içinde (VMA_IMPLEMENTATION).
 
@@ -81,6 +87,7 @@ endif()
 target_link_libraries(metro PRIVATE
   volk
   glm::glm
+  Jolt
   ${METRO_SDL_TARGET})
 
 # SPIR-V'ler derlenmeden exe kurulmasın
