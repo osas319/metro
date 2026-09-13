@@ -178,6 +178,19 @@ void Application::update(float dt) {
                           mTrain.speed() < 0.05f;
   if (atStop || atTerminal) {
     mTrain.requestDoorsOpen(true, true);
+    size_t servicedStop = static_cast<size_t>(-1);
+    for (size_t i = 0; i < mRoute.stopCount(); ++i) {
+      if (std::abs(mTrain.position() - mRoute.stops()[i].position) <= 0.5f) {
+        servicedStop = i;
+        break;
+      }
+    }
+    if (servicedStop != static_cast<size_t>(-1) &&
+        servicedStop != mLastServicedStop) {
+      mPassengers.serviceStop(servicedStop, mRoute.stopCount(),
+                              servicedStop + 1 == mRoute.stopCount());
+      mLastServicedStop = servicedStop;
+    }
     if (!atTerminal) {
       mStopDwellSeconds += dt;
       if (mStopDwellSeconds >= stopDwellLimit) {
@@ -188,10 +201,7 @@ void Application::update(float dt) {
   } else {
     mStopDwellSeconds = 0.0f;
   }
-  if (atTerminal && !mTerminalServiced) {
-    mPassengers.unloadAtTerminal();
-    mTerminalServiced = true;
-  }
+  if (atTerminal) mTerminalServiced = true;
   mPassengers.update(dt, mTrain.doorsOpen(), mTrain.speed() < 0.05f,
                     !atTerminal);
 

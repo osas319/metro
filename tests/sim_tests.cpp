@@ -106,6 +106,14 @@ int main() {
   assert(passengers.alightedTotal() == 2);
   passengers.update(1.0f, true, true, false);
   assert(passengers.onboard() == 0);
+  metro::sim::PassengerSystem stopPassengers(16, 16);
+  stopPassengers.update(4.0f, true, true);
+  assert(stopPassengers.onboard() == 8);
+  stopPassengers.serviceStop(1, 4, false);
+  assert(stopPassengers.alightedAtStops() > 0);
+  assert(stopPassengers.onboard() < 8);
+  stopPassengers.serviceStop(3, 4, true);
+  assert(stopPassengers.onboard() == 0);
 
   metro::sim::Route route;
   route.buildBlockStops(3, 900.0f);

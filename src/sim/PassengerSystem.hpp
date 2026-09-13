@@ -11,11 +11,13 @@ public:
 
   void update(float dt, bool doorsOpen, bool trainStopped,
               bool allowBoarding = true);
+  void serviceStop(size_t stopIndex, size_t stopCount, bool terminal);
   void unloadAtTerminal();
   size_t onboard() const { return mOnboard; }
   size_t waiting() const { return mWaiting; }
   size_t alightedTotal() const { return mAlightedTotal; }
   size_t boardedTotal() const { return mBoardedTotal; }
+  size_t alightedAtStops() const { return mAlightedAtStops; }
 
 private:
   size_t mCapacity;
@@ -23,6 +25,7 @@ private:
   size_t mWaiting = 24;
   size_t mBoardedTotal = 0;
   size_t mAlightedTotal = 0;
+  size_t mAlightedAtStops = 0;
   float mTransferTimer = 0.0f;
 };
 
