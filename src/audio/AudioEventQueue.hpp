@@ -10,7 +10,8 @@ enum class EventType {
   DoorClosed,
   StopArrived,
   TerminalServiced,
-  TrainDeparted
+  TrainDeparted,
+  SignalChanged
 };
 
 struct Event {

@@ -167,6 +167,10 @@ void Application::update(float dt) {
   for (size_t block = 0; block < mSignal.blockCount(); ++block) {
     mSignal.setOccupied(block, block == currentBlock);
   }
+  if (currentBlock != mLastSignalBlock) {
+    mAudioEvents.push({audio::EventType::SignalChanged, currentBlock});
+    mLastSignalBlock = currentBlock;
+  }
   const size_t nextBlock = currentBlock + 1;
   const bool signalClear = nextBlock >= mSignal.blockCount() ||
                            mSignal.canEnter(nextBlock);
@@ -248,6 +252,7 @@ void Application::consumeAudioEvents() {
     case audio::EventType::StopArrived: name = "duraga_varildi"; break;
     case audio::EventType::TerminalServiced: name = "terminal_servisi"; break;
     case audio::EventType::TrainDeparted: name = "tren_hareketi"; break;
+    case audio::EventType::SignalChanged: name = "sinyal_degisti"; break;
     }
     METRO_INFO("ses olayi: %s (durak %zu)", name, event.stopIndex);
   }
