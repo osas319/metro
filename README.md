@@ -143,6 +143,8 @@ cmake/                CMake yardımcı modülleri
   - Yolcu hedefleri ve doğrusal navgraph tamamlandı.
   - Navgraph üzerinde deterministik yürüyen yolcu ajanları eklendi.
   - Kapı, durak varışı ve terminal servis olayları için backend-bağımsız ses olay kuyruğu eklendi.
+  - `door_opened`, `door_closed`, `stop_arrived`, `terminal_serviced`,
+    `train_departed` ve `signal_changed` olayları uygulama döngüsünde tüketiliyor.
   - Manifest, isteğe bağlı `navmesh` ve `audio_directory` asset yollarını destekliyor.
   - Gerçek yaya ajanları, ses backend'i ve tam hat asset/streaming çalışmaları devam ediyor.
 
