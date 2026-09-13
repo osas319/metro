@@ -32,7 +32,7 @@ bool Application::init() {
   mPhysics = sim::PhysicsWorld(
       {.fixedStep = station.physicsFixedStep,
        .maxSubsteps = station.physicsMaxSubsteps});
-  mPhysics.reset();
+  mPhysics.reset(mTrain.position());
   if (station.stops.empty()) {
     mRoute.buildBlockStops(station.blockCount, station.routeLength);
   } else {

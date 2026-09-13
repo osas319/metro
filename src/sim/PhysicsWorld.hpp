@@ -16,7 +16,7 @@ public:
   PhysicsWorld();
   explicit PhysicsWorld(Settings settings);
 
-  void reset();
+  void reset(float trainPosition = 0.0f);
   void step(float frameDelta, Train& train, bool throttle, bool brake,
             bool signalClear, float routeLength);
   float interpolationAlpha() const;

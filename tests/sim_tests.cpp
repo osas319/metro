@@ -6,6 +6,7 @@
 #include "app/StationManifest.hpp"
 
 #include <cassert>
+#include <limits>
 
 int main() {
   metro::sim::Train train;
@@ -49,8 +50,12 @@ int main() {
   guardedPhysics.step(0.1f, fixedStepTrain, true, false, true, 100.0f);
   assert(guardedPhysics.interpolationAlpha() >= 0.0f &&
          guardedPhysics.interpolationAlpha() < 1.0f);
-  guardedPhysics.reset();
+  guardedPhysics.reset(fixedStepTrain.position());
   assert(guardedPhysics.interpolationAlpha() == 0.0f);
+  assert(guardedPhysics.interpolatedPosition(fixedStepTrain) ==
+         fixedStepTrain.position());
+  guardedPhysics.reset(std::numeric_limits<float>::quiet_NaN());
+  assert(guardedPhysics.interpolatedPosition(fixedStepTrain) == 0.0f);
 
   metro::sim::Train guardedTrain;
   guardedTrain.setParameters({.maxSpeed = -1.0f,

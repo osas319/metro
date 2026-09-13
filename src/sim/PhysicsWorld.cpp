@@ -16,8 +16,10 @@ PhysicsWorld::PhysicsWorld(Settings settings) : mSettings(settings) {
   if (mSettings.maxSubsteps == 0) mSettings.maxSubsteps = 1;
 }
 
-void PhysicsWorld::reset() {
+void PhysicsWorld::reset(float trainPosition) {
   mAccumulator = 0.0f;
+  mPreviousTrainPosition =
+      std::isfinite(trainPosition) ? trainPosition : 0.0f;
 }
 
 void PhysicsWorld::step(float frameDelta, Train& train, bool throttle,
