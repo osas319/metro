@@ -1,0 +1,15 @@
+[submodule "third_party/volk"]
+	path = third_party/volk
+	url = https://github.com/zeux/volk.git
+[submodule "third_party/VulkanMemoryAllocator"]
+	path = third_party/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "third_party/glm"]
+	path = third_party/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "third_party/cgltf"]
+	path = third_party/cgltf
+	url = https://github.com/jkuhlmann/cgltf.git
+[submodule "third_party/entt"]
+	path = third_party/entt
+	url = https://github.com/skypjack/entt.git
