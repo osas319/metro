@@ -132,13 +132,14 @@ void Application::update(float dt) {
   const bool atStop = mTrain.position() >= nextStop - 0.5f &&
                       mTrain.speed() < 0.05f;
   mTrain.update(dt, throttle, brake, signalClear, nextStop);
-  if (atStop || (mTrain.position() >= mRouteLength &&
-                 mTrain.speed() < 0.05f)) {
+  const bool atTerminal = mTrain.position() >= mRouteLength &&
+                          mTrain.speed() < 0.05f;
+  if (atStop || atTerminal) {
     mTrain.setDoorsOpen(true);
-    if (!mTerminalServiced) {
-      mPassengers.unloadAtTerminal();
-      mTerminalServiced = true;
-    }
+  }
+  if (atTerminal && !mTerminalServiced) {
+    mPassengers.unloadAtTerminal();
+    mTerminalServiced = true;
   }
   mPassengers.update(dt, mTrain.doorsOpen(), mTrain.speed() < 0.05f);
 
