@@ -475,12 +475,12 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                        static_cast<float>(mSwapchain.extent().height);
   FrameUniforms fu{};
   fu.viewProj = camera.getProjectionMatrix(aspect) * camera.getViewMatrix();
-  fu.lightDir = glm::vec4(glm::normalize(glm::vec3(0.45f, -1.0f, -0.25f)), 0.0f);
+  fu.lightDir = glm::vec4(glm::normalize(glm::vec3(0.25f, -1.0f, -0.35f)), 0.0f);
   fu.cameraPos = glm::vec4(camera.position, 1.0f);
   std::memcpy(mFrameUboMapped[imageIndex], &fu, sizeof(fu));
 
   VkClearValue clears[2]{};
-  clears[0].color = {{0.05f, 0.07f, 0.12f, 1.0f}}; // koyu gece mavisi — tünel havası
+  clears[0].color = {{0.09f, 0.12f, 0.18f, 1.0f}}; // istasyon ambient rengi
   clears[1].depthStencil = {1.0f, 0};
 
   VkRenderPassBeginInfo rp{};

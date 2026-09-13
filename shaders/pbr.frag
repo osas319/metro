@@ -75,7 +75,7 @@ void main() {
     vec3 Lo = (diffuse + specular) * radiance * NdotL;
 
     // Hafif hemisfer ambient — tünelde gökyüzü yok, zemin yansıması hissi
-    vec3 ambient = albedo * 0.04 * (0.5 + 0.5 * N.y);
+    vec3 ambient = albedo * 0.10 * (0.5 + 0.5 * N.y);
 
     vec3 color = ambient + Lo;
     // Swapchain SRGB: lineer yaz, donanım kodlasın. ACES tonemap post ile.
