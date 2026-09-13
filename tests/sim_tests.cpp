@@ -38,6 +38,9 @@ int main() {
   metro::sim::Train fixedStepTrain;
   physics.step(0.5f, fixedStepTrain, true, false, true, 100.0f);
   assert(fixedStepTrain.position() > 0.0f);
+  assert(physics.interpolatedPosition(fixedStepTrain) <=
+         fixedStepTrain.position());
+  assert(physics.interpolatedPosition(fixedStepTrain) >= 0.0f);
   assert(physics.interpolationAlpha() >= 0.0f &&
          physics.interpolationAlpha() < 1.0f);
   metro::sim::PhysicsWorld guardedPhysics(

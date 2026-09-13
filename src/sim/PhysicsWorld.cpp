@@ -29,6 +29,7 @@ void PhysicsWorld::step(float frameDelta, Train& train, bool throttle,
   size_t substeps = 0;
   while (mAccumulator >= mSettings.fixedStep &&
          substeps++ < mSettings.maxSubsteps) {
+    mPreviousTrainPosition = train.position();
     train.update(mSettings.fixedStep, throttle, brake, signalClear,
                  routeLength);
     mAccumulator -= mSettings.fixedStep;
@@ -37,6 +38,12 @@ void PhysicsWorld::step(float frameDelta, Train& train, bool throttle,
 
 float PhysicsWorld::interpolationAlpha() const {
   return mAccumulator / mSettings.fixedStep;
+}
+
+float PhysicsWorld::interpolatedPosition(const Train& train) const {
+  const float alpha = std::clamp(interpolationAlpha(), 0.0f, 1.0f);
+  return mPreviousTrainPosition +
+         (train.position() - mPreviousTrainPosition) * alpha;
 }
 
 } // namespace metro::sim

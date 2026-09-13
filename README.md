@@ -141,6 +141,9 @@ simülasyon katmanıdır; gerçek hat geometrisi ve fizik entegrasyonu geldiğin
 yerine genişletilecektir.
 Fizik dünyasının `physics_fixed_step` ve `physics_max_substeps` değerleri
 manifestten ayarlanabilir; değerler belirtilmezse 60 Hz ve 4 alt-adım kullanılır.
+Render karesinde tren konumu, sabit adımlar arasındaki accumulator oranıyla
+interpolasyonlanır; bu sayede değişken ekran yenileme hızlarında kamera ve tren
+hareketi daha akıcı kalır.
 
 Kadıköy asset pipeline başlangıç manifesti:
 `assets/stations/kadikoy/station.json`. Manifest metre birimini, glTF eksen
