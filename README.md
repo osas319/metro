@@ -69,6 +69,10 @@ terminal durağında kendiliğinden başlar.
 tren başına 320 yolcuyla sınırlıdır. Bu geçici sistem ileride navmesh ve
 istasyon hedefleriyle genişletilecektir.
 Kapasite `station.json` içindeki `passenger_capacity` alanından değiştirilebilir.
+Başlangıçta peronda bekleyen yolcu sayısı `initial_waiting_passengers` ile,
+renderer modeli ise `model` alanıyla belirlenebilir. `model` için göreli yollar
+proje kökünden çözülür; `METRO_MODEL_PATH` tanımlıysa manifest değerini geçersiz
+kılar.
 Terminal durağında mevcut yolcular iner ve iniş sayacı simülasyon telemetrisi
 olarak tutulur.
 
