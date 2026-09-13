@@ -121,6 +121,8 @@ int main() {
   assert(station.trackGauge == 2.4f);
   assert(station.trainWidth == 2.8f);
   assert(station.trainHeight == 3.2f);
+  assert(station.platformEdgePosition == glm::vec3(0.0f));
+  assert(station.stopPosition == glm::vec3(0.0f));
   assert(station.stopDwellSeconds == 3.0f);
   assert(station.physicsFixedStep > 0.016f &&
          station.physicsFixedStep < 0.017f);

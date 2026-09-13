@@ -61,7 +61,8 @@ VkFormat Renderer::pickDepthFormat() const {
 bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
                     const std::string& manifestModelPath, float routeLength,
                     float platformWidth, float trackGauge, float trainWidth,
-                    float trainHeight) {
+                    float trainHeight, const glm::vec3& platformEdgePosition,
+                    const glm::vec3& stopPosition) {
   mCtx = &ctx;
   mWindow = window;
   mRouteLength = routeLength > 0.0f ? routeLength : 2000.0f;
@@ -69,6 +70,8 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
   mTrackGauge = trackGauge > 0.0f ? trackGauge : 2.4f;
   mTrainWidth = trainWidth > 0.0f ? trainWidth : 2.8f;
   mTrainHeight = trainHeight > 0.0f ? trainHeight : 3.2f;
+  mPlatformEdgePosition = platformEdgePosition;
+  mStopPosition = stopPosition;
   const char* environmentModel = std::getenv("METRO_MODEL_PATH");
 
   try {
@@ -527,24 +530,25 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
     glm::vec4 color;
     float roughness;
   };
+  const glm::vec3 sceneOffset = mPlatformEdgePosition;
   const SceneInstance instances[] = {
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, -mRouteLength * 0.5f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(0.0f, -1.5f, -mRouteLength * 0.5f)),
                   glm::vec3(mPlatformWidth * 2.0f + 2.0f, 0.15f,
                             mRouteLength * 0.5f)),
        glm::vec4(0.32f, 0.36f, 0.42f, 1.0f), 0.9f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-mPlatformWidth, -0.2f, -mRouteLength * 0.5f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(-mPlatformWidth, -0.2f, -mRouteLength * 0.5f)),
                   glm::vec3(0.8f, 0.3f, mRouteLength * 0.5f)),
        glm::vec4(0.55f, 0.58f, 0.62f, 1.0f), 0.75f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(mPlatformWidth, -0.2f, -mRouteLength * 0.5f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(mPlatformWidth, -0.2f, -mRouteLength * 0.5f)),
                   glm::vec3(0.8f, 0.3f, mRouteLength * 0.5f)),
        glm::vec4(0.55f, 0.58f, 0.62f, 1.0f), 0.75f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 4.0f, -mRouteLength * 0.5f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(0.0f, 4.0f, -mRouteLength * 0.5f)),
                   glm::vec3(10.0f, 0.15f, mRouteLength * 0.5f)),
        glm::vec4(0.20f, 0.24f, 0.30f, 1.0f), 0.95f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-mTrackGauge * 0.5f, -1.25f, -mRouteLength * 0.5f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(-mTrackGauge * 0.5f, -1.25f, -mRouteLength * 0.5f)),
                   glm::vec3(0.08f, 0.08f, mRouteLength * 0.5f)),
        glm::vec4(0.72f, 0.74f, 0.78f, 1.0f), 0.35f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(mTrackGauge * 0.5f, -1.25f, -mRouteLength * 0.5f)),
+      {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(mTrackGauge * 0.5f, -1.25f, -mRouteLength * 0.5f)),
                   glm::vec3(0.08f, 0.08f, mRouteLength * 0.5f)),
        glm::vec4(0.72f, 0.74f, 0.78f, 1.0f), 0.35f},
       {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-7.0f, 1.2f, -12.0f)),
@@ -555,7 +559,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
        glm::vec4(0.38f, 0.40f, 0.44f, 1.0f), 0.8f},
       {glm::scale(
            glm::translate(glm::mat4(1.0f),
-                          glm::vec3(0.0f, -0.65f, -trainPosition)),
+                          mStopPosition + glm::vec3(0.0f, -0.65f, -trainPosition)),
            glm::vec3(mTrainWidth, mTrainHeight, mTrackGauge * 1.6f)),
        glm::vec4(0.12f, 0.42f, 0.85f, 1.0f), 0.55f},
   };

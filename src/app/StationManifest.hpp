@@ -25,6 +25,8 @@ struct StationManifest {
   float trackGauge = 2.4f;
   float trainWidth = 2.8f;
   float trainHeight = 3.2f;
+  glm::vec3 platformEdgePosition{0.0f};
+  glm::vec3 stopPosition{0.0f};
   size_t passengerCapacity = 320;
   size_t initialWaitingPassengers = 24;
   float stopDwellSeconds = 3.0f;

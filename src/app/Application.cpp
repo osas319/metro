@@ -69,7 +69,8 @@ bool Application::init() {
   if (!mRenderer.init(mContext, mWindow, station.modelPath,
                       station.routeLength, station.platformWidth,
                       station.trackGauge, station.trainWidth,
-                      station.trainHeight)) return false;
+                      station.trainHeight, station.platformEdgePosition,
+                      station.stopPosition)) return false;
 
   METRO_INFO("Pencere acildi; dongu basliyor (kapatmak icin pencereyi kapat)");
   METRO_INFO("Kontroller: Yukari=cekis Asagi=fren O/C=kapi Sol tik=fare ESC=serbest");

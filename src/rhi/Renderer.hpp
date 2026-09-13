@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <string>
+#include <glm/vec3.hpp>
 
 #include "rhi/Swapchain.hpp"
 #include "app/Camera.hpp"
@@ -48,7 +49,9 @@ public:
             const std::string& manifestModelPath = {},
             float routeLength = 2000.0f, float platformWidth = 4.0f,
             float trackGauge = 2.4f, float trainWidth = 2.8f,
-            float trainHeight = 3.2f);
+            float trainHeight = 3.2f,
+            const glm::vec3& platformEdgePosition = glm::vec3(0.0f),
+            const glm::vec3& stopPosition = glm::vec3(0.0f));
   void shutdown();
 
   // Bir kareyi uçur (acquire → record → submit → present).
@@ -101,6 +104,8 @@ private:
   float mTrackGauge = 2.4f;
   float mTrainWidth = 2.8f;
   float mTrainHeight = 3.2f;
+  glm::vec3 mPlatformEdgePosition{0.0f};
+  glm::vec3 mStopPosition{0.0f};
 
   VkCommandPool mCommandPool = VK_NULL_HANDLE;
   // Tüm per-frame senkronizasyon nesneleri swapchain image sayısına göre

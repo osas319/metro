@@ -154,6 +154,17 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     METRO_ERROR("Station manifest spawn pitch gecersiz: %s", path.c_str());
     return false;
   }
+  if (source.find("\"edge_position\"") != std::string::npos &&
+      !readVector3(source, "edge_position", parsed.platformEdgePosition)) {
+    METRO_ERROR("Station manifest peron kenar konumu gecersiz: %s",
+                path.c_str());
+    return false;
+  }
+  if (source.find("\"stop_position\"") != std::string::npos &&
+      !readVector3(source, "stop_position", parsed.stopPosition)) {
+    METRO_ERROR("Station manifest durus konumu gecersiz: %s", path.c_str());
+    return false;
+  }
   if (parsed.spawnPitch < -89.0f || parsed.spawnPitch > 89.0f ||
       parsed.spawnYaw < -360.0f || parsed.spawnYaw > 360.0f) {
     METRO_ERROR("Station manifest kamera acisi aralik disinda: %s",
