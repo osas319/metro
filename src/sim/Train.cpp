@@ -44,13 +44,26 @@ void Train::update(float dt, bool throttle, bool brake, bool signalClear,
     throttle = false;
     brake = true;
   }
+  if (routeLength > mPosition) {
+    const float distance = routeLength - mPosition;
+    const float brakingDistance =
+        (mSpeed * mSpeed) / (2.0f * mParameters.serviceBrake);
+    if (distance <= brakingDistance + 0.05f) {
+      throttle = false;
+      brake = true;
+    }
+  }
   float accelerationValue =
       throttle ? mParameters.acceleration : -mParameters.rollingResistance;
   if (brake || !signalClear) accelerationValue = -mParameters.serviceBrake;
   mSpeed = std::clamp(mSpeed + accelerationValue * dt, 0.0f,
                       mParameters.maxSpeed);
   const float nextPosition = mPosition + mSpeed * dt;
-  if (routeLength > 0.0f && nextPosition >= routeLength) {
+  const bool settledAtTarget =
+      routeLength > mPosition && routeLength - mPosition <= 0.05f &&
+      mSpeed <= mParameters.serviceBrake * dt;
+  if (routeLength > 0.0f &&
+      (nextPosition >= routeLength || settledAtTarget)) {
     mPosition = routeLength;
     mSpeed = 0.0f;
   } else {

@@ -36,6 +36,13 @@ int main() {
   assert(terminalTrain.position() <= 0.5f);
   assert(terminalTrain.speed() == 0.0f);
 
+  metro::sim::Train brakingTrain;
+  for (int i = 0; i < 600 && brakingTrain.position() < 25.0f; ++i) {
+    brakingTrain.update(1.0f / 60.0f, true, false, true, 25.0f);
+  }
+  assert(brakingTrain.position() <= 25.0f);
+  assert(brakingTrain.speed() == 0.0f);
+
   metro::sim::Train largeFrameTrain;
   largeFrameTrain.update(10.0f, true, false, true, 5.0f);
   assert(largeFrameTrain.position() == 5.0f);
