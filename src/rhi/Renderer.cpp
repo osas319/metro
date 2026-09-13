@@ -58,9 +58,11 @@ VkFormat Renderer::pickDepthFormat() const {
   return VK_FORMAT_D16_UNORM;
 }
 
-bool Renderer::init(VulkanContext& ctx, SDL_Window* window) {
+bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
+                    const std::string& manifestModelPath) {
   mCtx = &ctx;
   mWindow = window;
+  const char* environmentModel = std::getenv("METRO_MODEL_PATH");
 
   try {
     mSwapchain.create(ctx, window);
@@ -70,8 +72,10 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window) {
     createPipeline();
     createFramebuffers();
     createCommandObjects();
-    const char* modelPath = std::getenv("METRO_MODEL_PATH");
-    const char* selectedModel = modelPath != nullptr ? modelPath : "assets/box.glb";
+    const std::string selectedModel =
+        environmentModel != nullptr
+            ? environmentModel
+            : (manifestModelPath.empty() ? "assets/box.glb" : manifestModelPath);
     if (!mModel.load(ctx, mCommandPool, selectedModel)) {
       throw std::runtime_error(std::string("Model yuklenemedi: ") + selectedModel);
     }
@@ -81,8 +85,10 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window) {
     return false;
   }
   METRO_INFO("Renderer hazir (PBR pipeline, model: %s, %u frame-in-flight)",
-             std::getenv("METRO_MODEL_PATH") != nullptr ? std::getenv("METRO_MODEL_PATH")
-                                                        : "assets/box.glb",
+             environmentModel != nullptr
+                 ? environmentModel
+                 : (manifestModelPath.empty() ? "assets/box.glb"
+                                               : manifestModelPath.c_str()),
              MaxFramesInFlight);
   return true;
 }

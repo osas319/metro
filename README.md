@@ -127,4 +127,5 @@ yerine genişletilecektir.
 Kadıköy asset pipeline başlangıç manifesti:
 `assets/stations/kadikoy/station.json`. Manifest metre birimini, glTF eksen
 konvansiyonunu, asset klasörlerini ve kamera/peron başlangıç noktalarını tanımlar;
-loader entegrasyonu sahne sistemiyle birlikte eklenecektir.
+loader entegrasyonu model alanını da kullanır. `METRO_MODEL_PATH` verilirse
+ortam değişkeni manifestteki model yoluna önceliklidir.

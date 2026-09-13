@@ -6,6 +6,7 @@
 #include <vk_mem_alloc.h>
 
 #include <vector>
+#include <string>
 
 #include "rhi/Swapchain.hpp"
 #include "app/Camera.hpp"
@@ -43,7 +44,8 @@ class Renderer {
 public:
   static constexpr uint32_t MaxFramesInFlight = 2;
 
-  bool init(VulkanContext& ctx, SDL_Window* window);
+  bool init(VulkanContext& ctx, SDL_Window* window,
+            const std::string& manifestModelPath = {});
   void shutdown();
 
   // Bir kareyi uçur (acquire → record → submit → present).

@@ -127,6 +127,7 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     METRO_ERROR("Station manifest eksik alan iceriyor: %s", path.c_str());
     return false;
   }
+  readString(source, "model", parsed.modelPath);
   readVector3(source, "position", parsed.spawnPosition);
   readNumber(source, "yaw", parsed.spawnYaw);
   readNumber(source, "pitch", parsed.spawnPitch);
