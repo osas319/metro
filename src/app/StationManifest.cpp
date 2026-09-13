@@ -2,8 +2,10 @@
 
 #include <fstream>
 #include <cstdlib>
+#include <cmath>
 #include <sstream>
 #include <cstddef>
+#include <utility>
 
 #include "core/Log.hpp"
 
@@ -34,7 +36,7 @@ bool readNumber(const std::string& source, const char* key, float& value) {
   char* end = nullptr;
   const char* begin = source.c_str() + colon + 1;
   value = std::strtof(begin, &end);
-  return end != begin;
+  return end != begin && std::isfinite(value);
 }
 
 bool readVector3(const std::string& source, const char* key, glm::vec3& value) {
@@ -88,7 +90,10 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
   if (readNumber(source, "block_count", blockCount) && blockCount >= 1.0f) {
     parsed.blockCount = static_cast<size_t>(blockCount);
   }
-  readNumber(source, "route_length", parsed.routeLength);
+  float routeLength = parsed.routeLength;
+  if (readNumber(source, "route_length", routeLength) && routeLength > 0.0f) {
+    parsed.routeLength = routeLength;
+  }
   float passengerCapacity = static_cast<float>(parsed.passengerCapacity);
   if (readNumber(source, "passenger_capacity", passengerCapacity) &&
       passengerCapacity >= 1.0f) {
