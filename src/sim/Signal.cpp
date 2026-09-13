@@ -4,6 +4,10 @@ namespace metro::sim {
 
 BlockSignal::BlockSignal(size_t blockCount) : mOccupied(blockCount, false) {}
 
+void BlockSignal::resize(size_t blockCount) {
+  mOccupied.assign(blockCount, false);
+}
+
 void BlockSignal::setOccupied(size_t block, bool occupied) {
   if (block < mOccupied.size()) mOccupied[block] = occupied;
 }

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <sstream>
+#include <cstddef>
 
 #include "core/Log.hpp"
 
@@ -83,6 +84,10 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
   readVector3(source, "position", parsed.spawnPosition);
   readNumber(source, "yaw", parsed.spawnYaw);
   readNumber(source, "pitch", parsed.spawnPitch);
+  float blockCount = static_cast<float>(parsed.blockCount);
+  if (readNumber(source, "block_count", blockCount) && blockCount >= 1.0f) {
+    parsed.blockCount = static_cast<size_t>(blockCount);
+  }
 
   out = std::move(parsed);
   METRO_INFO("Station manifest: %s (%s), mesh dizini: %s",

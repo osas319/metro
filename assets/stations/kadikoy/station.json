@@ -1,6 +1,7 @@
 {
   "name": "Kadikoy",
   "line": "M4",
+  "block_count": 8,
   "units": "meters",
   "up_axis": "Y",
   "meshes": "meshes",

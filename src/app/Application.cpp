@@ -24,6 +24,7 @@ bool Application::init() {
   mCamera.position = station.spawnPosition;
   mCamera.yaw = station.spawnYaw;
   mCamera.pitch = station.spawnPitch;
+  mSignal.resize(station.blockCount);
 
   entt::registry registry;
   auto entity = registry.create();
@@ -112,11 +113,12 @@ void Application::update(float dt) {
     mTrain.setDoorsOpen(false);
   }
   const size_t currentBlock = static_cast<size_t>(mTrain.position() / 250.0f);
-  for (size_t block = 0; block < 8; ++block) {
+  for (size_t block = 0; block < mSignal.blockCount(); ++block) {
     mSignal.setOccupied(block, block == currentBlock);
   }
   const size_t nextBlock = currentBlock + 1;
-  const bool signalClear = nextBlock < 8 && mSignal.canEnter(nextBlock);
+  const bool signalClear = nextBlock < mSignal.blockCount() &&
+                           mSignal.canEnter(nextBlock);
   mTrain.update(dt, throttle, brake, signalClear);
 
   if (!mMouseCaptured) return;
@@ -180,7 +182,8 @@ int Application::run() {
       const size_t statsBlock = static_cast<size_t>(mTrain.position() / 250.0f);
       const size_t statsNextBlock = statsBlock + 1;
       METRO_INFO("sinyal: blok %zu %s", statsNextBlock,
-                 statsNextBlock < 8 && mSignal.canEnter(statsNextBlock)
+                 statsNextBlock < mSignal.blockCount() &&
+                         mSignal.canEnter(statsNextBlock)
                      ? "yesil"
                      : "kirmizi");
       frameCount = 0;

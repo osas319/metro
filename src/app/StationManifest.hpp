@@ -15,6 +15,7 @@ struct StationManifest {
   glm::vec3 spawnPosition{0.0f, 1.7f, 0.0f};
   float spawnYaw = -90.0f;
   float spawnPitch = 0.0f;
+  size_t blockCount = 8;
 
   static bool load(const std::string& path, StationManifest& out);
 };
