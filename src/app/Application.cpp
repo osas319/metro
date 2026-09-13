@@ -5,6 +5,7 @@
 #include <entt/entt.hpp>
 
 #include "core/Log.hpp"
+#include "app/StationManifest.hpp"
 
 namespace metro::app {
 
@@ -13,6 +14,20 @@ struct TransformComponent {
 };
 
 bool Application::init() {
+  const char* manifestPath = std::getenv("METRO_STATION_MANIFEST");
+  StationManifest station;
+  if (!StationManifest::load(
+          manifestPath != nullptr ? manifestPath : "assets/stations/kadikoy/station.json",
+          station)) {
+    return false;
+  }
+  mCamera.position = station.spawnPosition;
+  mCamera.yaw = station.spawnYaw;
+  mCamera.pitch = station.spawnPitch;
+  mSignal.resize(station.blockCount);
+  mRouteLength = station.routeLength;
+  mPassengers = sim::PassengerSystem(station.passengerCapacity);
+
   entt::registry registry;
   auto entity = registry.create();
   registry.emplace<TransformComponent>(entity, 1.0f, 2.0f, 3.0f);
@@ -65,6 +80,12 @@ void Application::handleEvent(const SDL_Event& e) {
         SDL_SetWindowRelativeMouseMode(mWindow, mMouseCaptured);
       }
       break;
+    case SDL_EVENT_KEY_DOWN:
+      if (e.key.key == SDLK_ESCAPE && mMouseCaptured) {
+        mMouseCaptured = false;
+        SDL_SetWindowRelativeMouseMode(mWindow, false);
+      }
+      break;
     case SDL_EVENT_MOUSE_MOTION:
       if (mMouseCaptured) {
         mCamera.yaw += e.motion.xrel * mCamera.mouseSensitivity;
@@ -80,18 +101,49 @@ void Application::handleEvent(const SDL_Event& e) {
 }
 
 void Application::update(float dt) {
-  if (!mMouseCaptured) return;
-  
   if (mKeyboardState == nullptr) {
       int count = 0;
       mKeyboardState = SDL_GetKeyboardState(&count);
   }
 
+  const bool throttle = mKeyboardState[SDL_SCANCODE_UP];
+  const bool brake = mKeyboardState[SDL_SCANCODE_DOWN];
+  if (mKeyboardState[SDL_SCANCODE_O] && mTrain.speed() < 0.05f) {
+    mTrain.setDoorsOpen(true);
+  }
+  if (mKeyboardState[SDL_SCANCODE_C]) {
+    mTrain.setDoorsOpen(false);
+  }
+  const size_t currentBlock = static_cast<size_t>(mTrain.position() / 250.0f);
+  for (size_t block = 0; block < mSignal.blockCount(); ++block) {
+    mSignal.setOccupied(block, block == currentBlock);
+  }
+  const size_t nextBlock = currentBlock + 1;
+  const bool signalClear = nextBlock < mSignal.blockCount() &&
+                           mSignal.canEnter(nextBlock);
+  mTrain.update(dt, throttle, brake, signalClear, mRouteLength);
+  if (mTrain.position() >= mRouteLength && mTrain.speed() < 0.05f) {
+    mTrain.setDoorsOpen(true);
+    if (!mTerminalServiced) {
+      mPassengers.unloadAtTerminal();
+      mTerminalServiced = true;
+    }
+  }
+  mPassengers.update(dt, mTrain.doorsOpen(), mTrain.speed() < 0.05f);
+
+  if (!mMouseCaptured) return;
+
   float velocity = mCamera.moveSpeed * dt;
+  if (mKeyboardState[SDL_SCANCODE_LSHIFT] ||
+      mKeyboardState[SDL_SCANCODE_RSHIFT]) {
+    velocity *= 3.0f;
+  }
   if (mKeyboardState[SDL_SCANCODE_W]) mCamera.position += mCamera.getFront() * velocity;
   if (mKeyboardState[SDL_SCANCODE_S]) mCamera.position -= mCamera.getFront() * velocity;
   if (mKeyboardState[SDL_SCANCODE_A]) mCamera.position -= mCamera.getRight() * velocity;
   if (mKeyboardState[SDL_SCANCODE_D]) mCamera.position += mCamera.getRight() * velocity;
+  if (mKeyboardState[SDL_SCANCODE_Q]) mCamera.position.y -= velocity;
+  if (mKeyboardState[SDL_SCANCODE_E]) mCamera.position.y += velocity;
 }
 
 int Application::run() {
@@ -134,6 +186,18 @@ int Application::run() {
     if (nowNs - lastStatsNs >= Uint64(2e9)) {
       const double secs = double(nowNs - lastStatsNs) / 1e9;
       METRO_INFO("fps: %.1f", double(frameCount) / secs);
+      METRO_INFO("tren: %.1f km/saat, konum %.1f m",
+                 mTrain.speed() * 3.6f, mTrain.position());
+      METRO_INFO("kapi: %s", mTrain.doorsOpen() ? "acik" : "kapali");
+      METRO_INFO("yolcu: %zu trende, %zu bekliyor",
+                 mPassengers.onboard(), mPassengers.waiting());
+      const size_t statsBlock = static_cast<size_t>(mTrain.position() / 250.0f);
+      const size_t statsNextBlock = statsBlock + 1;
+      METRO_INFO("sinyal: blok %zu %s", statsNextBlock,
+                 statsNextBlock < mSignal.blockCount() &&
+                         mSignal.canEnter(statsNextBlock)
+                     ? "yesil"
+                     : "kirmizi");
       frameCount = 0;
       lastStatsNs = nowNs;
     }

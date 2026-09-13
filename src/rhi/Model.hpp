@@ -15,6 +15,8 @@ class VulkanContext;
 struct SubMesh {
   uint32_t firstIndex = 0;
   uint32_t indexCount = 0;
+  uint32_t firstVertex = 0;
+  uint32_t vertexCount = 0;
   float baseColor[4] = {0.8f, 0.8f, 0.8f, 1.0f}; // pbrMetallicRoughness.baseColorFactor
   float metallic = 0.1f;                          // metallicFactor
   float roughness = 0.7f;                         // roughnessFactor

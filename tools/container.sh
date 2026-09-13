@@ -37,12 +37,22 @@ if [[ -n "${METRO_AUTO_EXIT:-}" ]]; then
   run_args+=(-e "METRO_AUTO_EXIT=${METRO_AUTO_EXIT}")
 fi
 
+# Çalıştırılacak GLB/glTF yolunu varsayılan örnek modelden değiştirme
+if [[ -n "${METRO_MODEL_PATH:-}" ]]; then
+  run_args+=(-e "METRO_MODEL_PATH=${METRO_MODEL_PATH}")
+fi
+
+if [[ -n "${METRO_STATION_MANIFEST:-}" ]]; then
+  run_args+=(-e "METRO_STATION_MANIFEST=${METRO_STATION_MANIFEST}")
+fi
+
 usage() {
   cat <<EOF
 Kullanım: tools/container.sh <komut> [arg]
   image          Geliştirme imajını derle
   configure      CMake configure + Ninja üretimi (arg: build type, default Debug)
   build          Derle (arg'ler cmake --build'e geçer)
+  test           Simülasyon testlerini çalıştır
   shell          İnteraktif bash (repo /work altında mount'lu)
   run            Uygulamayı çalıştır (arg'ler exe'ye geçer)
   vulkaninfo     GPU / sürücü doğrulaması
@@ -58,6 +68,8 @@ case "${cmd}" in
                 -DCMAKE_BUILD_TYPE="${1:-Debug}" ;;
   build)      podman run "${run_args[@]}" "${IMAGE}" \
                 cmake --build /work/build -j"$(nproc)" "$@" ;;
+  test)       podman run "${run_args[@]}" "${IMAGE}" \
+                ctest --test-dir /work/build --output-on-failure "$@" ;;
   shell)      podman run -it "${run_args[@]}" "${IMAGE}" ;;
   run)        podman run "${run_args[@]}" "${IMAGE}" /work/build/metro "$@" ;;
   vulkaninfo) podman run "${run_args[@]}" "${IMAGE}" vulkaninfo --summary ;;
