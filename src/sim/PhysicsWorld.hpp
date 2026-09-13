@@ -15,6 +15,8 @@ public:
     float trainWidth = 2.8f;
     float trainHeight = 3.2f;
     float trackGauge = 2.4f;
+    float routeLength = 2000.0f;
+    float platformWidth = 4.0f;
   };
 
   PhysicsWorld();

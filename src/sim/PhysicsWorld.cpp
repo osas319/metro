@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <thread>
+#include <vector>
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Core/Factory.h>
@@ -70,7 +71,8 @@ void EnsureJoltInitialized() {
 } // namespace
 
 struct PhysicsWorld::JoltState {
-  JoltState(float trainWidth, float trainHeight, float trackGauge)
+  JoltState(float trainWidth, float trainHeight, float trackGauge,
+            float routeLength, float platformWidth)
       : tempAllocator(4 * 1024 * 1024),
         jobSystem(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers,
                   std::max(1u, std::thread::hardware_concurrency() - 1)),
@@ -95,6 +97,18 @@ struct PhysicsWorld::JoltState {
         trainShape.Create().Get(), JPH::RVec3::sZero(), JPH::Quat::sIdentity(),
         JPH::EMotionType::Kinematic, 1);
     trainBody = bodies.CreateAndAddBody(trainSettings, JPH::EActivation::Activate);
+
+    const JPH::BoxShapeSettings platformShape(
+        JPH::Vec3(0.4f, 0.15f, routeLength * 0.5f));
+    for (float x : {-platformWidth - 0.4f, platformWidth + 0.4f}) {
+      JPH::BodyCreationSettings platformSettings(
+          platformShape.Create().Get(),
+          JPH::RVec3(x, -0.2, -routeLength * 0.5),
+          JPH::Quat::sIdentity(), JPH::EMotionType::Static, 0);
+      platformBodies.push_back(
+          bodies.CreateAndAddBody(platformSettings,
+                                  JPH::EActivation::DontActivate));
+    }
   }
 
   void syncTrain(float position, float deltaTime) {
@@ -112,6 +126,7 @@ struct PhysicsWorld::JoltState {
   std::unique_ptr<ObjectLayerPairFilter> objectLayerPairFilter;
   JPH::BodyID groundBody;
   JPH::BodyID trainBody;
+  std::vector<JPH::BodyID> platformBodies;
 };
 
 PhysicsWorld::PhysicsWorld() : PhysicsWorld(Settings{}) {}
@@ -128,9 +143,15 @@ PhysicsWorld::PhysicsWorld(Settings settings) : mSettings(settings) {
     mSettings.trainHeight = 3.2f;
   if (!std::isfinite(mSettings.trackGauge) || mSettings.trackGauge <= 0.0f)
     mSettings.trackGauge = 2.4f;
+  if (!std::isfinite(mSettings.routeLength) || mSettings.routeLength <= 0.0f)
+    mSettings.routeLength = 2000.0f;
+  if (!std::isfinite(mSettings.platformWidth) ||
+      mSettings.platformWidth <= 0.0f)
+    mSettings.platformWidth = 4.0f;
   mJolt = std::make_unique<JoltState>(mSettings.trainWidth,
                                       mSettings.trainHeight,
-                                      mSettings.trackGauge);
+                                      mSettings.trackGauge, mSettings.routeLength,
+                                      mSettings.platformWidth);
 }
 
 PhysicsWorld::~PhysicsWorld() = default;

@@ -34,7 +34,9 @@ bool Application::init() {
        .maxSubsteps = station.physicsMaxSubsteps,
        .trainWidth = station.trainWidth,
        .trainHeight = station.trainHeight,
-       .trackGauge = station.trackGauge});
+       .trackGauge = station.trackGauge,
+       .routeLength = station.routeLength,
+       .platformWidth = station.platformWidth});
   mPhysics.reset(mTrain.position());
   if (station.stops.empty()) {
     mRoute.buildBlockStops(station.blockCount, station.routeLength);
