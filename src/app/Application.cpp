@@ -200,7 +200,7 @@ int Application::run() {
     
     update(dt);
 
-    mRenderer.drawFrame(mCamera);
+    mRenderer.drawFrame(mCamera, mTrain.position());
     ++frameCount;
 
     if (nowNs - lastStatsNs >= Uint64(2e9)) {

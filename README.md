@@ -48,6 +48,8 @@ konumlanır; pencereye tıklayıp fareyi yakaladıktan sonra WASD ile gezilebili
 Gerçek istasyon modelleri eklenene kadar renderer bu mesh'i zemin, iki peron
 kenarı, raylar ve taşıyıcı kolonlar olarak çoğaltır; mavi nesne tren
 placeholder'ıdır.
+Tren placeholder'ı simülasyondaki konumunu ray ekseninde takip eder; Yukarı
+okla çekiş verildiğinde sahnede ilerler, Aşağı okla frenlenir.
 
 Kamera: pencereye tıklayıp fareyi yakalayın; **WASD** yatay hareket, **Q/E**
 dikey hareket, **Shift** hızlı hareket, **ESC** fare yakalamayı bırakır.

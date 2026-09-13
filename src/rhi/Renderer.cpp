@@ -464,7 +464,8 @@ void Renderer::createSyncObjects() {
   mFrame = 0;
 }
 
-void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex, const app::Camera& camera) {
+void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
+                                   const app::Camera& camera, float trainPosition) {
   VkCommandBufferBeginInfo begin{};
   begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   if (vkBeginCommandBuffer(cmd, &begin) != VK_SUCCESS) throw std::runtime_error("vkBeginCommandBuffer");
@@ -538,7 +539,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex, con
       {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(7.0f, 1.2f, -12.0f)),
                   glm::vec3(0.35f, 2.8f, 0.35f)),
        glm::vec4(0.38f, 0.40f, 0.44f, 1.0f), 0.8f},
-      {glm::mat4(1.0f), glm::vec4(0.12f, 0.42f, 0.85f, 1.0f), 0.55f},
+      {glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.65f, -trainPosition)),
+       glm::vec4(0.12f, 0.42f, 0.85f, 1.0f), 0.55f},
   };
   mModel.bind(cmd);
   for (const SceneInstance& instance : instances) {
@@ -560,7 +562,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex, con
   if (vkEndCommandBuffer(cmd) != VK_SUCCESS) throw std::runtime_error("vkEndCommandBuffer");
 }
 
-void Renderer::drawFrame(const app::Camera& camera) {
+void Renderer::drawFrame(const app::Camera& camera, float trainPosition) {
   const VkDevice dev = mCtx->device();
   const uint32_t syncCount = static_cast<uint32_t>(mInFlight.size());
 
@@ -584,7 +586,7 @@ void Renderer::drawFrame(const app::Camera& camera) {
 
   // 2) Komut tamponunu bu image için yeniden yaz.
   vkResetCommandBuffer(mCommands[mFrame], 0);
-  recordCommandBuffer(mCommands[mFrame], imageIndex, camera);
+  recordCommandBuffer(mCommands[mFrame], imageIndex, camera, trainPosition);
 
   // 3) Submit: renk çıktısı aşamasına kadar bekle.
   VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
