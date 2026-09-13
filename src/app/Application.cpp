@@ -48,6 +48,13 @@ bool Application::init() {
     METRO_ERROR("Yolcu navgraph olusturulamadi");
     return false;
   }
+  if (station.navmeshPath.empty()) {
+    METRO_INFO("Navmesh asseti yok; durak konumlarindan dogrusal fallback kullaniliyor");
+  } else {
+    METRO_INFO("Navmesh asseti: %s", station.navmeshPath.c_str());
+  }
+  if (!station.audioDirectory.empty())
+    METRO_INFO("Ses asset dizini: %s", station.audioDirectory.c_str());
   mPassengers.setNavGraph(mPassengerNav);
   mStopDwellSecondsLimit = station.stopDwellSeconds;
   mTrain.setParameters(station.trainParameters);
