@@ -78,7 +78,7 @@ bool Application::init() {
                           positions.push_back(stop.position);
                         }
                         return positions;
-                      }())) return false;
+                      }(), station.blockCount)) return false;
 
   METRO_INFO("Pencere acildi; dongu basliyor (kapatmak icin pencereyi kapat)");
   METRO_INFO("Kontroller: Yukari=cekis Asagi=fren O/C=kapi Sol tik=fare ESC=serbest");

@@ -64,7 +64,7 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
                     float trainHeight, float columnSpacing,
                     const glm::vec3& platformEdgePosition,
                     const glm::vec3& stopPosition,
-                    const std::vector<float>& stopPositions) {
+                    const std::vector<float>& stopPositions, size_t blockCount) {
   mCtx = &ctx;
   mWindow = window;
   mRouteLength = routeLength > 0.0f ? routeLength : 2000.0f;
@@ -76,6 +76,7 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
   mPlatformEdgePosition = platformEdgePosition;
   mStopPosition = stopPosition;
   mStopPositions = stopPositions;
+  mBlockCount = blockCount > 0 ? blockCount : 8;
   const char* environmentModel = std::getenv("METRO_MODEL_PATH");
 
   try {
@@ -586,6 +587,24 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
          terminal ? glm::vec4(0.90f, 0.18f, 0.10f, 1.0f)
                   : glm::vec4(0.95f, 0.65f, 0.08f, 1.0f),
          0.4f});
+  }
+  const float blockLength = mRouteLength / static_cast<float>(mBlockCount);
+  const size_t occupiedBlock = std::min(
+      static_cast<size_t>(trainPosition / blockLength), mBlockCount - 1);
+  for (size_t block = 0; block < mBlockCount; ++block) {
+    const float signalPosition = blockLength * static_cast<float>(block);
+    const bool occupied = block == occupiedBlock;
+    instances.push_back(
+        {glm::scale(
+             glm::translate(
+                 glm::mat4(1.0f),
+                 sceneOffset +
+                     glm::vec3(-mPlatformWidth - 1.2f, 1.0f,
+                               -signalPosition)),
+             glm::vec3(0.12f, 1.0f, 0.12f)),
+         occupied ? glm::vec4(0.88f, 0.10f, 0.08f, 1.0f)
+                  : glm::vec4(0.10f, 0.82f, 0.30f, 1.0f),
+         0.35f});
   }
   mModel.bind(cmd);
   for (const SceneInstance& instance : instances) {
