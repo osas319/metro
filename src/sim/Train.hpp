@@ -18,7 +18,7 @@ public:
   float speed() const { return mSpeed; }
   float position() const { return mPosition; }
   bool doorsOpen() const { return mDoorsOpen; }
-  void setDoorsOpen(bool open) { mDoorsOpen = open; }
+  bool requestDoorsOpen(bool open, bool platformAligned);
 
 private:
   float mPosition = 0.0f;

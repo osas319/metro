@@ -14,10 +14,16 @@ int main() {
   assert(train.speed() > 0.0f);
   assert(train.position() > 0.0f);
 
-  train.setDoorsOpen(true);
-  const float stoppedSpeed = train.speed();
+  assert(!train.requestDoorsOpen(true, false));
+  assert(!train.doorsOpen());
+  train.update(2.0f, false, true);
+  assert(train.speed() == 0.0f);
+  assert(train.requestDoorsOpen(true, true));
+  assert(train.doorsOpen());
   train.update(1.0f, true, false);
-  assert(train.speed() < stoppedSpeed);
+  assert(train.speed() == 0.0f);
+  assert(train.requestDoorsOpen(false, false));
+  assert(!train.doorsOpen());
 
   metro::sim::Train signalTrain;
   signalTrain.update(1.0f, true, false, false);

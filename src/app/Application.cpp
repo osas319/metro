@@ -142,11 +142,19 @@ void Application::update(float dt) {
 
   const bool throttle = mKeyboardState[SDL_SCANCODE_UP];
   const bool brake = mKeyboardState[SDL_SCANCODE_DOWN];
-  if (mKeyboardState[SDL_SCANCODE_O] && mTrain.speed() < 0.05f) {
-    mTrain.setDoorsOpen(true);
+  bool platformAligned = false;
+  for (const sim::Stop& stop : mRoute.stops()) {
+    if (std::abs(mTrain.position() - stop.position) <= 0.5f) {
+      platformAligned = true;
+      break;
+    }
+  }
+  platformAligned = platformAligned && mTrain.speed() < 0.05f;
+  if (mKeyboardState[SDL_SCANCODE_O]) {
+    mTrain.requestDoorsOpen(true, platformAligned);
   }
   if (mKeyboardState[SDL_SCANCODE_C]) {
-    mTrain.setDoorsOpen(false);
+    mTrain.requestDoorsOpen(false, false);
   }
   const size_t currentBlock =
       std::min(static_cast<size_t>(mTrain.position() / mBlockLength),
@@ -169,11 +177,11 @@ void Application::update(float dt) {
   const bool atTerminal = mTrain.position() >= mRouteLength &&
                           mTrain.speed() < 0.05f;
   if (atStop || atTerminal) {
-    mTrain.setDoorsOpen(true);
+    mTrain.requestDoorsOpen(true, true);
     if (!atTerminal) {
       mStopDwellSeconds += dt;
       if (mStopDwellSeconds >= stopDwellLimit) {
-        mTrain.setDoorsOpen(false);
+        mTrain.requestDoorsOpen(false, false);
         mStopDwellSeconds = 0.0f;
       }
     }

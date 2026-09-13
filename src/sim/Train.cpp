@@ -26,6 +26,16 @@ void Train::setParameters(Parameters parameters) {
   mParameters = parameters;
 }
 
+bool Train::requestDoorsOpen(bool open, bool platformAligned) {
+  if (!open) {
+    mDoorsOpen = false;
+    return true;
+  }
+  if (mSpeed > 0.05f || !platformAligned) return false;
+  mDoorsOpen = true;
+  return true;
+}
+
 void Train::update(float dt, bool throttle, bool brake, bool signalClear,
                    float routeLength) {
   if (!std::isfinite(dt) || dt <= 0.0f) return;
