@@ -39,6 +39,15 @@ bool readNumber(const std::string& source, const char* key, float& value) {
   return end != begin && std::isfinite(value);
 }
 
+bool readPositiveNumber(const std::string& source, const char* key,
+                        float& value) {
+  float parsed = value;
+  if (!readNumber(source, key, parsed)) return false;
+  if (parsed <= 0.0f) return false;
+  value = parsed;
+  return true;
+}
+
 bool readVector3(const std::string& source, const char* key, glm::vec3& value) {
   const std::string marker = "\"" + std::string(key) + "\"";
   const size_t keyPosition = source.find(marker);
@@ -134,11 +143,20 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
       stopDwellSeconds >= 0.0f) {
     parsed.stopDwellSeconds = stopDwellSeconds;
   }
-  readNumber(source, "max_speed_mps", parsed.trainParameters.maxSpeed);
-  readNumber(source, "acceleration_mps2", parsed.trainParameters.acceleration);
-  readNumber(source, "service_brake_mps2", parsed.trainParameters.serviceBrake);
-  readNumber(source, "rolling_resistance_mps2",
-             parsed.trainParameters.rollingResistance);
+  for (const auto& parameter : {
+           std::pair{"max_speed_mps", &parsed.trainParameters.maxSpeed},
+           std::pair{"acceleration_mps2", &parsed.trainParameters.acceleration},
+           std::pair{"service_brake_mps2", &parsed.trainParameters.serviceBrake},
+           std::pair{"rolling_resistance_mps2",
+                     &parsed.trainParameters.rollingResistance}}) {
+    if (source.find("\"" + std::string(parameter.first) + "\"") !=
+            std::string::npos &&
+        !readPositiveNumber(source, parameter.first, *parameter.second)) {
+      METRO_ERROR("Station manifest tren parametresi gecersiz: %s (%s)",
+                  parameter.first, path.c_str());
+      return false;
+    }
+  }
   if (source.find("\"stops\"") != std::string::npos &&
       !readStops(source, parsed.stops)) {
     METRO_ERROR("Station manifest durak listesi gecersiz: %s", path.c_str());
