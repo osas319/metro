@@ -18,12 +18,20 @@ void Route::buildBlockStops(size_t blockCount, float routeLength) {
 }
 
 float Route::nextStopPosition(float currentPosition, float routeLength) const {
+  return nextStop(currentPosition, routeLength).position;
+}
+
+const Stop& Route::nextStop(float currentPosition, float routeLength) const {
   for (const Stop& stop : mStops) {
     if (stop.position > currentPosition + 0.5f) {
-      return stop.position;
+      return stop;
     }
   }
-  return routeLength;
+  static const Stop terminal{"Terminal", 0.0f};
+  if (!mStops.empty() && routeLength >= mStops.back().position) {
+    return mStops.back();
+  }
+  return terminal;
 }
 
 } // namespace metro::sim

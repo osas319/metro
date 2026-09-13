@@ -128,7 +128,8 @@ void Application::update(float dt) {
   const size_t nextBlock = currentBlock + 1;
   const bool signalClear = nextBlock < mSignal.blockCount() &&
                            mSignal.canEnter(nextBlock);
-  const float nextStop = mRoute.nextStopPosition(mTrain.position(), mRouteLength);
+  const sim::Stop& upcomingStop = mRoute.nextStop(mTrain.position(), mRouteLength);
+  const float nextStop = upcomingStop.position;
   const bool atStop = mTrain.position() >= nextStop - 0.5f &&
                       mTrain.speed() < 0.05f;
   mTrain.update(dt, throttle, brake, signalClear, nextStop);
@@ -227,6 +228,10 @@ int Application::run() {
                          mSignal.canEnter(statsNextBlock)
                      ? "yesil"
                      : "kirmizi");
+      const sim::Stop& statsStop =
+          mRoute.nextStop(mTrain.position(), mRouteLength);
+      METRO_INFO("sonraki durak: %s (%.1f m)",
+                 statsStop.name.c_str(), statsStop.position);
       frameCount = 0;
       lastStatsNs = nowNs;
     }

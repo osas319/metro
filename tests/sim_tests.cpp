@@ -50,6 +50,7 @@ int main() {
   assert(route.nextStopPosition(0.0f, 900.0f) == 300.0f);
   assert(route.nextStopPosition(300.0f, 900.0f) == 600.0f);
   assert(route.nextStopPosition(900.0f, 900.0f) == 900.0f);
+  assert(route.nextStop(0.0f, 900.0f).name == "M4 duragi 1");
   signal.setOccupied(1, true);
   assert(!signal.canEnter(1));
   signal.resize(5);
