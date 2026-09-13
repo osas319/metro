@@ -43,6 +43,8 @@ Varsayılan örnek model yerine başka bir glTF/GLB yüklemek için:
 İstasyon manifestini değiştirmek için `METRO_STATION_MANIFEST` kullanılabilir;
 varsayılan değer `assets/stations/kadikoy/station.json` dosyasıdır. Başlatma,
 manifestteki temel alanları doğrular ve eksik/okunamayan dosyada durur.
+Örnek kutu asset'ini görmek için başlangıç kamerası kutunun 3 metre önünde
+konumlanır; pencereye tıklayıp fareyi yakaladıktan sonra WASD ile gezilebilir.
 
 Kamera: pencereye tıklayıp fareyi yakalayın; **WASD** yatay hareket, **Q/E**
 dikey hareket, **Shift** hızlı hareket, **ESC** fare yakalamayı bırakır.

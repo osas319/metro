@@ -19,7 +19,7 @@ void Route::buildBlockStops(size_t blockCount, float routeLength) {
 
 float Route::nextStopPosition(float currentPosition, float routeLength) const {
   for (const Stop& stop : mStops) {
-    if (stop.position > 0.5f && stop.position >= currentPosition - 0.5f) {
+    if (stop.position > currentPosition + 0.5f) {
       return stop.position;
     }
   }
