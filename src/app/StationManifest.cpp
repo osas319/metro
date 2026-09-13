@@ -206,6 +206,21 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     }
     parsed.stopDwellSeconds = stopDwellSeconds;
   }
+  if (source.find("\"physics_fixed_step\"") != std::string::npos &&
+      !readPositiveNumber(source, "physics_fixed_step",
+                          parsed.physicsFixedStep)) {
+    METRO_ERROR("Station manifest fizik sabit adimi gecersiz: %s",
+                path.c_str());
+    return false;
+  }
+  if (source.find("\"physics_max_substeps\"") != std::string::npos &&
+      (!readNonNegativeInteger(source, "physics_max_substeps",
+                               parsed.physicsMaxSubsteps) ||
+       parsed.physicsMaxSubsteps == 0)) {
+    METRO_ERROR("Station manifest fizik alt-adim sayisi gecersiz: %s",
+                path.c_str());
+    return false;
+  }
   for (const auto& parameter : {
            std::pair{"max_speed_mps", &parsed.trainParameters.maxSpeed},
            std::pair{"acceleration_mps2", &parsed.trainParameters.acceleration},

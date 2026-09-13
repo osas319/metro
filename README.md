@@ -128,6 +128,8 @@ işgal/sinyal mantığı çalışır durumdadır. Kırmızı sinyal ön blok iç
 frenini zorlar. Bunlar Faz 2-3 için geçici çekirdek
 simülasyon katmanıdır; gerçek hat geometrisi ve fizik entegrasyonu geldiğinde
 yerine genişletilecektir.
+Fizik dünyasının `physics_fixed_step` ve `physics_max_substeps` değerleri
+manifestten ayarlanabilir; değerler belirtilmezse 60 Hz ve 4 alt-adım kullanılır.
 
 Kadıköy asset pipeline başlangıç manifesti:
 `assets/stations/kadikoy/station.json`. Manifest metre birimini, glTF eksen

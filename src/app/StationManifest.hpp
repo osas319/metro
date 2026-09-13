@@ -24,6 +24,8 @@ struct StationManifest {
   size_t passengerCapacity = 320;
   size_t initialWaitingPassengers = 24;
   float stopDwellSeconds = 3.0f;
+  float physicsFixedStep = 1.0f / 60.0f;
+  size_t physicsMaxSubsteps = 4;
   sim::Train::Parameters trainParameters;
   std::vector<sim::Stop> stops;
 

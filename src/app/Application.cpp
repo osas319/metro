@@ -29,6 +29,9 @@ bool Application::init() {
   mRouteLength = station.routeLength;
   mPassengers = sim::PassengerSystem(station.passengerCapacity,
                                      station.initialWaitingPassengers);
+  mPhysics = sim::PhysicsWorld(
+      {.fixedStep = station.physicsFixedStep,
+       .maxSubsteps = station.physicsMaxSubsteps});
   if (station.stops.empty()) {
     mRoute.buildBlockStops(station.blockCount, station.routeLength);
   } else {

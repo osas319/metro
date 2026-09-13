@@ -6,6 +6,8 @@
   "passenger_capacity": 320,
   "initial_waiting_passengers": 24,
   "stop_dwell_seconds": 3.0,
+  "physics_fixed_step": 0.0166667,
+  "physics_max_substeps": 4,
   "max_speed_mps": 22.2,
   "acceleration_mps2": 1.2,
   "service_brake_mps2": 2.4,

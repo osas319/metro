@@ -102,6 +102,9 @@ int main() {
   assert(station.passengerCapacity == 320);
   assert(station.routeLength == 2000.0f);
   assert(station.stopDwellSeconds == 3.0f);
+  assert(station.physicsFixedStep > 0.016f &&
+         station.physicsFixedStep < 0.017f);
+  assert(station.physicsMaxSubsteps == 4);
   assert(station.trainParameters.serviceBrake >=
          station.trainParameters.acceleration);
   assert(station.spawnPosition.y == 1.7f);
