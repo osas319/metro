@@ -73,7 +73,7 @@ cmake/                CMake yardımcı modülleri
 ## Durum / yol haritası
 
 - [x] Aşama 0: SDL3 + Wayland pencere → Vulkan instance/device/swapchain → üçgen
-- [ ] Aşama 1: kamera + glTF mesh yükleme + PBR (metallic-roughness)
+- [x] Aşama 1: kamera + glTF mesh yükleme + PBR (metallic-roughness)
 - [ ] Aşama 2: Jolt fiziği + Kadıköy istasyonu sahnesi
 - [ ] Aşama 3: tren fiziği, sinyal/blok sistemi, kapı/peron mantığı
 - [ ] Aşama 4: yolcu simülasyonu (navmesh kalabalık), ses, tam hat

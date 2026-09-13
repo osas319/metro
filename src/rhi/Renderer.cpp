@@ -71,7 +71,10 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window) {
     createFramebuffers();
     createCommandObjects();
     const char* modelPath = std::getenv("METRO_MODEL_PATH");
-    mModel.load(ctx, mCommandPool, modelPath != nullptr ? modelPath : "assets/box.glb");
+    const char* selectedModel = modelPath != nullptr ? modelPath : "assets/box.glb";
+    if (!mModel.load(ctx, mCommandPool, selectedModel)) {
+      throw std::runtime_error(std::string("Model yuklenemedi: ") + selectedModel);
+    }
     createSyncObjects();
   } catch (const std::exception& e) {
     METRO_ERROR("Renderer init: %s", e.what());
