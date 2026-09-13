@@ -88,5 +88,7 @@ int main() {
   assert(station.passengerCapacity == 320);
   assert(station.routeLength == 2000.0f);
   assert(station.stopDwellSeconds == 3.0f);
+  assert(station.trainParameters.serviceBrake >=
+         station.trainParameters.acceleration);
   return 0;
 }

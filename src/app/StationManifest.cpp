@@ -202,6 +202,12 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
       return false;
     }
   }
+  if (parsed.trainParameters.serviceBrake <
+      parsed.trainParameters.acceleration) {
+    METRO_ERROR("Station manifest servis freni ivmelenmeden dusuk: %s",
+                path.c_str());
+    return false;
+  }
   if (source.find("\"stops\"") != std::string::npos &&
       !readStops(source, parsed.stops)) {
     METRO_ERROR("Station manifest durak listesi gecersiz: %s", path.c_str());
