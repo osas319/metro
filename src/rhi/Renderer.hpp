@@ -49,7 +49,7 @@ public:
             const std::string& manifestModelPath = {},
             float routeLength = 2000.0f, float platformWidth = 4.0f,
             float trackGauge = 2.4f, float trainWidth = 2.8f,
-            float trainHeight = 3.2f,
+            float trainHeight = 3.2f, float columnSpacing = 24.0f,
             const glm::vec3& platformEdgePosition = glm::vec3(0.0f),
             const glm::vec3& stopPosition = glm::vec3(0.0f));
   void shutdown();
@@ -104,6 +104,7 @@ private:
   float mTrackGauge = 2.4f;
   float mTrainWidth = 2.8f;
   float mTrainHeight = 3.2f;
+  float mColumnSpacing = 24.0f;
   glm::vec3 mPlatformEdgePosition{0.0f};
   glm::vec3 mStopPosition{0.0f};
 

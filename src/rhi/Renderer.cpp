@@ -61,7 +61,8 @@ VkFormat Renderer::pickDepthFormat() const {
 bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
                     const std::string& manifestModelPath, float routeLength,
                     float platformWidth, float trackGauge, float trainWidth,
-                    float trainHeight, const glm::vec3& platformEdgePosition,
+                    float trainHeight, float columnSpacing,
+                    const glm::vec3& platformEdgePosition,
                     const glm::vec3& stopPosition) {
   mCtx = &ctx;
   mWindow = window;
@@ -70,6 +71,7 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
   mTrackGauge = trackGauge > 0.0f ? trackGauge : 2.4f;
   mTrainWidth = trainWidth > 0.0f ? trainWidth : 2.8f;
   mTrainHeight = trainHeight > 0.0f ? trainHeight : 3.2f;
+  mColumnSpacing = columnSpacing > 0.0f ? columnSpacing : 24.0f;
   mPlatformEdgePosition = platformEdgePosition;
   mStopPosition = stopPosition;
   const char* environmentModel = std::getenv("METRO_MODEL_PATH");
@@ -531,7 +533,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
     float roughness;
   };
   const glm::vec3 sceneOffset = mPlatformEdgePosition;
-  const SceneInstance instances[] = {
+  std::vector<SceneInstance> instances = {
       {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(0.0f, -1.5f, -mRouteLength * 0.5f)),
                   glm::vec3(mPlatformWidth * 2.0f + 2.0f, 0.15f,
                             mRouteLength * 0.5f)),
@@ -551,18 +553,23 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
       {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(mTrackGauge * 0.5f, -1.25f, -mRouteLength * 0.5f)),
                   glm::vec3(0.08f, 0.08f, mRouteLength * 0.5f)),
        glm::vec4(0.72f, 0.74f, 0.78f, 1.0f), 0.35f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-7.0f, 1.2f, -12.0f)),
-                  glm::vec3(0.35f, 2.8f, 0.35f)),
-       glm::vec4(0.38f, 0.40f, 0.44f, 1.0f), 0.8f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(7.0f, 1.2f, -12.0f)),
-                  glm::vec3(0.35f, 2.8f, 0.35f)),
-       glm::vec4(0.38f, 0.40f, 0.44f, 1.0f), 0.8f},
       {glm::scale(
            glm::translate(glm::mat4(1.0f),
                           mStopPosition + glm::vec3(0.0f, -0.65f, -trainPosition)),
            glm::vec3(mTrainWidth, mTrainHeight, mTrackGauge * 1.6f)),
        glm::vec4(0.12f, 0.42f, 0.85f, 1.0f), 0.55f},
   };
+  for (float z = -mColumnSpacing; z > -mRouteLength;
+       z -= mColumnSpacing) {
+    for (float x : {-mPlatformWidth - 3.0f, mPlatformWidth + 3.0f}) {
+      instances.push_back(
+          {glm::scale(
+               glm::translate(glm::mat4(1.0f),
+                              sceneOffset + glm::vec3(x, 1.2f, z)),
+               glm::vec3(0.35f, 2.8f, 0.35f)),
+           glm::vec4(0.38f, 0.40f, 0.44f, 1.0f), 0.8f});
+    }
+  }
   mModel.bind(cmd);
   for (const SceneInstance& instance : instances) {
     for (size_t i = 0; i < mModel.subMeshCount(); ++i) {
