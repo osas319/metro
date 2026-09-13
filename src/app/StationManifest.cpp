@@ -71,7 +71,7 @@ bool readVector3(const std::string& source, const char* key, glm::vec3& value) {
   char* end = nullptr;
   for (float* component : {&value.x, &value.y, &value.z}) {
     *component = std::strtof(cursor, &end);
-    if (end == cursor) return false;
+    if (end == cursor || !std::isfinite(*component)) return false;
     cursor = end;
     while (*cursor == ' ' || *cursor == ',') ++cursor;
   }
