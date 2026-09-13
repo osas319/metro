@@ -81,11 +81,16 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
 
   try {
     mSwapchain.create(ctx, window);
-    createRenderPass();
+    createRenderPass();      // sahne (PBR) — HDR offscreen hedefe
     createDepthResources();
+    createHdrResources();    // HDR renk hedefleri + sampler
     createFrameUniforms();
     createPipeline();
-    createFramebuffers();
+    createFramebuffers();    // sahne framebuffer'ları (HDR+depth)
+    createPostRenderPass();  // post-process (tonemap) — swapchain'e
+    createPostResources();   // HDR örnekleme descriptor'ları
+    createPostPipeline();
+    createPostFramebuffers();
     createCommandObjects();
     const std::string selectedModel =
         environmentModel != nullptr
@@ -99,7 +104,7 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
     METRO_ERROR("Renderer init: %s", e.what());
     return false;
   }
-  METRO_INFO("Renderer hazir (PBR pipeline, model: %s, %u frame-in-flight)",
+  METRO_INFO("Renderer hazir (PBR+HDR+ACES tonemap, model: %s, %u frame-in-flight)",
              environmentModel != nullptr
                  ? environmentModel
                  : (manifestModelPath.empty() ? "assets/box.glb"
@@ -109,18 +114,21 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
 }
 
 void Renderer::createRenderPass() {
-  mSwapFormat = mSwapchain.format();
+  // Sahne geçişi artık swapchain'e değil HDR offscreen hedefe yazar; format
+  // swapchain'den bağımsız olduğu için burada mSwapFormat GÜNCELLENMEZ
+  // (bkz. createPostRenderPass — swapchain formatına bağlı olan odur).
   mDepthFormat = pickDepthFormat();
 
   VkAttachmentDescription color{};
-  color.format = mSwapchain.format();
+  color.format = kHdrFormat;
   color.samples = VK_SAMPLE_COUNT_1_BIT;
   color.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
   color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
   color.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
   color.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
   color.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  color.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+  // Post-process geçişi bu görüntüyü örnekleyecek; pass sonunda hazır olsun.
+  color.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
   VkAttachmentDescription depth{};
   depth.format = mDepthFormat;
@@ -148,17 +156,24 @@ void Renderer::createRenderPass() {
   subpass.pColorAttachments = &colorRef;
   subpass.pDepthStencilAttachment = &depthRef;
 
-  // Sunum motorunun okuması ile renk eki yazmasını çakıştırma.
-  VkSubpassDependency dep{};
-  dep.srcSubpass = VK_SUBPASS_EXTERNAL;
-  dep.dstSubpass = 0;
-  dep.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-  dep.srcAccessMask = 0;
-  dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-  dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-                      VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+  VkSubpassDependency deps[2]{};
+  // Önceki karenin post-process okumasıyla bu karenin renk eki yazmasını çakıştırma.
+  deps[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+  deps[0].dstSubpass = 0;
+  deps[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                         VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+  deps[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+  deps[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                         VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+  deps[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                          VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+  // Bu karenin renk eki yazmasıyla post-process geçişinin örneklemesini çakıştırma.
+  deps[1].srcSubpass = 0;
+  deps[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+  deps[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  deps[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+  deps[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+  deps[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
   VkRenderPassCreateInfo ci{};
   ci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -166,8 +181,8 @@ void Renderer::createRenderPass() {
   ci.pAttachments = attachments;
   ci.subpassCount = 1;
   ci.pSubpasses = &subpass;
-  ci.dependencyCount = 1;
-  ci.pDependencies = &dep;
+  ci.dependencyCount = 2;
+  ci.pDependencies = deps;
 
   if (vkCreateRenderPass(mCtx->device(), &ci, nullptr, &mRenderPass) != VK_SUCCESS) {
     throw std::runtime_error("vkCreateRenderPass");
@@ -209,6 +224,67 @@ void Renderer::createDepthResources() {
   view.subresourceRange.layerCount = 1;
   if (vkCreateImageView(mCtx->device(), &view, nullptr, &mDepthView) != VK_SUCCESS) {
     throw std::runtime_error("vkCreateImageView (depth)");
+  }
+}
+
+void Renderer::createHdrResources() {
+  // Sampler pipeline ömründe yaşar (extent'ten bağımsız); yalnız ilk
+  // kurulumda yaratılır — mDescSetLayout ile aynı desen.
+  if (mHdrSampler == VK_NULL_HANDLE) {
+    VkSamplerCreateInfo samplerCi{};
+    samplerCi.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerCi.magFilter = VK_FILTER_LINEAR;
+    samplerCi.minFilter = VK_FILTER_LINEAR;
+    samplerCi.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerCi.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerCi.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerCi.maxLod = 1.0f;
+    if (vkCreateSampler(mCtx->device(), &samplerCi, nullptr, &mHdrSampler) != VK_SUCCESS) {
+      throw std::runtime_error("vkCreateSampler (HDR)");
+    }
+  }
+
+  // Her swapchain image'i kendi HDR hedefine yazar (frame UBO'yla aynı
+  // per-image desen); extent değişince destroySwapchainDependent + burada
+  // yeniden kurulur.
+  const uint32_t count = mSwapchain.imageCount();
+  mHdrImages.resize(count);
+  mHdrAllocs.resize(count);
+  mHdrViews.resize(count);
+
+  for (uint32_t i = 0; i < count; ++i) {
+    VkImageCreateInfo img{};
+    img.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    img.imageType = VK_IMAGE_TYPE_2D;
+    img.format = kHdrFormat;
+    img.extent.width = mSwapchain.extent().width;
+    img.extent.height = mSwapchain.extent().height;
+    img.extent.depth = 1;
+    img.mipLevels = 1;
+    img.arrayLayers = 1;
+    img.samples = VK_SAMPLE_COUNT_1_BIT;
+    img.tiling = VK_IMAGE_TILING_OPTIMAL;
+    img.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VmaAllocationCreateInfo alloc{};
+    alloc.usage = VMA_MEMORY_USAGE_AUTO;
+
+    if (vmaCreateImage(mCtx->allocator(), &img, &alloc, &mHdrImages[i], &mHdrAllocs[i], nullptr) !=
+        VK_SUCCESS) {
+      throw std::runtime_error("vmaCreateImage (HDR)");
+    }
+
+    VkImageViewCreateInfo view{};
+    view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view.image = mHdrImages[i];
+    view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view.format = kHdrFormat;
+    view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    view.subresourceRange.levelCount = 1;
+    view.subresourceRange.layerCount = 1;
+    if (vkCreateImageView(mCtx->device(), &view, nullptr, &mHdrViews[i]) != VK_SUCCESS) {
+      throw std::runtime_error("vkCreateImageView (HDR)");
+    }
   }
 }
 
@@ -421,9 +497,10 @@ void Renderer::createPipeline() {
 }
 
 void Renderer::createFramebuffers() {
-  mFramebuffers.resize(mSwapchain.views().size());
-  for (size_t i = 0; i < mSwapchain.views().size(); ++i) {
-    VkImageView attachments[] = {mSwapchain.views()[i], mDepthView};
+  // Sahne geçişi artık HDR offscreen hedefe yazar (swapchain view değil).
+  mFramebuffers.resize(mHdrViews.size());
+  for (size_t i = 0; i < mHdrViews.size(); ++i) {
+    VkImageView attachments[] = {mHdrViews[i], mDepthView};
 
     VkFramebufferCreateInfo ci{};
     ci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -435,6 +512,228 @@ void Renderer::createFramebuffers() {
     ci.layers = 1;
     if (vkCreateFramebuffer(mCtx->device(), &ci, nullptr, &mFramebuffers[i]) != VK_SUCCESS) {
       throw std::runtime_error("vkCreateFramebuffer");
+    }
+  }
+}
+
+void Renderer::createPostRenderPass() {
+  // Bu render pass swapchain formatına bağlıdır — mSwapFormat burada takip
+  // edilir (recreateSwapchain format değişimini bu değere göre algılar).
+  mSwapFormat = mSwapchain.format();
+
+  VkAttachmentDescription color{};
+  color.format = mSwapFormat;
+  color.samples = VK_SAMPLE_COUNT_1_BIT;
+  // Tam ekran üçgen her pikseli baştan yazar; önceki içerik önemsiz.
+  color.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  color.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  color.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  color.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  color.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+  VkAttachmentReference colorRef{};
+  colorRef.attachment = 0;
+  colorRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+  VkSubpassDescription subpass{};
+  subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  subpass.colorAttachmentCount = 1;
+  subpass.pColorAttachments = &colorRef;
+
+  // Sunum motorunun okumasıyla bu geçişin renk eki yazmasını çakıştırma.
+  VkSubpassDependency dep{};
+  dep.srcSubpass = VK_SUBPASS_EXTERNAL;
+  dep.dstSubpass = 0;
+  dep.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dep.srcAccessMask = 0;
+  dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+  VkRenderPassCreateInfo ci{};
+  ci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+  ci.attachmentCount = 1;
+  ci.pAttachments = &color;
+  ci.subpassCount = 1;
+  ci.pSubpasses = &subpass;
+  ci.dependencyCount = 1;
+  ci.pDependencies = &dep;
+
+  if (vkCreateRenderPass(mCtx->device(), &ci, nullptr, &mPostRenderPass) != VK_SUCCESS) {
+    throw std::runtime_error("vkCreateRenderPass (post)");
+  }
+}
+
+void Renderer::createPostResources() {
+  // Set layout pipeline ömründe yaşar; yalnız ilk kurulumda yaratılır.
+  if (mPostDescSetLayout == VK_NULL_HANDLE) {
+    VkDescriptorSetLayoutBinding binding{};
+    binding.binding = 0;
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    binding.descriptorCount = 1;
+    binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutCreateInfo layoutCi{};
+    layoutCi.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutCi.bindingCount = 1;
+    layoutCi.pBindings = &binding;
+    if (vkCreateDescriptorSetLayout(mCtx->device(), &layoutCi, nullptr, &mPostDescSetLayout) !=
+        VK_SUCCESS) {
+      throw std::runtime_error("vkCreateDescriptorSetLayout (post)");
+    }
+  }
+
+  const uint32_t count = mSwapchain.imageCount();
+
+  VkDescriptorPoolSize poolSize{};
+  poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  poolSize.descriptorCount = count;
+
+  VkDescriptorPoolCreateInfo poolCi{};
+  poolCi.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  poolCi.maxSets = count;
+  poolCi.poolSizeCount = 1;
+  poolCi.pPoolSizes = &poolSize;
+  if (vkCreateDescriptorPool(mCtx->device(), &poolCi, nullptr, &mPostDescriptorPool) != VK_SUCCESS) {
+    throw std::runtime_error("vkCreateDescriptorPool (post)");
+  }
+
+  // Her swapchain image'in post-process seti kendi HDR görünümünü örnekler
+  // (imageIndex ile sahne geçişinin yazdığı HDR hedefle birebir eşleşir).
+  mPostDescriptorSets.resize(count);
+  for (uint32_t i = 0; i < count; ++i) {
+    VkDescriptorSetAllocateInfo setAi{};
+    setAi.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    setAi.descriptorPool = mPostDescriptorPool;
+    setAi.descriptorSetCount = 1;
+    setAi.pSetLayouts = &mPostDescSetLayout;
+    if (vkAllocateDescriptorSets(mCtx->device(), &setAi, &mPostDescriptorSets[i]) != VK_SUCCESS) {
+      throw std::runtime_error("vkAllocateDescriptorSets (post)");
+    }
+
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.sampler = mHdrSampler;
+    imageInfo.imageView = mHdrViews[i];
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = mPostDescriptorSets[i];
+    write.dstBinding = 0;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    write.descriptorCount = 1;
+    write.pImageInfo = &imageInfo;
+    vkUpdateDescriptorSets(mCtx->device(), 1, &write, 0, nullptr);
+  }
+}
+
+void Renderer::createPostPipeline() {
+  // Tam ekran üçgen: vertex buffer yok, gl_VertexIndex'ten üretilir.
+  VkShaderModule vert = loadShader("tonemap.vert.spv");
+  VkShaderModule frag = loadShader("tonemap.frag.spv");
+
+  VkPipelineShaderStageCreateInfo stages[2]{};
+  stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+  stages[0].module = vert;
+  stages[0].pName = "main";
+  stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+  stages[1].module = frag;
+  stages[1].pName = "main";
+
+  // Vertex girişi yok: konumlar/UV shader içinde gl_VertexIndex'ten üretilir.
+  VkPipelineVertexInputStateCreateInfo vertexInput{};
+  vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+  VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+  inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+  inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+  VkPipelineViewportStateCreateInfo viewportState{};
+  viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+  viewportState.viewportCount = 1;
+  viewportState.scissorCount = 1;
+
+  VkPipelineRasterizationStateCreateInfo raster{};
+  raster.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+  raster.polygonMode = VK_POLYGON_MODE_FILL;
+  raster.cullMode = VK_CULL_MODE_NONE; // tek büyük üçgen; kırpma anlamsız
+  raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+  raster.lineWidth = 1.0f;
+
+  VkPipelineMultisampleStateCreateInfo multisample{};
+  multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+  multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+  VkPipelineDepthStencilStateCreateInfo depth{}; // derinlik testi yok (tam ekran quad)
+  depth.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+
+  VkPipelineColorBlendAttachmentState blendAttachment{};
+  blendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                   VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+  VkPipelineColorBlendStateCreateInfo blend{};
+  blend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+  blend.attachmentCount = 1;
+  blend.pAttachments = &blendAttachment;
+
+  VkDynamicState dynamicStates[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+  VkPipelineDynamicStateCreateInfo dynamic{};
+  dynamic.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+  dynamic.dynamicStateCount = 2;
+  dynamic.pDynamicStates = dynamicStates;
+
+  VkPipelineLayoutCreateInfo layoutCi{};
+  layoutCi.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  layoutCi.setLayoutCount = 1;
+  layoutCi.pSetLayouts = &mPostDescSetLayout;
+
+  if (vkCreatePipelineLayout(mCtx->device(), &layoutCi, nullptr, &mPostPipelineLayout) != VK_SUCCESS) {
+    vkDestroyShaderModule(mCtx->device(), vert, nullptr);
+    vkDestroyShaderModule(mCtx->device(), frag, nullptr);
+    throw std::runtime_error("vkCreatePipelineLayout (post)");
+  }
+
+  VkGraphicsPipelineCreateInfo ci{};
+  ci.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+  ci.stageCount = 2;
+  ci.pStages = stages;
+  ci.pVertexInputState = &vertexInput;
+  ci.pInputAssemblyState = &inputAssembly;
+  ci.pViewportState = &viewportState;
+  ci.pRasterizationState = &raster;
+  ci.pMultisampleState = &multisample;
+  ci.pDepthStencilState = &depth;
+  ci.pColorBlendState = &blend;
+  ci.pDynamicState = &dynamic;
+  ci.layout = mPostPipelineLayout;
+  ci.renderPass = mPostRenderPass;
+  ci.subpass = 0;
+
+  const VkResult r =
+      vkCreateGraphicsPipelines(mCtx->device(), VK_NULL_HANDLE, 1, &ci, nullptr, &mPostPipeline);
+
+  vkDestroyShaderModule(mCtx->device(), vert, nullptr);
+  vkDestroyShaderModule(mCtx->device(), frag, nullptr);
+  if (r != VK_SUCCESS) throw std::runtime_error("vkCreateGraphicsPipelines (post)");
+}
+
+void Renderer::createPostFramebuffers() {
+  mPostFramebuffers.resize(mSwapchain.views().size());
+  for (size_t i = 0; i < mSwapchain.views().size(); ++i) {
+    VkImageView attachment = mSwapchain.views()[i];
+
+    VkFramebufferCreateInfo ci{};
+    ci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    ci.renderPass = mPostRenderPass;
+    ci.attachmentCount = 1;
+    ci.pAttachments = &attachment;
+    ci.width = mSwapchain.extent().width;
+    ci.height = mSwapchain.extent().height;
+    ci.layers = 1;
+    if (vkCreateFramebuffer(mCtx->device(), &ci, nullptr, &mPostFramebuffers[i]) != VK_SUCCESS) {
+      throw std::runtime_error("vkCreateFramebuffer (post)");
     }
   }
 }
@@ -648,6 +947,31 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
   }
 
   vkCmdEndRenderPass(cmd);
+
+  // --- Post-process: HDR hedefi örnekle, ACES tonemap uygula, swapchain'e yaz ---
+  VkClearValue postClear{};
+  postClear.color = {{0.0f, 0.0f, 0.0f, 1.0f}}; // loadOp DONT_CARE; yalnız API gereği dolu
+
+  VkRenderPassBeginInfo postRp{};
+  postRp.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+  postRp.renderPass = mPostRenderPass;
+  postRp.framebuffer = mPostFramebuffers[imageIndex];
+  postRp.renderArea.extent = mSwapchain.extent();
+  postRp.clearValueCount = 1;
+  postRp.pClearValues = &postClear;
+  vkCmdBeginRenderPass(cmd, &postRp, VK_SUBPASS_CONTENTS_INLINE);
+
+  // Dinamik viewport/scissor render pass sınırları arasında korunur ama
+  // netlik için burada da açıkça belirtiyoruz.
+  vkCmdSetViewport(cmd, 0, 1, &viewport);
+  vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, mPostPipeline);
+  vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, mPostPipelineLayout, 0, 1,
+                          &mPostDescriptorSets[imageIndex], 0, nullptr);
+  vkCmdDraw(cmd, 3, 1, 0, 0); // tam ekran üçgen; vertex/index buffer yok
+
+  vkCmdEndRenderPass(cmd);
   if (vkEndCommandBuffer(cmd) != VK_SUCCESS) throw std::runtime_error("vkEndCommandBuffer");
 }
 
@@ -724,6 +1048,8 @@ void Renderer::onResize() {
 void Renderer::destroySwapchainDependent() {
   for (VkFramebuffer fb : mFramebuffers) vkDestroyFramebuffer(mCtx->device(), fb, nullptr);
   mFramebuffers.clear();
+  for (VkFramebuffer fb : mPostFramebuffers) vkDestroyFramebuffer(mCtx->device(), fb, nullptr);
+  mPostFramebuffers.clear();
 
   // Depth buffer extent'e bağlı → yık, recreate'te yeniden kurulur.
   if (mDepthView) vkDestroyImageView(mCtx->device(), mDepthView, nullptr);
@@ -731,6 +1057,20 @@ void Renderer::destroySwapchainDependent() {
   if (mDepthImage) vmaDestroyImage(mCtx->allocator(), mDepthImage, mDepthAlloc);
   mDepthImage = VK_NULL_HANDLE;
   mDepthAlloc = VK_NULL_HANDLE;
+
+  // HDR renk hedefleri de extent'e bağlı (sampler hariç — o pipeline ömründe).
+  for (VkImageView v : mHdrViews) vkDestroyImageView(mCtx->device(), v, nullptr);
+  mHdrViews.clear();
+  for (size_t i = 0; i < mHdrImages.size(); ++i) {
+    vmaDestroyImage(mCtx->allocator(), mHdrImages[i], mHdrAllocs[i]);
+  }
+  mHdrImages.clear();
+  mHdrAllocs.clear();
+
+  // Post-process descriptor'ları HDR view'lara işaret eder → view'larla birlikte yık.
+  mPostDescriptorSets.clear();
+  if (mPostDescriptorPool) vkDestroyDescriptorPool(mCtx->device(), mPostDescriptorPool, nullptr);
+  mPostDescriptorPool = VK_NULL_HANDLE;
 
   // Frame UBO + descriptor'lar image sayısına bağlı.
   for (size_t i = 0; i < mFrameUboBuffers.size(); ++i) {
@@ -794,22 +1134,27 @@ void Renderer::recreateSwapchain() {
 
   mFrame = 0;
 
-  // Derinlik + frame UBO'ları yeni image sayısı/extent'e göre yeniden kur.
+  // Derinlik + HDR hedefleri + frame UBO'ları yeni image sayısı/extent'e
+  // göre yeniden kur. Sahne render pass'ı (mRenderPass) HDR formatına bağlı
+  // olduğu için swapchain format değişiminden ETKİLENMEZ — yalnız post-process
+  // (swapchain'e yazan) geçiş bundan etkilenir.
   createDepthResources();
+  createHdrResources();
   createFrameUniforms();
 
-  // Format değişmediyse pipeline kalmaya devam eder (viewport dinamik).
   if (mSwapchain.format() != mSwapFormat) {
-    METRO_WARN("Swapchain formati degisti (%u -> %u); render pass + pipeline yenileniyor",
+    METRO_WARN("Swapchain formati degisti (%u -> %u); post render pass + pipeline yenileniyor",
                static_cast<unsigned>(mSwapFormat), static_cast<unsigned>(mSwapchain.format()));
-    vkDestroyPipeline(mCtx->device(), mPipeline, nullptr);
-    mPipeline = VK_NULL_HANDLE;
-    vkDestroyRenderPass(mCtx->device(), mRenderPass, nullptr);
-    mRenderPass = VK_NULL_HANDLE;
-    createRenderPass();
-    createPipeline();
+    vkDestroyPipeline(mCtx->device(), mPostPipeline, nullptr);
+    mPostPipeline = VK_NULL_HANDLE;
+    vkDestroyRenderPass(mCtx->device(), mPostRenderPass, nullptr);
+    mPostRenderPass = VK_NULL_HANDLE;
+    createPostRenderPass(); // mSwapFormat'i günceller
+    createPostPipeline();
   }
-  createFramebuffers();
+  createFramebuffers();     // sahne (HDR+depth)
+  createPostResources();    // HDR view'lar değişti → descriptor'ları yeniden yaz
+  createPostFramebuffers(); // swapchain hedefli
 }
 
 void Renderer::shutdown() {
@@ -831,6 +1176,18 @@ void Renderer::shutdown() {
   mDescSetLayout = VK_NULL_HANDLE;
   if (mRenderPass) vkDestroyRenderPass(mCtx->device(), mRenderPass, nullptr);
   mRenderPass = VK_NULL_HANDLE;
+
+  // Post-process (tonemap) pipeline ömürlü kaynakları.
+  if (mHdrSampler) vkDestroySampler(mCtx->device(), mHdrSampler, nullptr);
+  mHdrSampler = VK_NULL_HANDLE;
+  if (mPostPipeline) vkDestroyPipeline(mCtx->device(), mPostPipeline, nullptr);
+  mPostPipeline = VK_NULL_HANDLE;
+  if (mPostPipelineLayout) vkDestroyPipelineLayout(mCtx->device(), mPostPipelineLayout, nullptr);
+  mPostPipelineLayout = VK_NULL_HANDLE;
+  if (mPostDescSetLayout) vkDestroyDescriptorSetLayout(mCtx->device(), mPostDescSetLayout, nullptr);
+  mPostDescSetLayout = VK_NULL_HANDLE;
+  if (mPostRenderPass) vkDestroyRenderPass(mCtx->device(), mPostRenderPass, nullptr);
+  mPostRenderPass = VK_NULL_HANDLE;
 
   mSwapchain.destroy(*mCtx);
 }

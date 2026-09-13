@@ -1,7 +1,11 @@
 #version 450
 // Cook-Torrance PBR (metallic-roughness): D(GGX) + Smith geometrisi +
 // Schlick Fresnel. Tek yönlü ışık + hafif ambient; doku yok — faktörler
-// push-constant'tan. Tonemap post-process zinciri gelene kadar şiddet düşük.
+// push-constant'tan. HDR offscreen hedefe (kHdrFormat) yazar; ACES tonemap
+// artık ayrı bir post-process geçişinde (tonemap.frag) uygulanıyor, bu
+// yüzden burada ışık şiddetini 1.0 üstüne çıkarmaktan çekinmeye gerek yok —
+// parlak alanlar sert kırpılmak yerine ACES eğrisiyle yumuşak biçimde
+// tepe yapar.
 layout(set = 0, binding = 0) uniform FrameUniforms {
     mat4 viewProj;
     vec4 lightDir;

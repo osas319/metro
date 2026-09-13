@@ -59,7 +59,9 @@ find_package(Vulkan REQUIRED)
 include(cmake/Shaders.cmake)
 metro_add_shader_target(
   shaders/pbr.vert
-  shaders/pbr.frag)
+  shaders/pbr.frag
+  shaders/tonemap.vert
+  shaders/tonemap.frag)
 
 # ---------------------------------------------------------------------------
 # Uygulama

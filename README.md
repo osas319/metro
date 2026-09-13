@@ -150,6 +150,7 @@ cmake/                CMake yardımcı modülleri
   - Manifest, isteğe bağlı `navmesh` ve `audio_directory` asset yollarını destekliyor.
   - `navmesh` dosyası satır başına `x z komşu...` formatında doğrulanmış grafik olarak yükleniyor; dosya belirtilmezse durak tabanlı fallback korunuyor.
   - Gerçek yaya ajanları, ses backend'i, navmesh asset yükleme ve 23 duraklı tam hat akışı tamamlandı; harici sanat asset'leri gelene kadar prosedürel/placeholder fallback korunuyor.
+  - HDR R16G16B16A16 sahne hedefi ve ACES filmic tonemap post-process geçişi eklendi.
 
 Mevcut prototipte Tren hareketi, sabit zaman adımlı fizik dünyası,
 kapı durumu ve 8 bloklu temel

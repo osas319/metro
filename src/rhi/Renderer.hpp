@@ -1,6 +1,10 @@
 #pragma once
-// Çerçeve render'ı: render pass (renk+derinlik), PBR pipeline, frame UBO
-// (descriptor set 0), per-submesh malzeme push-constant'ları, senkronizasyon.
+// Çerçeve render'ı, iki geçiş: (1) sahne — PBR pipeline HDR offscreen renk
+// hedefine (mHdrFormat, lineer) render eder; (2) post-process — tam ekran
+// üçgen, HDR hedefi örnekler, ACES filmic tonemap uygular ve swapchain'e
+// (LDR, sRGB) yazar. Bloom/SSAO/CSM gelecekte bu iki geçiş arasına veya
+// sahne geçişine ek olarak eklenecek. Frame UBO (descriptor set 0, sahne
+// geçişi), per-submesh malzeme push-constant'ları, senkronizasyon.
 // Sahne sistemi (EnTT entity render) buraya eklenerek Forward+'a evrilir.
 #include <volk.h>
 #include <vk_mem_alloc.h>
@@ -66,11 +70,16 @@ public:
   void onResize();
 
 private:
-  void createRenderPass();
+  void createRenderPass();       // sahne (PBR) render pass — HDR renk hedefine yazar
   void createDepthResources();
+  void createHdrResources();     // offscreen HDR renk hedefi (per swapchain image) + sampler
   void createFrameUniforms();   // UBO + descriptor pool/set'ler (per image)
   void createPipeline();
   void createFramebuffers();
+  void createPostRenderPass();   // tonemap render pass — swapchain'e (LDR) yazar
+  void createPostResources();    // HDR örnekleme descriptor set layout/pool/set'ler
+  void createPostPipeline();     // tam ekran üçgen + ACES tonemap pipeline
+  void createPostFramebuffers();
   void createCommandObjects();
   void createSyncObjects();
   void destroySwapchainDependent();
@@ -86,10 +95,29 @@ private:
   SDL_Window* mWindow = nullptr;
 
   Swapchain mSwapchain;
+
+  // --- Sahne geçişi (PBR): HDR offscreen hedefe render eder ---
   VkRenderPass mRenderPass = VK_NULL_HANDLE;
   VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
   VkPipeline mPipeline = VK_NULL_HANDLE;
   std::vector<VkFramebuffer> mFramebuffers;
+
+  // HDR renk hedefi (lineer, sıkıştırılmamış); swapchain image sayısı kadar,
+  // her biri kendi UBO'su gibi kendi imageIndex'iyle eşleşir.
+  static constexpr VkFormat kHdrFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+  std::vector<VkImage> mHdrImages;
+  std::vector<VmaAllocation> mHdrAllocs;
+  std::vector<VkImageView> mHdrViews;
+  VkSampler mHdrSampler = VK_NULL_HANDLE; // pipeline ömründe; extent'ten bağımsız
+
+  // --- Post-process geçişi: HDR'ı örnekleyip ACES tonemap ile swapchain'e (LDR) yazar ---
+  VkRenderPass mPostRenderPass = VK_NULL_HANDLE;
+  VkDescriptorSetLayout mPostDescSetLayout = VK_NULL_HANDLE; // pipeline ömründe
+  VkDescriptorPool mPostDescriptorPool = VK_NULL_HANDLE;
+  std::vector<VkDescriptorSet> mPostDescriptorSets; // per swapchain image (HDR görünümü)
+  VkPipelineLayout mPostPipelineLayout = VK_NULL_HANDLE;
+  VkPipeline mPostPipeline = VK_NULL_HANDLE;
+  std::vector<VkFramebuffer> mPostFramebuffers; // swapchain hedefli
 
   // Derinlik buffer'ı (extent swapchain'e bağlı)
   VkImage mDepthImage = VK_NULL_HANDLE;
