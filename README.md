@@ -59,6 +59,8 @@ terminal durağında kendiliğinden başlar.
 tren başına 320 yolcuyla sınırlıdır. Bu geçici sistem ileride navmesh ve
 istasyon hedefleriyle genişletilecektir.
 Kapasite `station.json` içindeki `passenger_capacity` alanından değiştirilebilir.
+Terminal durağında mevcut yolcular iner ve iniş sayacı simülasyon telemetrisi
+olarak tutulur.
 
 ## Klasör yapısı
 
