@@ -42,6 +42,10 @@ if [[ -n "${METRO_MODEL_PATH:-}" ]]; then
   run_args+=(-e "METRO_MODEL_PATH=${METRO_MODEL_PATH}")
 fi
 
+if [[ -n "${METRO_STATION_MANIFEST:-}" ]]; then
+  run_args+=(-e "METRO_STATION_MANIFEST=${METRO_STATION_MANIFEST}")
+fi
+
 usage() {
   cat <<EOF
 Kullanım: tools/container.sh <komut> [arg]

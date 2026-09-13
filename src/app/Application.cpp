@@ -5,6 +5,7 @@
 #include <entt/entt.hpp>
 
 #include "core/Log.hpp"
+#include "app/StationManifest.hpp"
 
 namespace metro::app {
 
@@ -13,6 +14,14 @@ struct TransformComponent {
 };
 
 bool Application::init() {
+  const char* manifestPath = std::getenv("METRO_STATION_MANIFEST");
+  StationManifest station;
+  if (!StationManifest::load(
+          manifestPath != nullptr ? manifestPath : "assets/stations/kadikoy/station.json",
+          station)) {
+    return false;
+  }
+
   entt::registry registry;
   auto entity = registry.create();
   registry.emplace<TransformComponent>(entity, 1.0f, 2.0f, 3.0f);

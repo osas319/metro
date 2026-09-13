@@ -39,6 +39,10 @@ Test/CI koşusu için: `METRO_AUTO_EXIT=5 tools/container.sh run` → uygulama
 Varsayılan örnek model yerine başka bir glTF/GLB yüklemek için:
 `METRO_MODEL_PATH=assets/stations/kadikoy/meshes/platform.glb tools/container.sh run`.
 
+İstasyon manifestini değiştirmek için `METRO_STATION_MANIFEST` kullanılabilir;
+varsayılan değer `assets/stations/kadikoy/station.json` dosyasıdır. Başlatma,
+manifestteki temel alanları doğrular ve eksik/okunamayan dosyada durur.
+
 Kamera: pencereye tıklayıp fareyi yakalayın; **WASD** yatay hareket, **Q/E**
 dikey hareket, **Shift** hızlı hareket, **ESC** fare yakalamayı bırakır.
 
