@@ -121,6 +121,7 @@ void Application::update(float dt) {
   const bool signalClear = nextBlock < mSignal.blockCount() &&
                            mSignal.canEnter(nextBlock);
   mTrain.update(dt, throttle, brake, signalClear, mRouteLength);
+  mPassengers.update(dt, mTrain.doorsOpen(), mTrain.speed() < 0.05f);
 
   if (!mMouseCaptured) return;
 
@@ -180,6 +181,8 @@ int Application::run() {
       METRO_INFO("tren: %.1f km/saat, konum %.1f m",
                  mTrain.speed() * 3.6f, mTrain.position());
       METRO_INFO("kapi: %s", mTrain.doorsOpen() ? "acik" : "kapali");
+      METRO_INFO("yolcu: %zu trende, %zu bekliyor",
+                 mPassengers.onboard(), mPassengers.waiting());
       const size_t statsBlock = static_cast<size_t>(mTrain.position() / 250.0f);
       const size_t statsNextBlock = statsBlock + 1;
       METRO_INFO("sinyal: blok %zu %s", statsNextBlock,

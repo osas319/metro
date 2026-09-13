@@ -90,7 +90,8 @@ if(BUILD_TESTING)
   add_executable(metro_sim_tests
     tests/sim_tests.cpp
     src/sim/Train.cpp
-    src/sim/Signal.cpp)
+      src/sim/Signal.cpp
+      src/sim/PassengerSystem.cpp)
   target_include_directories(metro_sim_tests PRIVATE src)
   add_test(NAME metro_sim_tests COMMAND metro_sim_tests)
 endif()

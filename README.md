@@ -53,6 +53,10 @@ bu bağımlılıksız model ileride Jolt tabanlı hat fiziğiyle değiştirilece
 Tren dururken **O** kapıları açar, **C** kapatır; kapılar açıkken çekiş
 uygulanmaz.
 
+İstasyon durağında kapılar açıkken yolcular yarım saniyede bir biner; kapasite
+tren başına 320 yolcuyla sınırlıdır. Bu geçici sistem ileride navmesh ve
+istasyon hedefleriyle genişletilecektir.
+
 ## Klasör yapısı
 
 ```

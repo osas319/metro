@@ -7,6 +7,7 @@
 #include "app/Camera.hpp"
 #include "sim/Train.hpp"
 #include "sim/Signal.hpp"
+#include "sim/PassengerSystem.hpp"
 #include <SDL3/SDL.h>
 
 namespace metro::app {
@@ -35,6 +36,7 @@ private:
   sim::Train mTrain;
   sim::BlockSignal mSignal{8};
   float mRouteLength = 2000.0f;
+  sim::PassengerSystem mPassengers;
   bool mMouseCaptured = false;
   const bool* mKeyboardState = nullptr;
 };
