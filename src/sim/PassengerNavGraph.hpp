@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 #include <vector>
 #include "sim/Route.hpp"
 
@@ -16,6 +17,7 @@ public:
 
   bool buildLinear(size_t stopCount, float routeLength);
   bool buildFromStops(const std::vector<Stop>& stops);
+  bool loadFromFile(const std::string& path);
   bool valid() const { return !mNodes.empty(); }
   size_t nodeCount() const { return mNodes.size(); }
   const Node* node(size_t index) const;

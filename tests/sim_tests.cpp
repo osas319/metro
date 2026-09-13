@@ -131,6 +131,7 @@ int main() {
       {{"A", 0.0f}, {"B", 125.0f}, {"C", 900.0f}}));
   assert(manifestNav.node(1)->z == -125.0f);
   assert(!manifestNav.buildFromStops({{"A", 0.0f}, {"B", 0.0f}}));
+  assert(!manifestNav.loadFromFile("assets/missing.nav"));
   metro::sim::PassengerAgent walker(navGraph.shortestPath(0, 3), 300.0f);
   walker.update(1.0f, navGraph);
   assert(walker.node() == 1);

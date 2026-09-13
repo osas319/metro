@@ -44,7 +44,11 @@ bool Application::init() {
   } else {
     mRoute.setStops(station.stops);
   }
-  if (!mPassengerNav.buildFromStops(mRoute.stops())) {
+  const bool navGraphReady =
+      station.navmeshPath.empty()
+          ? mPassengerNav.buildFromStops(mRoute.stops())
+          : mPassengerNav.loadFromFile(station.navmeshPath);
+  if (!navGraphReady) {
     METRO_ERROR("Yolcu navgraph olusturulamadi");
     return false;
   }

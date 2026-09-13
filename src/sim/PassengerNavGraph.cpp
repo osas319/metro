@@ -2,8 +2,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <limits>
 #include <queue>
+#include <sstream>
 
 namespace metro::sim {
 
@@ -35,6 +37,29 @@ bool PassengerNavGraph::buildFromStops(const std::vector<Stop>& stops) {
     if (i > 0) mNodes[i].neighbors.push_back(i - 1);
     if (i + 1 < stops.size()) mNodes[i].neighbors.push_back(i + 1);
   }
+  return true;
+}
+
+bool PassengerNavGraph::loadFromFile(const std::string& path) {
+  std::ifstream file(path);
+  if (!file) return false;
+  std::vector<Node> parsed;
+  std::string line;
+  while (std::getline(file, line)) {
+    if (line.empty() || line[0] == '#') continue;
+    std::istringstream stream(line);
+    Node node;
+    size_t neighbor = 0;
+    if (!(stream >> node.x >> node.z)) return false;
+    while (stream >> neighbor) node.neighbors.push_back(neighbor);
+    parsed.push_back(std::move(node));
+  }
+  if (parsed.size() < 2) return false;
+  for (const Node& node : parsed) {
+    for (const size_t neighbor : node.neighbors)
+      if (neighbor >= parsed.size()) return false;
+  }
+  mNodes = std::move(parsed);
   return true;
 }
 

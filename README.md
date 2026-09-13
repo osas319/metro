@@ -148,6 +148,7 @@ cmake/                CMake yardımcı modülleri
     `train_departed` ve `signal_changed` olayları uygulama döngüsünde tüketiliyor.
   - SDL3 audio stream backend'i olaylar için düşük seviyeli prosedürel bildirim tonu üretiyor; ses aygıtı yoksa simülasyon sessiz fallback ile devam ediyor.
   - Manifest, isteğe bağlı `navmesh` ve `audio_directory` asset yollarını destekliyor.
+  - `navmesh` dosyası satır başına `x z komşu...` formatında doğrulanmış grafik olarak yükleniyor; dosya belirtilmezse durak tabanlı fallback korunuyor.
   - Gerçek yaya ajanları, ses backend'i ve tam hat asset/streaming çalışmaları devam ediyor.
 
 Mevcut prototipte Tren hareketi, sabit zaman adımlı fizik dünyası,
