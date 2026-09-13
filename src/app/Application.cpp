@@ -124,7 +124,8 @@ void Application::update(float dt) {
                            mSignal.canEnter(nextBlock);
   float nextStop = mRouteLength;
   for (const sim::Stop& stop : mRoute.stops()) {
-    if (stop.position > mTrain.position() + 0.5f) {
+    if (stop.position > 0.5f &&
+        stop.position >= mTrain.position() - 0.5f) {
       nextStop = stop.position;
       break;
     }
@@ -136,6 +137,15 @@ void Application::update(float dt) {
                           mTrain.speed() < 0.05f;
   if (atStop || atTerminal) {
     mTrain.setDoorsOpen(true);
+    if (!atTerminal) {
+      mStopDwellSeconds += dt;
+      if (mStopDwellSeconds >= 3.0f) {
+        mTrain.setDoorsOpen(false);
+        mStopDwellSeconds = 0.0f;
+      }
+    }
+  } else {
+    mStopDwellSeconds = 0.0f;
   }
   if (atTerminal && !mTerminalServiced) {
     mPassengers.unloadAtTerminal();

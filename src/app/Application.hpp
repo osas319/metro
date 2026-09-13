@@ -40,6 +40,7 @@ private:
   sim::PassengerSystem mPassengers{320};
   sim::Route mRoute;
   bool mTerminalServiced = false;
+  float mStopDwellSeconds = 0.0f;
   bool mMouseCaptured = false;
   const bool* mKeyboardState = nullptr;
 };

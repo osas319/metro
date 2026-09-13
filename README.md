@@ -66,6 +66,8 @@ Rota, manifestteki blok sayısı ve toplam uzunluktan çok duraklı geçici bir
 çizelge üretir. Tren her ara durakta servis freniyle durur; gerçek M4 durak
 isimleri ve koordinatları geldiğinde bu üretilen çizelge veri tabanlı listeyle
 değiştirilecektir.
+Ara duraklarda kapılar 3 saniye açık kalır ve otomatik kapanır; terminal
+durağında kapılar açık bırakılır.
 
 ## Klasör yapısı
 
