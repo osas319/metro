@@ -27,7 +27,8 @@ bool Application::init() {
   mCamera.pitch = station.spawnPitch;
   mSignal.resize(station.blockCount);
   mRouteLength = station.routeLength;
-  mPassengers = sim::PassengerSystem(station.passengerCapacity);
+  mPassengers = sim::PassengerSystem(station.passengerCapacity,
+                                     station.initialWaitingPassengers);
   if (station.stops.empty()) {
     mRoute.buildBlockStops(station.blockCount, station.routeLength);
   } else {

@@ -83,5 +83,6 @@ int main() {
   assert(station.stops.front().dwellSeconds == 3.0f);
   assert(station.stops.back().dwellSeconds == 0.0f);
   assert(station.modelPath == "assets/box.glb");
+  assert(station.initialWaitingPassengers == 24);
   return 0;
 }

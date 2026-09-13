@@ -6,7 +6,8 @@ namespace metro::sim {
 
 class PassengerSystem {
 public:
-  explicit PassengerSystem(size_t capacity = 320) : mCapacity(capacity) {}
+  explicit PassengerSystem(size_t capacity = 320, size_t waiting = 24)
+      : mCapacity(capacity), mWaiting(waiting) {}
 
   void update(float dt, bool doorsOpen, bool trainStopped,
               bool allowBoarding = true);

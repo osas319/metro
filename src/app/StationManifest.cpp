@@ -144,6 +144,11 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
       passengerCapacity >= 1.0f) {
     parsed.passengerCapacity = static_cast<size_t>(passengerCapacity);
   }
+  float initialWaiting = static_cast<float>(parsed.initialWaitingPassengers);
+  if (readNumber(source, "initial_waiting_passengers", initialWaiting) &&
+      initialWaiting >= 0.0f) {
+    parsed.initialWaitingPassengers = static_cast<size_t>(initialWaiting);
+  }
   float stopDwellSeconds = parsed.stopDwellSeconds;
   if (readNumber(source, "stop_dwell_seconds", stopDwellSeconds) &&
       stopDwellSeconds >= 0.0f) {
