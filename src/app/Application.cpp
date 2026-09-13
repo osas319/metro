@@ -65,6 +65,12 @@ void Application::handleEvent(const SDL_Event& e) {
         SDL_SetWindowRelativeMouseMode(mWindow, mMouseCaptured);
       }
       break;
+    case SDL_EVENT_KEY_DOWN:
+      if (e.key.key == SDLK_ESCAPE && mMouseCaptured) {
+        mMouseCaptured = false;
+        SDL_SetWindowRelativeMouseMode(mWindow, false);
+      }
+      break;
     case SDL_EVENT_MOUSE_MOTION:
       if (mMouseCaptured) {
         mCamera.yaw += e.motion.xrel * mCamera.mouseSensitivity;
@@ -88,10 +94,16 @@ void Application::update(float dt) {
   }
 
   float velocity = mCamera.moveSpeed * dt;
+  if (mKeyboardState[SDL_SCANCODE_LSHIFT] ||
+      mKeyboardState[SDL_SCANCODE_RSHIFT]) {
+    velocity *= 3.0f;
+  }
   if (mKeyboardState[SDL_SCANCODE_W]) mCamera.position += mCamera.getFront() * velocity;
   if (mKeyboardState[SDL_SCANCODE_S]) mCamera.position -= mCamera.getFront() * velocity;
   if (mKeyboardState[SDL_SCANCODE_A]) mCamera.position -= mCamera.getRight() * velocity;
   if (mKeyboardState[SDL_SCANCODE_D]) mCamera.position += mCamera.getRight() * velocity;
+  if (mKeyboardState[SDL_SCANCODE_Q]) mCamera.position.y -= velocity;
+  if (mKeyboardState[SDL_SCANCODE_E]) mCamera.position.y += velocity;
 }
 
 int Application::run() {
