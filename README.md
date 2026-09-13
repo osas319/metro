@@ -139,7 +139,7 @@ cmake/                CMake yardımcı modülleri
 - [x] Aşama 1: kamera + glTF mesh yükleme + PBR (metallic-roughness)
 - [x] Aşama 2: Jolt fiziği + Kadıköy prosedürel istasyon sahnesi
 - [x] Aşama 3: tren fiziği, sinyal/blok sistemi, kapı/peron mantığı
-- [ ] Aşama 4: yolcu simülasyonu (navmesh kalabalık), ses, tam hat
+- [x] Aşama 4: yolcu simülasyonu (navmesh kalabalık), ses, tam hat
   - Yolcu hedefleri ve doğrusal navgraph tamamlandı.
   - Navgraph üzerinde deterministik yürüyen yolcu ajanları eklendi.
   - Yürüyen ajanların interpolasyon konumları placeholder sahnesinde cyan marker olarak çiziliyor.
@@ -149,7 +149,7 @@ cmake/                CMake yardımcı modülleri
   - SDL3 audio stream backend'i olaylar için düşük seviyeli prosedürel bildirim tonu üretiyor; ses aygıtı yoksa simülasyon sessiz fallback ile devam ediyor.
   - Manifest, isteğe bağlı `navmesh` ve `audio_directory` asset yollarını destekliyor.
   - `navmesh` dosyası satır başına `x z komşu...` formatında doğrulanmış grafik olarak yükleniyor; dosya belirtilmezse durak tabanlı fallback korunuyor.
-  - Gerçek yaya ajanları, ses backend'i ve tam hat asset/streaming çalışmaları devam ediyor.
+  - Gerçek yaya ajanları, ses backend'i, navmesh asset yükleme ve 23 duraklı tam hat akışı tamamlandı; harici sanat asset'leri gelene kadar prosedürel/placeholder fallback korunuyor.
 
 Mevcut prototipte Tren hareketi, sabit zaman adımlı fizik dünyası,
 kapı durumu ve 8 bloklu temel
