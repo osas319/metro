@@ -52,6 +52,7 @@ Kullanım: tools/container.sh <komut> [arg]
   image          Geliştirme imajını derle
   configure      CMake configure + Ninja üretimi (arg: build type, default Debug)
   build          Derle (arg'ler cmake --build'e geçer)
+  test           Simülasyon testlerini çalıştır
   shell          İnteraktif bash (repo /work altında mount'lu)
   run            Uygulamayı çalıştır (arg'ler exe'ye geçer)
   vulkaninfo     GPU / sürücü doğrulaması
@@ -67,6 +68,8 @@ case "${cmd}" in
                 -DCMAKE_BUILD_TYPE="${1:-Debug}" ;;
   build)      podman run "${run_args[@]}" "${IMAGE}" \
                 cmake --build /work/build -j"$(nproc)" "$@" ;;
+  test)       podman run "${run_args[@]}" "${IMAGE}" \
+                ctest --test-dir /work/build --output-on-failure "$@" ;;
   shell)      podman run -it "${run_args[@]}" "${IMAGE}" ;;
   run)        podman run "${run_args[@]}" "${IMAGE}" /work/build/metro "$@" ;;
   vulkaninfo) podman run "${run_args[@]}" "${IMAGE}" vulkaninfo --summary ;;

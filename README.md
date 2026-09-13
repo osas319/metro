@@ -29,6 +29,7 @@ tools/container.sh image        # geliştirme imajını derle (bir kez)
 tools/container.sh vulkaninfo   # container içinden GPU görünür mü? (RADV)
 tools/container.sh configure    # cmake configure (Debug)
 tools/container.sh build        # derle
+tools/container.sh test         # simülasyon çekirdeği testleri
 tools/container.sh run          # çalıştır
 tools/container.sh shell        # container içinde bash
 ```
