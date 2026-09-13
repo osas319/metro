@@ -133,7 +133,7 @@ void Application::update(float dt) {
     mSignal.setOccupied(block, block == currentBlock);
   }
   const size_t nextBlock = currentBlock + 1;
-  const bool signalClear = nextBlock < mSignal.blockCount() &&
+  const bool signalClear = nextBlock >= mSignal.blockCount() ||
                            mSignal.canEnter(nextBlock);
   const sim::Stop& upcomingStop = mRoute.nextStop(mTrain.position(), mRouteLength);
   const float stopTarget = upcomingStop.position;
