@@ -64,7 +64,10 @@ void main() {
     float D = distributionGGX(NdotH, alpha);
     float G = geometrySmith(NdotV, NdotL, k);
 
-    vec3 specular = (D * G * F) / max(4.0 * NdotV * NdotL, 1e-4);
+    vec3 specular = vec3(0.0);
+    if (NdotL > 0.0) {
+        specular = (D * G * F) / max(4.0 * NdotV * NdotL, 1e-4);
+    }
     // metalde difüz yok; enerji korunumu (1-F) ile
     vec3 diffuse = (1.0 - F) * (1.0 - metallic) * albedo / PI;
 

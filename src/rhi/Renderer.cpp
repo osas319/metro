@@ -516,17 +516,17 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex, con
   const SceneInstance instances[] = {
       {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)),
                   glm::vec3(10.0f, 0.15f, 40.0f)),
-       glm::vec4(0.18f, 0.20f, 0.23f, 1.0f), 0.9f},
+       glm::vec4(0.32f, 0.36f, 0.42f, 1.0f), 0.9f},
       {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-4.0f, -0.2f, 0.0f)),
                   glm::vec3(0.8f, 0.3f, 40.0f)),
-       glm::vec4(0.25f, 0.28f, 0.32f, 1.0f), 0.75f},
+       glm::vec4(0.55f, 0.58f, 0.62f, 1.0f), 0.75f},
       {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, -0.2f, 0.0f)),
                   glm::vec3(0.8f, 0.3f, 40.0f)),
-       glm::vec4(0.25f, 0.28f, 0.32f, 1.0f), 0.75f},
+       glm::vec4(0.55f, 0.58f, 0.62f, 1.0f), 0.75f},
       {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 4.0f, 0.0f)),
                   glm::vec3(10.0f, 0.15f, 40.0f)),
-       glm::vec4(0.12f, 0.14f, 0.18f, 1.0f), 0.95f},
-      {glm::mat4(1.0f), glm::vec4(0.72f, 0.10f, 0.06f, 1.0f), 0.55f},
+       glm::vec4(0.20f, 0.24f, 0.30f, 1.0f), 0.95f},
+      {glm::mat4(1.0f), glm::vec4(0.12f, 0.42f, 0.85f, 1.0f), 0.55f},
   };
   mModel.bind(cmd);
   for (const SceneInstance& instance : instances) {

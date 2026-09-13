@@ -29,7 +29,7 @@ void main() {
     vWorldPos = world.xyz;
     // Uniform ölçek varsayımı (istasyon assetleri); uniform-olmayan
     // ölçeklerde inverse-transpose gerekir.
-    vNormal = mat3(push.model) * inNormal;
+    vNormal = normalize(mat3(push.model) * inNormal);
     vTexCoord = inTexCoord;
     gl_Position = frame.viewProj * world;
 }
