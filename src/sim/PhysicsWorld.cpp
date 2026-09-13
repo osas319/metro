@@ -2,10 +2,93 @@
 
 #include <algorithm>
 #include <cmath>
+#include <thread>
+
+#include <Jolt/Jolt.h>
+#include <Jolt/Core/Factory.h>
+#include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/RegisterTypes.h>
 
 #include "sim/Train.hpp"
 
 namespace metro::sim {
+
+namespace {
+
+class ObjectLayerPairFilter final : public JPH::ObjectLayerPairFilter {
+public:
+  bool ShouldCollide(JPH::ObjectLayer object1,
+                     JPH::ObjectLayer object2) const override {
+    return object1 == 0 ? object2 == 1 : object1 == 1;
+  }
+};
+
+class BroadPhaseLayerInterface final : public JPH::BroadPhaseLayerInterface {
+public:
+  BroadPhaseLayerInterface() {
+    mLayers[0] = JPH::BroadPhaseLayer(0);
+    mLayers[1] = JPH::BroadPhaseLayer(1);
+  }
+
+  uint GetNumBroadPhaseLayers() const override { return 2; }
+  JPH::BroadPhaseLayer GetBroadPhaseLayer(JPH::ObjectLayer layer) const override {
+    return mLayers[layer < 2 ? layer : 0];
+  }
+  const char* GetBroadPhaseLayerName(
+      JPH::BroadPhaseLayer layer) const override {
+    return layer == JPH::BroadPhaseLayer(1) ? "MOVING" : "NON_MOVING";
+  }
+
+private:
+  JPH::BroadPhaseLayer mLayers[2];
+};
+
+class ObjectVsBroadPhaseLayerFilter final
+    : public JPH::ObjectVsBroadPhaseLayerFilter {
+public:
+  bool ShouldCollide(JPH::ObjectLayer objectLayer,
+                     JPH::BroadPhaseLayer broadPhaseLayer) const override {
+    return objectLayer == 0 ? broadPhaseLayer == JPH::BroadPhaseLayer(1)
+                            : true;
+  }
+};
+
+void EnsureJoltInitialized() {
+  static const bool initialized = [] {
+    JPH::RegisterDefaultAllocator();
+    JPH::Factory::sInstance = new JPH::Factory();
+    JPH::RegisterTypes();
+    return true;
+  }();
+  (void)initialized;
+}
+
+} // namespace
+
+struct PhysicsWorld::JoltState {
+  JoltState()
+      : tempAllocator(4 * 1024 * 1024),
+        jobSystem(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers,
+                  std::max(1u, std::thread::hardware_concurrency() - 1)),
+        physicsSystem() {
+    broadPhaseLayerInterface = std::make_unique<BroadPhaseLayerInterface>();
+    objectVsBroadPhaseLayerFilter =
+        std::make_unique<ObjectVsBroadPhaseLayerFilter>();
+    objectLayerPairFilter = std::make_unique<ObjectLayerPairFilter>();
+    physicsSystem.Init(4096, 0, 4096, 4096, *broadPhaseLayerInterface,
+                       *objectVsBroadPhaseLayerFilter, *objectLayerPairFilter);
+  }
+
+  JPH::TempAllocatorImpl tempAllocator;
+  JPH::JobSystemThreadPool jobSystem;
+  JPH::PhysicsSystem physicsSystem;
+  std::unique_ptr<BroadPhaseLayerInterface> broadPhaseLayerInterface;
+  std::unique_ptr<ObjectVsBroadPhaseLayerFilter>
+      objectVsBroadPhaseLayerFilter;
+  std::unique_ptr<ObjectLayerPairFilter> objectLayerPairFilter;
+};
 
 PhysicsWorld::PhysicsWorld() : PhysicsWorld(Settings{}) {}
 
@@ -14,7 +97,13 @@ PhysicsWorld::PhysicsWorld(Settings settings) : mSettings(settings) {
     mSettings.fixedStep = 1.0f / 60.0f;
   }
   if (mSettings.maxSubsteps == 0) mSettings.maxSubsteps = 1;
+  EnsureJoltInitialized();
+  mJolt = std::make_unique<JoltState>();
 }
+
+PhysicsWorld::~PhysicsWorld() = default;
+PhysicsWorld::PhysicsWorld(PhysicsWorld&&) noexcept = default;
+PhysicsWorld& PhysicsWorld::operator=(PhysicsWorld&&) noexcept = default;
 
 void PhysicsWorld::reset(float trainPosition) {
   mAccumulator = 0.0f;
@@ -32,6 +121,8 @@ void PhysicsWorld::step(float frameDelta, Train& train, bool throttle,
   while (mAccumulator >= mSettings.fixedStep &&
          substeps++ < mSettings.maxSubsteps) {
     mPreviousTrainPosition = train.position();
+    mJolt->physicsSystem.Update(mSettings.fixedStep, 1, &mJolt->tempAllocator,
+                                &mJolt->jobSystem);
     train.update(mSettings.fixedStep, throttle, brake, signalClear,
                  routeLength);
     mAccumulator -= mSettings.fixedStep;

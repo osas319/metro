@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
 
 namespace metro::sim {
 
@@ -15,6 +16,11 @@ public:
 
   PhysicsWorld();
   explicit PhysicsWorld(Settings settings);
+  ~PhysicsWorld();
+  PhysicsWorld(PhysicsWorld&&) noexcept;
+  PhysicsWorld& operator=(PhysicsWorld&&) noexcept;
+  PhysicsWorld(const PhysicsWorld&) = delete;
+  PhysicsWorld& operator=(const PhysicsWorld&) = delete;
 
   void reset(float trainPosition = 0.0f);
   void step(float frameDelta, Train& train, bool throttle, bool brake,
@@ -27,6 +33,8 @@ private:
   Settings mSettings;
   float mAccumulator = 0.0f;
   float mPreviousTrainPosition = 0.0f;
+  struct JoltState;
+  std::unique_ptr<JoltState> mJolt;
 };
 
 } // namespace metro::sim
