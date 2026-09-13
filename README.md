@@ -88,6 +88,11 @@ cmake/                CMake yardımcı modülleri
 - [ ] Aşama 3: tren fiziği, sinyal/blok sistemi, kapı/peron mantığı
 - [ ] Aşama 4: yolcu simülasyonu (navmesh kalabalık), ses, tam hat
 
+Mevcut prototipte Jolt öncesi tren hareketi, kapı durumu ve 8 bloklu temel
+işgal/sinyal mantığı çalışır durumdadır. Bunlar Faz 2-3 için geçici çekirdek
+simülasyon katmanıdır; gerçek hat geometrisi ve fizik entegrasyonu geldiğinde
+yerine genişletilecektir.
+
 Kadıköy asset pipeline başlangıç manifesti:
 `assets/stations/kadikoy/station.json`. Manifest metre birimini, glTF eksen
 konvansiyonunu, asset klasörlerini ve kamera/peron başlangıç noktalarını tanımlar;
