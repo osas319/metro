@@ -18,6 +18,7 @@ public:
   size_t addWalkingAgent(size_t start, size_t goal, float speed = 1.0f);
   void updateWalkingAgents(float dt);
   const std::vector<PassengerAgent>& walkingAgents() const { return mAgents; }
+  size_t activeWalkingAgents() const;
   void clearWalkingAgents() { mAgents.clear(); }
   void serviceStop(size_t stopIndex, size_t stopCount, bool terminal);
   void setBoardingDestination(size_t destinationStop);

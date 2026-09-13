@@ -37,6 +37,14 @@ void PassengerSystem::updateWalkingAgents(float dt) {
   for (auto& agent : mAgents) agent.update(dt, mNavGraph);
 }
 
+size_t PassengerSystem::activeWalkingAgents() const {
+  size_t active = 0;
+  for (const auto& agent : mAgents) {
+    if (agent.state() == PassengerAgent::State::Walking) ++active;
+  }
+  return active;
+}
+
 void PassengerSystem::unloadAtTerminal() {
   mAlightedTotal += mOnboard;
   mWaiting += mOnboard;

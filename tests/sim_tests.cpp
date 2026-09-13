@@ -146,6 +146,7 @@ int main() {
   assert(walkingPassengers.walkingAgents().front().node() == 2);
   assert(walkingPassengers.walkingAgents().front().state() ==
          metro::sim::PassengerAgent::State::Arrived);
+  assert(walkingPassengers.activeWalkingAgents() == 0);
   metro::audio::AudioEventQueue audioEvents;
   audioEvents.push({metro::audio::EventType::DoorOpened, 1});
   audioEvents.push({metro::audio::EventType::StopArrived, 1});
