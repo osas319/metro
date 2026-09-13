@@ -1,5 +1,7 @@
 #pragma once
 
+#include "sim/PassengerAgent.hpp"
+
 #include <cstddef>
 #include <vector>
 
@@ -12,6 +14,11 @@ public:
 
   void update(float dt, bool doorsOpen, bool trainStopped,
               bool allowBoarding = true);
+  void setNavGraph(const PassengerNavGraph& graph) { mNavGraph = graph; }
+  size_t addWalkingAgent(size_t start, size_t goal, float speed = 1.0f);
+  void updateWalkingAgents(float dt);
+  const std::vector<PassengerAgent>& walkingAgents() const { return mAgents; }
+  void clearWalkingAgents() { mAgents.clear(); }
   void serviceStop(size_t stopIndex, size_t stopCount, bool terminal);
   void setBoardingDestination(size_t destinationStop);
   void unloadAtTerminal();
@@ -31,6 +38,8 @@ private:
   float mTransferTimer = 0.0f;
   size_t mBoardingDestination = 1;
   std::vector<size_t> mDestinationCounts;
+  PassengerNavGraph mNavGraph;
+  std::vector<PassengerAgent> mAgents;
 };
 
 } // namespace metro::sim

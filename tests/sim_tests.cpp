@@ -126,6 +126,24 @@ int main() {
   const auto navPath = navGraph.shortestPath(0, 3);
   assert((navPath == std::vector<size_t>{0, 1, 2, 3}));
   assert(navGraph.shortestPath(3, 3).size() == 1);
+  metro::sim::PassengerAgent walker(navGraph.shortestPath(0, 3), 300.0f);
+  walker.update(1.0f, navGraph);
+  assert(walker.node() == 1);
+  assert(walker.progress() == 0.0f);
+  assert(walker.state() == metro::sim::PassengerAgent::State::Walking);
+  walker.update(2.0f, navGraph);
+  assert(walker.node() == 3);
+  assert(walker.progress() == 1.0f);
+  assert(walker.state() == metro::sim::PassengerAgent::State::Arrived);
+  metro::sim::PassengerSystem walkingPassengers;
+  walkingPassengers.setNavGraph(navGraph);
+  assert(walkingPassengers.addWalkingAgent(0, 2, 300.0f) == 0);
+  assert(walkingPassengers.addWalkingAgent(3, 99) ==
+         std::numeric_limits<size_t>::max());
+  walkingPassengers.updateWalkingAgents(2.0f);
+  assert(walkingPassengers.walkingAgents().front().node() == 2);
+  assert(walkingPassengers.walkingAgents().front().state() ==
+         metro::sim::PassengerAgent::State::Arrived);
   metro::audio::AudioEventQueue audioEvents;
   audioEvents.push({metro::audio::EventType::DoorOpened, 1});
   audioEvents.push({metro::audio::EventType::StopArrived, 1});

@@ -1,11 +1,13 @@
 #include "sim/PassengerSystem.hpp"
 
 #include <algorithm>
+#include <limits>
 
 namespace metro::sim {
 
 void PassengerSystem::update(float dt, bool doorsOpen, bool trainStopped,
                              bool allowBoarding) {
+  updateWalkingAgents(dt);
   if (!doorsOpen || !trainStopped || !allowBoarding) return;
 
   mTransferTimer += dt;
@@ -21,6 +23,18 @@ void PassengerSystem::update(float dt, bool doorsOpen, bool trainStopped,
       ++mDestinationCounts[mBoardingDestination];
     }
   }
+}
+
+size_t PassengerSystem::addWalkingAgent(size_t start, size_t goal,
+                                        float speed) {
+  const auto path = mNavGraph.shortestPath(start, goal);
+  if (path.empty()) return std::numeric_limits<size_t>::max();
+  mAgents.emplace_back(path, speed);
+  return mAgents.size() - 1;
+}
+
+void PassengerSystem::updateWalkingAgents(float dt) {
+  for (auto& agent : mAgents) agent.update(dt, mNavGraph);
 }
 
 void PassengerSystem::unloadAtTerminal() {

@@ -48,6 +48,7 @@ bool Application::init() {
     METRO_ERROR("Yolcu navgraph olusturulamadi");
     return false;
   }
+  mPassengers.setNavGraph(mPassengerNav);
   mStopDwellSecondsLimit = station.stopDwellSeconds;
   mTrain.setParameters(station.trainParameters);
   mBlockLength = station.routeLength /

@@ -99,6 +99,7 @@ if(BUILD_TESTING)
     src/sim/Train.cpp
       src/sim/Signal.cpp
       src/sim/PassengerSystem.cpp
+        src/sim/PassengerAgent.cpp
         src/sim/Route.cpp
         src/sim/PhysicsWorld.cpp
           src/sim/PassengerNavGraph.cpp
