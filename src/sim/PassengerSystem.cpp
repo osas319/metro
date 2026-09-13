@@ -16,6 +16,9 @@ void PassengerSystem::update(float dt, bool doorsOpen, bool trainStopped,
       ++mOnboard;
       --mWaiting;
       ++mBoardedTotal;
+      if (mDestinationCounts.size() <= mBoardingDestination)
+        mDestinationCounts.resize(mBoardingDestination + 1);
+      ++mDestinationCounts[mBoardingDestination];
     }
   }
 }
@@ -25,6 +28,7 @@ void PassengerSystem::unloadAtTerminal() {
   mWaiting += mOnboard;
   mOnboard = 0;
   mTransferTimer = 0.0f;
+  mDestinationCounts.clear();
 }
 
 void PassengerSystem::serviceStop(size_t stopIndex, size_t stopCount,
@@ -35,12 +39,19 @@ void PassengerSystem::serviceStop(size_t stopIndex, size_t stopCount,
   }
   if (stopCount < 2 || stopIndex == 0 || stopIndex >= stopCount - 1) return;
 
-  const size_t alighting = std::min(mOnboard, mOnboard / 8 + 1);
-  mOnboard -= alighting;
+  const size_t alighting =
+      stopIndex < mDestinationCounts.size() ? mDestinationCounts[stopIndex] : 0;
+  if (alighting == 0) return;
+  mDestinationCounts[stopIndex] = 0;
+  mOnboard -= std::min(mOnboard, alighting);
   mWaiting += alighting;
   mAlightedTotal += alighting;
   mAlightedAtStops += alighting;
   mTransferTimer = 0.0f;
+}
+
+void PassengerSystem::setBoardingDestination(size_t destinationStop) {
+  mBoardingDestination = destinationStop;
 }
 
 } // namespace metro::sim

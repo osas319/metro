@@ -116,6 +116,7 @@ int main() {
   assert(stopPassengers.onboard() < 8);
   stopPassengers.serviceStop(3, 4, true);
   assert(stopPassengers.onboard() == 0);
+  stopPassengers.setBoardingDestination(2);
 
   metro::sim::PassengerNavGraph navGraph;
   assert(navGraph.buildLinear(4, 900.0f));

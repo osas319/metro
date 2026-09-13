@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <vector>
 
 namespace metro::sim {
 
@@ -12,6 +13,7 @@ public:
   void update(float dt, bool doorsOpen, bool trainStopped,
               bool allowBoarding = true);
   void serviceStop(size_t stopIndex, size_t stopCount, bool terminal);
+  void setBoardingDestination(size_t destinationStop);
   void unloadAtTerminal();
   size_t onboard() const { return mOnboard; }
   size_t waiting() const { return mWaiting; }
@@ -27,6 +29,8 @@ private:
   size_t mAlightedTotal = 0;
   size_t mAlightedAtStops = 0;
   float mTransferTimer = 0.0f;
+  size_t mBoardingDestination = 1;
+  std::vector<size_t> mDestinationCounts;
 };
 
 } // namespace metro::sim

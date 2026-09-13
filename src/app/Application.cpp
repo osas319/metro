@@ -193,6 +193,8 @@ void Application::update(float dt) {
         servicedStop != mLastServicedStop) {
       mPassengers.serviceStop(servicedStop, mRoute.stopCount(),
                               servicedStop + 1 == mRoute.stopCount());
+      if (servicedStop + 1 < mRoute.stopCount())
+        mPassengers.setBoardingDestination(servicedStop + 1);
       mLastServicedStop = servicedStop;
     }
     if (!atTerminal) {
