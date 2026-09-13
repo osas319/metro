@@ -506,20 +506,42 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex, con
   vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1,
                           &mDescriptorSets[imageIndex], 0, nullptr);
 
-  // Model: tek model, N submesh; her submesh kendi malzeme faktörleriyle.
-  // Sahne sistemi gelince bu döngü entity listesi üzerinden dönecek.
+  // Geçici istasyon: gerçek asset'ler gelene kadar aynı glTF mesh'i zemin,
+  // peron ve tavan placeholder'larına dönüştürülür.
+  struct SceneInstance {
+    glm::mat4 transform;
+    glm::vec4 color;
+    float roughness;
+  };
+  const SceneInstance instances[] = {
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)),
+                  glm::vec3(10.0f, 0.15f, 40.0f)),
+       glm::vec4(0.18f, 0.20f, 0.23f, 1.0f), 0.9f},
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-4.0f, -0.2f, 0.0f)),
+                  glm::vec3(0.8f, 0.3f, 40.0f)),
+       glm::vec4(0.25f, 0.28f, 0.32f, 1.0f), 0.75f},
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, -0.2f, 0.0f)),
+                  glm::vec3(0.8f, 0.3f, 40.0f)),
+       glm::vec4(0.25f, 0.28f, 0.32f, 1.0f), 0.75f},
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 4.0f, 0.0f)),
+                  glm::vec3(10.0f, 0.15f, 40.0f)),
+       glm::vec4(0.12f, 0.14f, 0.18f, 1.0f), 0.95f},
+      {glm::mat4(1.0f), glm::vec4(0.72f, 0.10f, 0.06f, 1.0f), 0.55f},
+  };
   mModel.bind(cmd);
-  for (size_t i = 0; i < mModel.subMeshCount(); ++i) {
-    const SubMesh& sub = mModel.subMesh(i);
-    ModelPush push{};
-    push.model = glm::mat4(1.0f); // kimlik — transform'lar EnTT ile gelene kadar
-    push.baseColor = glm::vec4(sub.baseColor[0], sub.baseColor[1], sub.baseColor[2], sub.baseColor[3]);
-    push.metallic = sub.metallic;
-    push.roughness = sub.roughness;
-    vkCmdPushConstants(cmd, mPipelineLayout,
-                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                       0, sizeof(ModelPush), &push);
-    mModel.drawSubMesh(cmd, i);
+  for (const SceneInstance& instance : instances) {
+    for (size_t i = 0; i < mModel.subMeshCount(); ++i) {
+      const SubMesh& sub = mModel.subMesh(i);
+      ModelPush push{};
+      push.model = instance.transform;
+      push.baseColor = instance.color;
+      push.metallic = sub.metallic;
+      push.roughness = instance.roughness;
+      vkCmdPushConstants(cmd, mPipelineLayout,
+                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                         0, sizeof(ModelPush), &push);
+      mModel.drawSubMesh(cmd, i);
+    }
   }
 
   vkCmdEndRenderPass(cmd);
