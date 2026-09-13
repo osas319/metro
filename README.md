@@ -59,7 +59,9 @@ dikey hareket, **Shift** hızlı hareket, **ESC** fare yakalamayı bırakır.
 
 Tren prototipi: **Yukarı ok** çekiş, **Aşağı ok** servis freni uygular.
 Model 0-80 km/saat aralığında hızlanır ve konumu metre cinsinden ilerletir;
-bu bağımlılıksız model ileride Jolt tabanlı hat fiziğiyle değiştirilecektir.
+bu kontrol modeli Jolt'un kinematik tren gövdesine fixed-step içinde senkronlanır.
+Jolt dünyası zemin ve peron çarpışma hacimlerini de taşır; ray kısıtları ve
+gerçek dinamik tren gövdesi sonraki fizik alt adımında eklenecektir.
 Tren dururken **O** kapıları açar, **C** kapatır; kapılar açıkken çekiş
 uygulanmaz.
 Terminale ulaşan tren otomatik durur ve kapılarını açar; yolcu transferi
