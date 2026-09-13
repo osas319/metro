@@ -58,6 +58,7 @@ bool Application::init() {
   if (!mRenderer.init(mContext, mWindow)) return false;
 
   METRO_INFO("Pencere acildi; dongu basliyor (kapatmak icin pencereyi kapat)");
+  METRO_INFO("Kontroller: Yukari=cekis Asagi=fren O/C=kapi Sol tik=fare ESC=serbest");
   return true;
 }
 
