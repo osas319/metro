@@ -68,6 +68,11 @@ void EnsureJoltInitialized() {
   (void)initialized;
 }
 
+unsigned JoltWorkerCount() {
+  const unsigned hardwareThreads = std::thread::hardware_concurrency();
+  return hardwareThreads > 1 ? hardwareThreads - 1 : 1;
+}
+
 } // namespace
 
 struct PhysicsWorld::JoltState {
@@ -75,7 +80,7 @@ struct PhysicsWorld::JoltState {
             float routeLength, float platformWidth)
       : tempAllocator(4 * 1024 * 1024),
         jobSystem(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers,
-                  std::max(1u, std::thread::hardware_concurrency() - 1)),
+                JoltWorkerCount()),
         physicsSystem() {
     broadPhaseLayerInterface = std::make_unique<BroadPhaseLayerInterface>();
     objectVsBroadPhaseLayerFilter =
