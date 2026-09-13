@@ -290,6 +290,8 @@ int Application::run() {
       METRO_INFO("kapi: %s", mTrain.doorsOpen() ? "acik" : "kapali");
       METRO_INFO("yolcu: %zu trende, %zu bekliyor",
                  mPassengers.onboard(), mPassengers.waiting());
+      METRO_INFO("yuruyen yolcu: %zu aktif",
+                 mPassengers.activeWalkingAgents());
       const size_t statsBlock =
           std::min(static_cast<size_t>(mTrain.position() / mBlockLength),
                    mSignal.blockCount() - 1);
