@@ -47,6 +47,9 @@ int main() {
   assert(route.stopCount() == 4);
   assert(route.stops().front().position == 0.0f);
   assert(route.stops().back().position == 900.0f);
+  assert(route.nextStopPosition(0.0f, 900.0f) == 300.0f);
+  assert(route.nextStopPosition(300.0f, 900.0f) == 300.0f);
+  assert(route.nextStopPosition(900.0f, 900.0f) == 900.0f);
   signal.setOccupied(1, true);
   assert(!signal.canEnter(1));
   signal.resize(5);

@@ -122,14 +122,7 @@ void Application::update(float dt) {
   const size_t nextBlock = currentBlock + 1;
   const bool signalClear = nextBlock < mSignal.blockCount() &&
                            mSignal.canEnter(nextBlock);
-  float nextStop = mRouteLength;
-  for (const sim::Stop& stop : mRoute.stops()) {
-    if (stop.position > 0.5f &&
-        stop.position >= mTrain.position() - 0.5f) {
-      nextStop = stop.position;
-      break;
-    }
-  }
+  const float nextStop = mRoute.nextStopPosition(mTrain.position(), mRouteLength);
   const bool atStop = mTrain.position() >= nextStop - 0.5f &&
                       mTrain.speed() < 0.05f;
   mTrain.update(dt, throttle, brake, signalClear, nextStop);

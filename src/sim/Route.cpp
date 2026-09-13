@@ -17,4 +17,13 @@ void Route::buildBlockStops(size_t blockCount, float routeLength) {
   mStops.push_back({"Sabiha Gokcen", routeLength});
 }
 
+float Route::nextStopPosition(float currentPosition, float routeLength) const {
+  for (const Stop& stop : mStops) {
+    if (stop.position > 0.5f && stop.position >= currentPosition - 0.5f) {
+      return stop.position;
+    }
+  }
+  return routeLength;
+}
+
 } // namespace metro::sim
