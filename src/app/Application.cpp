@@ -197,6 +197,7 @@ int Application::run() {
     const Uint64 nowNs = SDL_GetTicksNS();
     float dt = static_cast<float>(nowNs - lastFrameNs) / 1e9f;
     lastFrameNs = nowNs;
+    dt = std::min(dt, 0.1f);
 
     SDL_Event e;
     while (SDL_PollEvent(&e)) handleEvent(e);
