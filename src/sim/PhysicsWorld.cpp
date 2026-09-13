@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 
@@ -95,6 +96,8 @@ struct PhysicsWorld::JoltState {
         groundShape.Create().Get(), JPH::RVec3(0.0, -1.5, 0.0),
         JPH::Quat::sIdentity(), JPH::EMotionType::Static, 0);
     groundBody = bodies.CreateAndAddBody(groundSettings, JPH::EActivation::DontActivate);
+    if (groundBody.IsInvalid())
+      throw std::runtime_error("Jolt ground body olusturulamadi");
 
     const JPH::BoxShapeSettings trainShape(
         JPH::Vec3(trainWidth * 0.5f, trainHeight * 0.5f, trackGauge * 0.8f));
@@ -102,17 +105,23 @@ struct PhysicsWorld::JoltState {
         trainShape.Create().Get(), JPH::RVec3::sZero(), JPH::Quat::sIdentity(),
         JPH::EMotionType::Kinematic, 1);
     trainBody = bodies.CreateAndAddBody(trainSettings, JPH::EActivation::Activate);
+    if (trainBody.IsInvalid())
+      throw std::runtime_error("Jolt train body olusturulamadi");
 
     const JPH::BoxShapeSettings platformShape(
         JPH::Vec3(0.4f, 0.15f, routeLength * 0.5f));
+    platformBodies.reserve(2);
     for (float x : {-platformWidth - 0.4f, platformWidth + 0.4f}) {
       JPH::BodyCreationSettings platformSettings(
           platformShape.Create().Get(),
           JPH::RVec3(x, -0.2, -routeLength * 0.5),
           JPH::Quat::sIdentity(), JPH::EMotionType::Static, 0);
-      platformBodies.push_back(
+      const JPH::BodyID platformBody =
           bodies.CreateAndAddBody(platformSettings,
-                                  JPH::EActivation::DontActivate));
+                                  JPH::EActivation::DontActivate);
+      if (platformBody.IsInvalid())
+        throw std::runtime_error("Jolt platform body olusturulamadi");
+      platformBodies.push_back(platformBody);
     }
   }
 
