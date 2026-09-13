@@ -156,6 +156,8 @@ bool Model::load(VulkanContext& ctx, VkCommandPool pool, const std::string& path
       SubMesh sub{};
       sub.firstIndex = firstIndex;
       sub.indexCount = indexCount;
+      sub.firstVertex = vertexOffset;
+      sub.vertexCount = static_cast<uint32_t>(vertexCount);
       if (prim.material != nullptr) {
         const cgltf_pbr_metallic_roughness& pbr =
             prim.material->pbr_metallic_roughness;
@@ -218,10 +220,10 @@ void Model::bind(VkCommandBuffer cmd) const {
 
 void Model::drawSubMesh(VkCommandBuffer cmd, size_t index) const {
   const SubMesh& sub = mSubMeshes[index];
-  if (mIndexCount > 0) {
+  if (sub.indexCount > 0) {
     vkCmdDrawIndexed(cmd, sub.indexCount, 1, sub.firstIndex, 0, 0);
   } else {
-    vkCmdDraw(cmd, mVertexCount, 1, 0, 0);
+    vkCmdDraw(cmd, sub.vertexCount, 1, sub.firstVertex, 0);
   }
 }
 
