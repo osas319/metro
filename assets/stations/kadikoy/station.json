@@ -4,6 +4,7 @@
   "block_count": 8,
   "route_length": 2000.0,
   "passenger_capacity": 320,
+  "stop_dwell_seconds": 3.0,
   "units": "meters",
   "up_axis": "Y",
   "meshes": "meshes",

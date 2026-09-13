@@ -99,6 +99,11 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
       passengerCapacity >= 1.0f) {
     parsed.passengerCapacity = static_cast<size_t>(passengerCapacity);
   }
+  float stopDwellSeconds = parsed.stopDwellSeconds;
+  if (readNumber(source, "stop_dwell_seconds", stopDwellSeconds) &&
+      stopDwellSeconds >= 0.0f) {
+    parsed.stopDwellSeconds = stopDwellSeconds;
+  }
 
   out = std::move(parsed);
   METRO_INFO("Station manifest: %s (%s), mesh dizini: %s",

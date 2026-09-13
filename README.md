@@ -78,6 +78,8 @@ isimleri ve koordinatları geldiğinde bu üretilen çizelge veri tabanlı liste
 değiştirilecektir.
 Ara duraklarda kapılar 3 saniye açık kalır ve otomatik kapanır; terminal
 durağında kapılar açık bırakılır.
+Ara durak süresi `station.json` içindeki `stop_dwell_seconds` alanından
+ayarlanabilir.
 
 ## Klasör yapısı
 

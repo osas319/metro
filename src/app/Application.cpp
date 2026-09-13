@@ -29,6 +29,7 @@ bool Application::init() {
   mRouteLength = station.routeLength;
   mPassengers = sim::PassengerSystem(station.passengerCapacity);
   mRoute.buildBlockStops(station.blockCount, station.routeLength);
+  mStopDwellSecondsLimit = station.stopDwellSeconds;
   mBlockLength = station.routeLength /
                  static_cast<float>(std::max<size_t>(station.blockCount, 1));
 
@@ -139,7 +140,7 @@ void Application::update(float dt) {
     mTrain.setDoorsOpen(true);
     if (!atTerminal) {
       mStopDwellSeconds += dt;
-      if (mStopDwellSeconds >= 3.0f) {
+      if (mStopDwellSeconds >= mStopDwellSecondsLimit) {
         mTrain.setDoorsOpen(false);
         mStopDwellSeconds = 0.0f;
       }
