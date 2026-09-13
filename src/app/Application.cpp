@@ -111,7 +111,9 @@ void Application::update(float dt) {
   if (mKeyboardState[SDL_SCANCODE_C]) {
     mTrain.setDoorsOpen(false);
   }
-  mTrain.update(dt, throttle, brake);
+  const size_t currentBlock = static_cast<size_t>(mTrain.position() / 250.0f);
+  const bool signalClear = mSignal.canEnter(currentBlock);
+  mTrain.update(dt, throttle, brake, signalClear);
 
   if (!mMouseCaptured) return;
 
@@ -171,6 +173,9 @@ int Application::run() {
       METRO_INFO("tren: %.1f km/saat, konum %.1f m",
                  mTrain.speed() * 3.6f, mTrain.position());
       METRO_INFO("kapi: %s", mTrain.doorsOpen() ? "acik" : "kapali");
+      const size_t statsBlock = static_cast<size_t>(mTrain.position() / 250.0f);
+      METRO_INFO("sinyal: blok %zu %s", statsBlock,
+                 mSignal.canEnter(statsBlock) ? "yesil" : "kirmizi");
       frameCount = 0;
       lastStatsNs = nowNs;
     }

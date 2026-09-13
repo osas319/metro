@@ -4,7 +4,7 @@ namespace metro::sim {
 
 class Train {
 public:
-  void update(float dt, bool throttle, bool brake);
+  void update(float dt, bool throttle, bool brake, bool signalClear = true);
 
   float speed() const { return mSpeed; }
   float position() const { return mPosition; }

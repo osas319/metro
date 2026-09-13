@@ -6,6 +6,7 @@
 
 #include "app/Camera.hpp"
 #include "sim/Train.hpp"
+#include "sim/Signal.hpp"
 #include <SDL3/SDL.h>
 
 namespace metro::app {
@@ -32,6 +33,7 @@ private:
   // Kamera ve Girdi
   Camera mCamera;
   sim::Train mTrain;
+  sim::BlockSignal mSignal{8};
   bool mMouseCaptured = false;
   const bool* mKeyboardState = nullptr;
 };
