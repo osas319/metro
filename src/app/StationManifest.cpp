@@ -48,6 +48,17 @@ bool readPositiveNumber(const std::string& source, const char* key,
   return true;
 }
 
+bool readNonNegativeInteger(const std::string& source, const char* key,
+                            size_t& value) {
+  float parsed = 0.0f;
+  if (!readNumber(source, key, parsed) || parsed < 0.0f ||
+      std::floor(parsed) != parsed) {
+    return false;
+  }
+  value = static_cast<size_t>(parsed);
+  return true;
+}
+
 bool readVector3(const std::string& source, const char* key, glm::vec3& value) {
   const std::string marker = "\"" + std::string(key) + "\"";
   const size_t keyPosition = source.find(marker);
@@ -131,23 +142,32 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
   readVector3(source, "position", parsed.spawnPosition);
   readNumber(source, "yaw", parsed.spawnYaw);
   readNumber(source, "pitch", parsed.spawnPitch);
-  float blockCount = static_cast<float>(parsed.blockCount);
-  if (readNumber(source, "block_count", blockCount) && blockCount >= 1.0f) {
-    parsed.blockCount = static_cast<size_t>(blockCount);
+  if (source.find("\"block_count\"") != std::string::npos) {
+    if (!readNonNegativeInteger(source, "block_count", parsed.blockCount) ||
+        parsed.blockCount == 0) {
+      METRO_ERROR("Station manifest blok sayisi gecersiz: %s", path.c_str());
+      return false;
+    }
   }
   float routeLength = parsed.routeLength;
   if (readNumber(source, "route_length", routeLength) && routeLength > 0.0f) {
     parsed.routeLength = routeLength;
   }
-  float passengerCapacity = static_cast<float>(parsed.passengerCapacity);
-  if (readNumber(source, "passenger_capacity", passengerCapacity) &&
-      passengerCapacity >= 1.0f) {
-    parsed.passengerCapacity = static_cast<size_t>(passengerCapacity);
+  if (source.find("\"passenger_capacity\"") != std::string::npos) {
+    if (!readNonNegativeInteger(source, "passenger_capacity",
+                                parsed.passengerCapacity) ||
+        parsed.passengerCapacity == 0) {
+      METRO_ERROR("Station manifest yolcu kapasitesi gecersiz: %s",
+                  path.c_str());
+      return false;
+    }
   }
-  float initialWaiting = static_cast<float>(parsed.initialWaitingPassengers);
-  if (readNumber(source, "initial_waiting_passengers", initialWaiting) &&
-      initialWaiting >= 0.0f) {
-    parsed.initialWaitingPassengers = static_cast<size_t>(initialWaiting);
+  if (source.find("\"initial_waiting_passengers\"") != std::string::npos &&
+      !readNonNegativeInteger(source, "initial_waiting_passengers",
+                              parsed.initialWaitingPassengers)) {
+    METRO_ERROR("Station manifest baslangic yolcu sayisi gecersiz: %s",
+                path.c_str());
+    return false;
   }
   if (parsed.initialWaitingPassengers > parsed.passengerCapacity) {
     METRO_ERROR("Station manifest baslangic yolcu sayisi kapasiteyi asiyor: %s",

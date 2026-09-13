@@ -84,5 +84,7 @@ int main() {
   assert(station.stops.back().dwellSeconds == 0.0f);
   assert(station.modelPath == "assets/box.glb");
   assert(station.initialWaitingPassengers == 24);
+  assert(station.blockCount == 8);
+  assert(station.passengerCapacity == 320);
   return 0;
 }
