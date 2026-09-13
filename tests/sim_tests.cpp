@@ -57,6 +57,14 @@ int main() {
   guardedTrain.update(1.0f, true, false);
   assert(guardedTrain.speed() > 0.0f);
 
+  metro::sim::PhysicsWorld stopPhysics;
+  metro::sim::Train stopTrain;
+  for (int i = 0; i < 600 && stopTrain.position() < 25.0f; ++i) {
+    stopPhysics.step(1.0f / 60.0f, stopTrain, true, false, true, 25.0f);
+  }
+  assert(stopTrain.position() == 25.0f);
+  assert(stopTrain.speed() == 0.0f);
+
   metro::sim::BlockSignal signal(3);
   assert(signal.blockCount() == 3);
   assert(signal.canEnter(1));
