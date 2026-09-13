@@ -300,8 +300,12 @@ int Application::run() {
       renderCamera.yaw = -90.0f;
       renderCamera.pitch = -4.0f;
     }
+    std::vector<glm::vec2> passengerPositions;
+    passengerPositions.reserve(mPassengers.walkingAgents().size());
+    for (const auto& passenger : mPassengers.walkingAgents())
+      passengerPositions.push_back(passenger.position(mPassengerNav));
     mRenderer.drawFrame(renderCamera, renderTrainPosition,
-                        mSignal.occupiedBlocks());
+                        mSignal.occupiedBlocks(), passengerPositions);
     ++frameCount;
 
     if (nowNs - lastStatsNs >= Uint64(2e9)) {

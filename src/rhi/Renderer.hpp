@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <string>
+#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
 #include "rhi/Swapchain.hpp"
@@ -58,7 +59,8 @@ public:
 
   // Bir kareyi uçur (acquire → record → submit → present).
   void drawFrame(const app::Camera& camera, float trainPosition,
-                 const std::vector<bool>& occupiedBlocks);
+                 const std::vector<bool>& occupiedBlocks,
+                 const std::vector<glm::vec2>& passengerPositions = {});
 
   // Pencere boyutu değişti; swapchain'i güvenli anda yeniden kur.
   void onResize();
@@ -75,7 +77,8 @@ private:
   void recreateSwapchain();
   void recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                            const app::Camera& camera, float trainPosition,
-                           const std::vector<bool>& occupiedBlocks);
+                           const std::vector<bool>& occupiedBlocks,
+                           const std::vector<glm::vec2>& passengerPositions);
   VkShaderModule loadShader(const char* filename);
   VkFormat pickDepthFormat() const;
 
