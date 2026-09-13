@@ -5,6 +5,7 @@
 #include <cmath>
 #include <sstream>
 #include <cstddef>
+#include <filesystem>
 #include <utility>
 
 #include "core/Log.hpp"
@@ -139,6 +140,14 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     return false;
   }
   readString(source, "model", parsed.modelPath);
+  if (!parsed.modelPath.empty() &&
+      !std::filesystem::path(parsed.modelPath).is_absolute() &&
+      !std::filesystem::exists(parsed.modelPath)) {
+    const std::filesystem::path manifestModel =
+        std::filesystem::path(path).parent_path() / parsed.modelPath;
+    if (std::filesystem::exists(manifestModel))
+      parsed.modelPath = manifestModel.lexically_normal().string();
+  }
   if (source.find("\"position\"") != std::string::npos &&
       !readVector3(source, "position", parsed.spawnPosition)) {
     METRO_ERROR("Station manifest spawn konumu gecersiz: %s", path.c_str());
