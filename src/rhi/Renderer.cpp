@@ -526,6 +526,18 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex, con
       {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 4.0f, 0.0f)),
                   glm::vec3(10.0f, 0.15f, 40.0f)),
        glm::vec4(0.20f, 0.24f, 0.30f, 1.0f), 0.95f},
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.2f, -1.25f, 0.0f)),
+                  glm::vec3(0.08f, 0.08f, 40.0f)),
+       glm::vec4(0.72f, 0.74f, 0.78f, 1.0f), 0.35f},
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(1.2f, -1.25f, 0.0f)),
+                  glm::vec3(0.08f, 0.08f, 40.0f)),
+       glm::vec4(0.72f, 0.74f, 0.78f, 1.0f), 0.35f},
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-7.0f, 1.2f, -12.0f)),
+                  glm::vec3(0.35f, 2.8f, 0.35f)),
+       glm::vec4(0.38f, 0.40f, 0.44f, 1.0f), 0.8f},
+      {glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(7.0f, 1.2f, -12.0f)),
+                  glm::vec3(0.35f, 2.8f, 0.35f)),
+       glm::vec4(0.38f, 0.40f, 0.44f, 1.0f), 0.8f},
       {glm::mat4(1.0f), glm::vec4(0.12f, 0.42f, 0.85f, 1.0f), 0.55f},
   };
   mModel.bind(cmd);

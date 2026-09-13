@@ -46,7 +46,8 @@ manifestteki temel alanları doğrular ve eksik/okunamayan dosyada durur.
 Örnek kutu asset'ini görmek için başlangıç kamerası kutunun 3 metre önünde
 konumlanır; pencereye tıklayıp fareyi yakaladıktan sonra WASD ile gezilebilir.
 Gerçek istasyon modelleri eklenene kadar renderer bu mesh'i zemin, iki peron
-kenarı ve tavan placeholder'ı olarak çoğaltır; kırmızı nesne tren placeholder'ıdır.
+kenarı, raylar ve taşıyıcı kolonlar olarak çoğaltır; mavi nesne tren
+placeholder'ıdır.
 
 Kamera: pencereye tıklayıp fareyi yakalayın; **WASD** yatay hareket, **Q/E**
 dikey hareket, **Shift** hızlı hareket, **ESC** fare yakalamayı bırakır.
