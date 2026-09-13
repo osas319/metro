@@ -89,6 +89,11 @@ bool readStops(const std::string& source, std::vector<sim::Stop>& stops) {
         (!parsed.empty() && stop.position <= parsed.back().position)) {
       return false;
     }
+    if (object.find("\"dwell_seconds\"") != std::string::npos &&
+        (!readNumber(object, "dwell_seconds", stop.dwellSeconds) ||
+         stop.dwellSeconds < 0.0f)) {
+      return false;
+    }
     parsed.push_back(std::move(stop));
     cursor = objectEnd + 1;
   }

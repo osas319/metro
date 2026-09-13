@@ -136,6 +136,9 @@ void Application::update(float dt) {
                            mSignal.canEnter(nextBlock);
   const sim::Stop& upcomingStop = mRoute.nextStop(mTrain.position(), mRouteLength);
   const float stopTarget = upcomingStop.position;
+  const float stopDwellLimit = upcomingStop.dwellSeconds >= 0.0f
+                                   ? upcomingStop.dwellSeconds
+                                   : mStopDwellSecondsLimit;
   mTrain.update(dt, throttle, brake, signalClear, stopTarget);
   const bool atStop = mTrain.position() >= stopTarget - 0.5f &&
                       mTrain.position() <= stopTarget + 0.5f &&
@@ -146,7 +149,7 @@ void Application::update(float dt) {
     mTrain.setDoorsOpen(true);
     if (!atTerminal) {
       mStopDwellSeconds += dt;
-      if (mStopDwellSeconds >= mStopDwellSecondsLimit) {
+      if (mStopDwellSeconds >= stopDwellLimit) {
         mTrain.setDoorsOpen(false);
         mStopDwellSeconds = 0.0f;
       }

@@ -9,6 +9,7 @@ namespace metro::sim {
 struct Stop {
   std::string name;
   float position = 0.0f;
+  float dwellSeconds = -1.0f;
 };
 
 class Route {
