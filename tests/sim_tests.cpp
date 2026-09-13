@@ -4,6 +4,7 @@
 #include "sim/Route.hpp"
 #include "sim/PhysicsWorld.hpp"
 #include "sim/PassengerNavGraph.hpp"
+#include "audio/AudioEventQueue.hpp"
 #include "app/StationManifest.hpp"
 
 #include <cassert>
@@ -125,6 +126,15 @@ int main() {
   const auto navPath = navGraph.shortestPath(0, 3);
   assert((navPath == std::vector<size_t>{0, 1, 2, 3}));
   assert(navGraph.shortestPath(3, 3).size() == 1);
+  metro::audio::AudioEventQueue audioEvents;
+  audioEvents.push({metro::audio::EventType::DoorOpened, 1});
+  audioEvents.push({metro::audio::EventType::StopArrived, 1});
+  metro::audio::Event audioEvent{};
+  assert(audioEvents.pending() == 2);
+  assert(audioEvents.tryPop(audioEvent));
+  assert(audioEvent.type == metro::audio::EventType::DoorOpened);
+  assert(audioEvents.tryPop(audioEvent));
+  assert(audioEvents.pending() == 0);
 
   metro::sim::Route route;
   route.buildBlockStops(3, 900.0f);

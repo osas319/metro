@@ -181,13 +181,20 @@ void Application::update(float dt) {
   const bool atTerminal = mTrain.position() >= mRouteLength &&
                           mTrain.speed() < 0.05f;
   if (atStop || atTerminal) {
-    mTrain.requestDoorsOpen(true, true);
     size_t servicedStop = static_cast<size_t>(-1);
     for (size_t i = 0; i < mRoute.stopCount(); ++i) {
       if (std::abs(mTrain.position() - mRoute.stops()[i].position) <= 0.5f) {
         servicedStop = i;
         break;
       }
+    }
+    const bool wasOpen = mTrain.doorsOpen();
+    mTrain.requestDoorsOpen(true, true);
+    if (!wasOpen && mTrain.doorsOpen()) {
+      mAudioEvents.push({atTerminal ? audio::EventType::TerminalServiced
+                                    : audio::EventType::StopArrived,
+                         servicedStop});
+      mAudioEvents.push({audio::EventType::DoorOpened, servicedStop});
     }
     if (servicedStop != static_cast<size_t>(-1) &&
         servicedStop != mLastServicedStop) {
@@ -201,6 +208,7 @@ void Application::update(float dt) {
       mStopDwellSeconds += dt;
       if (mStopDwellSeconds >= stopDwellLimit) {
         mTrain.requestDoorsOpen(false, false);
+        mAudioEvents.push({audio::EventType::DoorClosed, servicedStop});
         mStopDwellSeconds = 0.0f;
       }
     }

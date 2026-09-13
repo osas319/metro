@@ -102,6 +102,7 @@ if(BUILD_TESTING)
         src/sim/Route.cpp
         src/sim/PhysicsWorld.cpp
           src/sim/PassengerNavGraph.cpp
+            src/audio/AudioEventQueue.cpp
             src/app/StationManifest.cpp)
   target_include_directories(metro_sim_tests PRIVATE src)
   target_link_libraries(metro_sim_tests PRIVATE glm::glm Jolt)
