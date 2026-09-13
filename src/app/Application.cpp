@@ -112,7 +112,11 @@ void Application::update(float dt) {
     mTrain.setDoorsOpen(false);
   }
   const size_t currentBlock = static_cast<size_t>(mTrain.position() / 250.0f);
-  const bool signalClear = mSignal.canEnter(currentBlock);
+  for (size_t block = 0; block < 8; ++block) {
+    mSignal.setOccupied(block, block == currentBlock);
+  }
+  const size_t nextBlock = currentBlock + 1;
+  const bool signalClear = nextBlock < 8 && mSignal.canEnter(nextBlock);
   mTrain.update(dt, throttle, brake, signalClear);
 
   if (!mMouseCaptured) return;
@@ -174,8 +178,11 @@ int Application::run() {
                  mTrain.speed() * 3.6f, mTrain.position());
       METRO_INFO("kapi: %s", mTrain.doorsOpen() ? "acik" : "kapali");
       const size_t statsBlock = static_cast<size_t>(mTrain.position() / 250.0f);
-      METRO_INFO("sinyal: blok %zu %s", statsBlock,
-                 mSignal.canEnter(statsBlock) ? "yesil" : "kirmizi");
+      const size_t statsNextBlock = statsBlock + 1;
+      METRO_INFO("sinyal: blok %zu %s", statsNextBlock,
+                 statsNextBlock < 8 && mSignal.canEnter(statsNextBlock)
+                     ? "yesil"
+                     : "kirmizi");
       frameCount = 0;
       lastStatsNs = nowNs;
     }
