@@ -587,6 +587,16 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
          terminal ? glm::vec4(0.90f, 0.18f, 0.10f, 1.0f)
                   : glm::vec4(0.95f, 0.65f, 0.08f, 1.0f),
          0.4f});
+    instances.push_back(
+        {glm::scale(
+             glm::translate(
+                 glm::mat4(1.0f),
+                 sceneOffset + glm::vec3(-mPlatformWidth - 0.8f, 2.8f,
+                                         -stopPosition)),
+             glm::vec3(0.08f, 0.08f, 0.08f)),
+         terminal ? glm::vec4(1.0f, 0.18f, 0.08f, 1.0f)
+                  : glm::vec4(1.0f, 0.82f, 0.18f, 1.0f),
+         0.25f});
   }
   const float blockLength = mRouteLength / static_cast<float>(mBlockCount);
   const size_t occupiedBlock = std::min(
