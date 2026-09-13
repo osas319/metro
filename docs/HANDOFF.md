@@ -1,6 +1,7 @@
 # METRO PROJESİ — HANDOFF DÖKÜMANI (devralan AI için)
 
-Bu doküman, projenin şu anki tam durumunu özetler. Son güncelleme: 2026-09-13.
+Bu doküman, projenin şu anki tam durumunu özetler. Son güncelleme: 2026-09-13
+(modelleme organizasyonu oturumu — bkz. §11).
 
 ## 1. PROJE TANIMI
 - İstanbul M4 metro hattı (Kadıköy–Sabiha Gökçen) simülasyonu, SIFIRDAN oyun motoru ile.
@@ -18,8 +19,8 @@ Bu doküman, projenin şu anki tam durumunu özetler. Son güncelleme: 2026-09-1
 - Wayland: WAYLAND_DISPLAY=wayland-0, XDG_RUNTIME_DIR=/run/user/1000.
 - Podman 5.8.4 rootless, git 2.55. Lokale Türkçe; kod yorumları Türkçe yazılıyor.
 
-## 3. REPO DURUMU (/home/genc/Belgeler/Metro)
-- `git init -b main` yapıldı. **HİÇBİR COMMIT YOK.**
+## 3. REPO DURUMU (`osas319/metro`, `main`)
+- Proje değişiklikleri doğrudan `main` dalına aktarılıyor; son doğrulanmış paket HDR/ACES tonemap geçişidir.
 - Submodule'ler eklendi (pinli): third_party/volk, third_party/VulkanMemoryAllocator,
   third_party/glm. (EnTT, Jolt, cgltf vb. SONRAKI fazlarda eklenecek.)
 - Çalışma dizininde tüm kaynak hazır; derleme yeşil.
@@ -59,8 +60,8 @@ Bu doküman, projenin şu anki tam durumunu özetler. Son güncelleme: 2026-09-1
   onResize, 2 sn'de bir fps log, METRO_AUTO_EXIT=<sn> sonunda temiz çıkış) → shutdown
   (vkDeviceWaitIdle + sıralı yıkım).
 - src/main.cpp — try/catch giriş noktası.
-- shaders/triangle.vert / triangle.frag — klips uzayında üçgen (MVP yok, push-constant
-  kamera Faz 1'de).
+- shaders/pbr.vert / pbr.frag — sahne PBR shader'ları; `tonemap.vert` /
+  `tonemap.frag` HDR görüntüyü ACES filmic eğriyle swapchain'e indirger.
 - README.md — mimari karar tablosu, Forward+ gerekçe taslağı, klasör yapısı, asset
   konvansiyonları (1 birim=1 m, +Y up, sağ-el/glTF; assets/stations/<ad>/meshes|
   materials|textures|lightmaps + station.json manifest; LOD0/1/2 stratejisi), yol haritası.
@@ -92,18 +93,69 @@ Bu doküman, projenin şu anki tam durumunu özetler. Son güncelleme: 2026-09-1
 - CMake Vulkan find_package'ı sadece header/loader kontrolü; loader'a link YOK (volk dlopen).
 
 ## 9. SIRADAKİ ADIMLAR (öncelik sırasıyla)
-1. Bölüm 6'daki VMA fix'ini uygula → `METRO_AUTO_EXIT=5 tools/container.sh run` ile
-   üçgenin hatasız 5 sn render'ını ve temiz validation çıkışını doğrula.
-2. İlk git commit (tüm src + build sistemi; submodule pointer'ları ile).
-3. Faz 1: push-constant + MVP kamera (mouse+keyboard orbit), cgltf submodule + glTF
-   yükleme (staging→device-local upload), PBR metallic-roughness shader'ı, EnTT submodule.
-4. Faz 2: Jolt submodule + entegrasyon, Kadıköy istasyon placeholder sahnesi.
-5. Render mimarisi kararı: Forward+ (README'de başlangıç gerekçesi var; uygulama
-   öncesi kullanıcıyla netleştir). CSM, TAA/SSAO/bloom/ACES sonraki alt fazlar.
-6. Modelleme organizasyonu: Kadıköy için referans toplama + station.json şeması.
+
+Aşamalar 0–4 (pencere → Vulkan → kamera/glTF/PBR → Jolt + Kadıköy prosedürel
+sahne → tren/sinyal/kapı → yolcu/ses/tonemap) **tamamlandı**. Kalan işler:
+
+1. Render kalitesi: CSM, SSAO, bloom, TAA (HDR hedefi ve ACES tonemap hazır;
+   bu geçişler sahne ve post-process arasına girer).
+2. Sahne sistemini gerçek ECS'e taşı (EnTT şu an yalnızca `Application::init`
+   içinde varlık oluşturup loglayan bir duman testi; render hâlâ `Renderer`
+   içindeki elle yerleştirilmiş placeholder geometriden geliyor).
+3. Kadıköy mimari asset üretimi (MODELING.md §16, adım M1'den başlar).
+4. `station.json` şemasının asset alanlarıyla genişletilmesi: mesh listesi,
+   LOD bağlantıları, malzeme/doku referansları. `StationManifest` + `Renderer`
+   kod değişikliği gerektirir; onay bekliyor (MODELING.md §17/3).
+5. Ses backend'i şu an SDL3 prosedürel bildirim tonu üretiyor; gerçek ses
+   asset'leri ve 3D pozisyonel ses açık iş.
 
 ## 10. KULLANICININ ÇALIŞMA KURALLARI (bozma)
 - Her aşamada kararların kısa gerekçesini açıkla; kod modüler ve yorumlu olsun.
 - Kapsamı asla sessizce büyütme; büyük sistem (tam sinyal ağı, çok istasyon) öncesi onay iste.
 - CMake yapılandırmasını güncel tut; derlenebilir kod teslim et.
 - Ana sistemeye DOKUNMA — her şey podman konteynerinde.
+
+## 11. SON OTURUM — modelleme organizasyonu (2026-09-13)
+
+Kapsam sessizce büyütülmedi: **hiçbir motor kodu ve hiçbir manifest değeri
+değiştirilmedi.** Eklenenler yalnızca doküman, dizin iskelesi ve host
+tarafında çalışan bir doğrulayıcı:
+
+- `docs/MODELING.md` — Kadıköy pilotu için tam boru hattı: ölçek/eksen
+  konvansiyonu, klasör yapısı, `<kod>_<parça>_lodN` adlandırma şeması ve
+  23 durağın istasyon kodları, modüler kit, LOD bütçeleri/geçiş mesafeleri,
+  Jolt `_col` stratejisi, navmesh planı, PBR doku/UV kuralları, Blender→glTF
+  export checklist, saha ölçümü prosedürü, İBB açık veri kullanımı, M1–M7
+  üretim planı ve onay bekleyen 7 karar.
+- `assets/stations/kadikoy/{meshes,materials,textures,lightmaps,navmesh,audio}`
+  + `reference/` ve `assets/shared/{meshes,materials,textures}` iskelesi
+  (her biri `.gitkeep` ile; git boş dizin tutmaz).
+- `assets/stations/kadikoy/reference/measurements.csv` — sahada doldurulacak
+  34 satırlık ölçüm defteri (`kaynak` ve `guven` kolonlarıyla).
+- `tools/validate_station_assets.sh` — manifest alanlarını, bildirilen
+  dizinleri, `model`/`navmesh` yollarının varlığını (yoksa uygulama
+  açılmıyor), mesh ad şemasını, LOD0↔LOD1/2 ve `_col` bütünlüğünü, doku
+  boyut eki/KTX2 kuralını denetler. Hata varsa çıkış kodu 1.
+
+Doğrulananlar: script `bash -n` temiz; gerçek Kadıköy manifestinde **0 hata,
+0 uyarı**; kasıtlı bozuk bir fixture ile 4 hata + 7 uyarı ve ikinci turda
+"dizin yok" yolu tetiklendi (fixture sonra silindi).
+
+### Önemli bulgular
+
+- **Hat ekseni −Z**: `Renderer` hattı `-routeLength * 0.5` merkezine kuruyor
+  ve treni `-trainPosition` ile ilerletiyor. Yani Kadıköy `z = 0`, ileri
+  hareket −Z. Modelleme yönü buna göre sabitlendi.
+- **Gerçek ölçek ile placeholder çelişkisi**: M4 gerçekte 33,5 km / 23
+  istasyon (uçtan uca 52 dk, azami 80 km/sa), ama manifest 2000 m ve 87 m
+  eşit aralıklı durak listesi kullanıyor; `track_gauge = 2.4` ise standart
+  açıklık 1,435 m yerine geçici. Üçü de onay bekleyen listede.
+
+### Çalışma alanı uyarısı (bu kopya)
+
+Bu çalışma alanı (`İndirilenler/metro-main`) **git deposu değil** ve
+`third_party/` altındaki altı submodule dizini **boş** (volk, glm, VMA,
+Jolt, entt, cgltf). Bu nedenle burada `cmake` configure/derleme çalışmaz;
+host'ta yalnızca `podman` var (cmake/ninja/glslc imajın içinde). Derleme
+doğrulaması yapmak için submodule'lerin yeniden klonlanması gerekir.
+Doğrulanan çalışma ağacı: `osas319/metro` `main`.

@@ -37,6 +37,10 @@ tools/container.sh shell        # container içinde bash
 Test/CI koşusu için: `METRO_AUTO_EXIT=5 tools/container.sh run` → uygulama
 5 saniye sonra kendini kapatır (kafasız doğrulama için).
 
+Asset doğrulaması host'ta (konteyner gerekmez):
+`tools/validate_station_assets.sh` → mevcut Kadıköy manifesti için 0 hata,
+0 uyarı döner; hatalı bulduğunda çıkış kodu 1 olur.
+
 Varsayılan örnek model yerine başka bir glTF/GLB yüklemek için:
 `METRO_MODEL_PATH=assets/stations/kadikoy/meshes/platform.glb tools/container.sh run`.
 
@@ -111,27 +115,67 @@ ayarlanabilir.
 src/
   main.cpp            giriş noktası
   core/               log, assert, temel yardımcılar
-  app/                pencere, ana döngü, uygulama durumu
-  rhi/                Vulkan soyutlaması (context, swapchain, renderer)
+  app/                pencere, ana döngü, uygulama durumu, station.json okuma
+  rhi/                Vulkan soyutlaması (context, swapchain, renderer, glTF model)
+  sim/                tren, sinyal, rota, fizik dünyası, yolcu sistemi/navgraph
+  audio/              ses olay kuyruğu + SDL3 backend
 shaders/              GLSL kaynakları (build'de SPIR-V'ye derlenir)
-assets/               istasyon/modeller/dokular (pipeline olgunlaşınca)
-third_party/          git submodule'ler (volk, VMA, GLM, ...)
-tools/                geliştirme araçları (container.sh, ...)
-cmake/                CMake yardımcı modülleri
+assets/
+  box.glb             prototip placeholder modeli
+  shared/             istasyonlar arası ortak kit (sh_* mesh/malzeme/doku)
+  stations/<ad>/      meshes/ materials/ textures/ lightmaps/ navmesh/ audio/
+                      reference/ (motor dışı kaynak veri) + station.json
+tests/                simülasyon çekirdeği testleri (ctest)
+tools/
+  container.sh                podman geliştirme akışı (image/configure/build/…)
+  validate_station_assets.sh  manifest + asset adlandırma/LOD doğrulayıcı
+docs/
+  MODELING.md         modelleme ve asset boru hattı (klasör, ölçek, LOD, ölçüm)
+  HANDOFF.md          devralan geliştirici/AI için durum özeti
+third_party/          git submodule'ler (volk, VMA, GLM, Jolt, EnTT, cgltf)
+cmake/                CMake yardımcı modülleri (shader derleme)
 ```
 
 ## Asset ölçüleri ve sahne konvansiyonları
 
+Modelleme ve asset boru hattının tamamı: **[docs/MODELING.md](docs/MODELING.md)**
+(pilot istasyon Kadıköy, manuel Blender + saha ölçümü).
+
 - **Birim:** 1 engine birimi = 1 metre. **Eksen:** +Y yukarı, sağ-el
   (glTF 2.0 native) — Blender'dan glTF export alırken eksen dönüşümü
   yapılmaz, motor glTF'i ham yükler.
+- **Hat ekseni −Z ileri:** `Renderer` hat gövdesini `-routeLength * 0.5`
+  merkezine kurar ve treni `-trainPosition` ile ilerletir. Bu yüzden
+  Kadıköy `z = 0`'da, hat −Z'ye uzanır, peron uzunluğu Z boyunca serilir,
+  raylar `x = ±track_gauge/2`, peronlar `x = ±platform_width` üzerindedir.
+  Her istasyon glTF'i **kendi peron merkezine göre yerel** modellenir;
+  hattaki yeri manifestteki `platform.edge_position` belirler.
 - **İstasyon düzeni:** `assets/stations/<istasyon-adı>/` altında
-  `meshes/`, `materials/`, `textures/`, `lightmaps/` + `station.json`
-  manifest (peron kenarı, durma noktası, asansör/merdiven konumları).
+  `meshes/`, `materials/`, `textures/`, `lightmaps/`, `navmesh/`,
+  `audio/`, `reference/` + `station.json` manifest. İstasyonlar arası ortak
+  kit `assets/shared/` altındadır.
+- **Adlandırma:** `<3-harf-istasyon-kodu>_<parça>[_<varyant>][_lodN][_col].glb`
+  (örn. `kdk_platform_floor_lod0.glb`); ortak kit `sh_*`; doku adları
+  `_1k/_2k/_4k` boyut eki ve KTX2. Kodlar ve şema: MODELING.md §5.
 - **LOD stratejisi:** LOD0 = peron içi detay (kiosk, tabelalar, banklar),
   LOD1 = istasyon genel hacim, LOD2 = tünel/dış görünüm basitleştirilmiş.
   Tren: LOD0 iç+dış, LOD1 dış kabuk, LOD2 uzak görünüm.
-  Ayrıntılı modelleme planı modelleme aşamasına geçerken dokümanlanacak.
+  Bütçe ve geçiş mesafeleri MODELING.md §7'de tablolanmıştır.
+- **Doğrulama:** `tools/validate_station_assets.sh [istasyon-dizini]`
+  manifest alanlarını, dizinleri, `model`/`navmesh` yollarını, mesh/doku
+  adlandırmasını ve LOD+`_col` bütünlüğünü denetler (MODELING.md §15).
+
+### Gerçek hat verisi ve placeholder farkları
+
+M4 hattı **33,5 km / 23 istasyon / 80 km-sa azami hız / 52 dk uçtan uca**
+(Metro İstanbul); ray açıklığı **1.435 mm** standart, elektrifikasyon **1.500 V DC
+havai hat**, filo **CAF üretimi 36 adet 4'lü set** (144 vagon).
+Ayrıntı ve kaynaklar: MODELING.md §2. Manifestteki `route_length = 2000` ve 87 m'lik eşit aralıklı
+`stops` listesi prototip ölçeğidir; `track_gauge = 2.4` ise standart açıklık
+(1,435 m) yerine geçici bir değerdir. Bu üç alan **bilerek değiştirilmedi** —
+sahne ölçeğini ve tren dinamiğini kökten etkiledikleri için ayrı onay
+bekliyorlar (MODELING.md §17). Gerçek mimari mesh yüklenmeden önce
+güncellenmeleri gerekir.
 
 ## Durum / yol haritası
 
@@ -151,6 +195,16 @@ cmake/                CMake yardımcı modülleri
   - `navmesh` dosyası satır başına `x z komşu...` formatında doğrulanmış grafik olarak yükleniyor; dosya belirtilmezse durak tabanlı fallback korunuyor.
   - Gerçek yaya ajanları, ses backend'i, navmesh asset yükleme ve 23 duraklı tam hat akışı tamamlandı; harici sanat asset'leri gelene kadar prosedürel/placeholder fallback korunuyor.
   - HDR R16G16B16A16 sahne hedefi ve ACES filmic tonemap post-process geçişi eklendi.
+- [x] Aşama 5 (kısmi): modelleme/asset boru hattı organizasyonu
+  - `docs/MODELING.md`: ölçek ve eksen konvansiyonu, klasör yapısı,
+    adlandırma şeması, modüler kit, LOD bütçeleri, Jolt collision stratejisi,
+    navmesh planı, doku/UV kuralları, Blender export checklist, saha ölçümü
+    prosedürü, İBB açık veri kullanımı, Kadıköy üretim planı (M1–M7).
+  - İstasyon asset iskelesi: `assets/stations/kadikoy/{meshes,materials,
+    textures,lightmaps,navmesh,audio,reference}` ve `assets/shared/`.
+  - Saha ölçüm defteri şablonu: `assets/stations/kadikoy/reference/measurements.csv`.
+  - `tools/validate_station_assets.sh`: manifest + asset adlandırma/LOD
+    doğrulayıcısı, hata/uyarı ayrımı ve çıkış kodu ile.
 
 Mevcut prototipte Tren hareketi, sabit zaman adımlı fizik dünyası,
 kapı durumu ve 8 bloklu temel

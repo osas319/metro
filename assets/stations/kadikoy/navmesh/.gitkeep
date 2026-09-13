@@ -1,0 +1,3 @@
+# Yaya grafiği/navmesh verisi buraya gelir (bkz. docs/MODELING.md §9).
+# UYARI: station.json'a "navmesh" alanı ancak dosya gerçekten varsa eklenir;
+# StationManifest::load dosyayı bulamazsa uygulama açılmaz.
