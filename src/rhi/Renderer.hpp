@@ -57,7 +57,8 @@ public:
   void shutdown();
 
   // Bir kareyi uçur (acquire → record → submit → present).
-  void drawFrame(const app::Camera& camera, float trainPosition);
+  void drawFrame(const app::Camera& camera, float trainPosition,
+                 const std::vector<bool>& occupiedBlocks);
 
   // Pencere boyutu değişti; swapchain'i güvenli anda yeniden kur.
   void onResize();
@@ -73,7 +74,8 @@ private:
   void destroySwapchainDependent();
   void recreateSwapchain();
   void recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
-                           const app::Camera& camera, float trainPosition);
+                           const app::Camera& camera, float trainPosition,
+                           const std::vector<bool>& occupiedBlocks);
   VkShaderModule loadShader(const char* filename);
   VkFormat pickDepthFormat() const;
 

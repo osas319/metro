@@ -486,7 +486,8 @@ void Renderer::createSyncObjects() {
 }
 
 void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
-                                   const app::Camera& camera, float trainPosition) {
+                                   const app::Camera& camera, float trainPosition,
+                                   const std::vector<bool>& occupiedBlocks) {
   VkCommandBufferBeginInfo begin{};
   begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   if (vkBeginCommandBuffer(cmd, &begin) != VK_SUCCESS) throw std::runtime_error("vkBeginCommandBuffer");
@@ -604,11 +605,10 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
          0.25f});
   }
   const float blockLength = mRouteLength / static_cast<float>(mBlockCount);
-  const size_t occupiedBlock = std::min(
-      static_cast<size_t>(trainPosition / blockLength), mBlockCount - 1);
   for (size_t block = 0; block < mBlockCount; ++block) {
     const float signalPosition = blockLength * static_cast<float>(block);
-    const bool occupied = block == occupiedBlock;
+    const bool occupied =
+        block < occupiedBlocks.size() && occupiedBlocks[block];
     instances.push_back(
         {glm::scale(
              glm::translate(
@@ -641,7 +641,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
   if (vkEndCommandBuffer(cmd) != VK_SUCCESS) throw std::runtime_error("vkEndCommandBuffer");
 }
 
-void Renderer::drawFrame(const app::Camera& camera, float trainPosition) {
+void Renderer::drawFrame(const app::Camera& camera, float trainPosition,
+                         const std::vector<bool>& occupiedBlocks) {
   const VkDevice dev = mCtx->device();
   const uint32_t syncCount = static_cast<uint32_t>(mInFlight.size());
 
@@ -665,7 +666,8 @@ void Renderer::drawFrame(const app::Camera& camera, float trainPosition) {
 
   // 2) Komut tamponunu bu image için yeniden yaz.
   vkResetCommandBuffer(mCommands[mFrame], 0);
-  recordCommandBuffer(mCommands[mFrame], imageIndex, camera, trainPosition);
+  recordCommandBuffer(mCommands[mFrame], imageIndex, camera, trainPosition,
+                      occupiedBlocks);
 
   // 3) Submit: renk çıktısı aşamasına kadar bekle.
   VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
