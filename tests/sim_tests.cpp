@@ -2,6 +2,7 @@
 #include "sim/Train.hpp"
 #include "sim/PassengerSystem.hpp"
 #include "sim/Route.hpp"
+#include "app/StationManifest.hpp"
 
 #include <cassert>
 
@@ -62,5 +63,13 @@ int main() {
   signal.resize(5);
   assert(signal.blockCount() == 5);
   assert(signal.canEnter(1));
+
+  metro::app::StationManifest station;
+  assert(metro::app::StationManifest::load(
+      "assets/stations/kadikoy/station.json", station));
+  assert(station.stops.size() == 23);
+  assert(station.stops.front().name == "Kadikoy");
+  assert(station.stops.back().name == "Sabiha Gokcen Havalimani");
+  assert(station.stops.back().position == station.routeLength);
   return 0;
 }
