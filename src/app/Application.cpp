@@ -559,6 +559,7 @@ int Application::run() {
                     -renderTrainPosition - 40.9f);
       renderCamera.yaw = -90.0f;
       renderCamera.pitch = -3.0f - mCabSway * 23.0f;
+      renderCamera.fovDegrees = mCabFov;
       renderCamera.mouseSensitivity = mCamera.mouseSensitivity;
     } else if (mCameraViewMode == CameraViewMode::Chase) {
       renderCamera.position =
