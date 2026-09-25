@@ -51,6 +51,7 @@ public:
   // Yerel Transform'dan dünya matrisini hesaplar. Parent zinciri uygulanır.
   glm::mat4 worldTransform(entt::entity entity) const;
   glm::vec3 worldPosition(entt::entity entity) const;
+  bool translateWorld(entt::entity entity, const glm::vec3& delta);
 
   // Parent değiştirirken entity'nin çocuklarından birinin altına taşınmasını engeller.
   bool setParent(entt::entity entity, entt::entity parent, bool keepWorldTransform = true);
