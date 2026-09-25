@@ -1180,6 +1180,9 @@ void Renderer::createEditorBlurResources() {
 }
 
 void Renderer::destroyEditorBlurResources() {
+  if (mEditorBlurTexture != 0)
+    ImGui_ImplVulkan_RemoveTexture(
+        reinterpret_cast<VkDescriptorSet>(mEditorBlurTexture));
   mEditorBlurTexture = 0;
   if (mEditorBlurFramebuffer)
     vkDestroyFramebuffer(mCtx->device(), mEditorBlurFramebuffer, nullptr);
