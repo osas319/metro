@@ -19,6 +19,11 @@ namespace metro::app {
 
 class Application {
 public:
+  enum class CameraViewMode {
+    Cab,
+    Chase,
+    Free
+  };
   // Başarıda 0; hata kodları 1 (init), 2 (istisna) döner.
   int run();
 
@@ -55,6 +60,7 @@ private:
   size_t mLastSignalBlock = static_cast<size_t>(-1);
   float mStopDwellSeconds = 0.0f;
   bool mMouseCaptured = false;
+  CameraViewMode mCameraViewMode = CameraViewMode::Cab;
   const bool* mKeyboardState = nullptr;
 };
 
