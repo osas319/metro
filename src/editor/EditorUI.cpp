@@ -129,7 +129,7 @@ void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMo
     return;
   }
 
-  ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),
+  ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(),
                                ImGuiDockNodeFlags_PassthruCentralNode);
 
   ImGuiIO& io = ImGui::GetIO();
@@ -215,7 +215,7 @@ void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& 
   }
 
   ImGui::SameLine();
-  ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+  ImGui::TextDisabled("|");
 
   ImGui::SameLine();
   ImGui::TextUnformatted("Metro Editor");
