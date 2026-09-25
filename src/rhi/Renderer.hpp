@@ -88,6 +88,7 @@ public:
     size_t index{0};
     glm::mat4 transform{1.0f};
     bool visible{true};
+    std::string assetPath;
   };
 
   void drawFrame(const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
@@ -132,7 +133,7 @@ private:
                            const std::vector<EditorRenderOverride>& editorOverrides);
   VkShaderModule loadShader(const char* filename);
   VkFormat pickDepthFormat() const;
-  Model* getEditorModel(const std::string& path);
+  Model* getEditorModel(const std::string& path) const;
 
   enum class SceneModel : uint8_t {
     Box,
@@ -205,8 +206,8 @@ private:
   Model mTrainCarModel;
   Model mStationModuleModel;
   Model mTunnelModuleModel;
-  std::unordered_map<std::string, std::unique_ptr<Model>> mEditorModels;
-  std::unordered_set<std::string> mFailedEditorAssets;
+  mutable std::unordered_map<std::string, std::unique_ptr<Model>> mEditorModels;
+  mutable std::unordered_set<std::string> mFailedEditorAssets;
   float mRouteLength = 2000.0f;
   float mPlatformWidth = 4.0f;
   float mTrackGauge = 2.4f;
