@@ -5,6 +5,8 @@ layout(set = 0, binding = 0) uniform FrameUniforms {
     mat4 viewProj;
     vec4 lightDir;   // xyz: ışığın gittiği yön (L = -lightDir)
     vec4 cameraPos;  // xyz: göz/kamera dünya konumu
+    vec4 headlightPos;   // xyz: tren farı dünya konumu
+    vec4 headlightColor; // rgb: far rengi, a: menzil
 } frame;
 
 layout(push_constant) uniform ModelPush {
