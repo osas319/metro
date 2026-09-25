@@ -36,6 +36,8 @@ struct FrameUniforms {
   glm::mat4 viewProj;
   glm::vec4 lightDir;   // xyz: ışığın gidiş yönü
   glm::vec4 cameraPos;  // xyz: göz konumu
+  glm::vec4 headlightPos; // xyz: tren farı dünya konumu
+  glm::vec4 headlightColor; // rgb: far rengi, a: menzil
 };
 
 // Per-submesh push-constant (vertex+fragment; std430 hizası).
