@@ -4,10 +4,17 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
 namespace metro::editor {
+
+enum class GizmoMode : uint8_t {
+  Translate,
+  Rotate,
+  Scale
+};
 
 struct Transform {
   glm::vec3 position{0.0f};
