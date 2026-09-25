@@ -24,11 +24,12 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   const float halfRoute = mRouteLength * 0.5f;
 
   auto addBox = [&](glm::vec3 pos, glm::vec3 scale, glm::vec4 color,
-                    float roughness = 0.7f) {
+                    float roughness = 0.7f, float materialId = 0.0f) {
     SceneInstance s{};
     s.transform = glm::scale(glm::translate(glm::mat4(1.0f), o + pos), scale);
     s.color = color;
     s.roughness = roughness;
+    s.materialId = materialId;
     instances.push_back(s);
   };
 
@@ -246,7 +247,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
 
     addBox({0.0f, 0.05f, carZ},
            {mTrainWidth * 0.52f, mTrainHeight * 0.52f, carLength * 0.48f},
-           {0.055f, 0.28f, 0.56f, 1.0f}, 0.50f);
+           {0.055f, 0.28f, 0.56f, 1.0f}, 0.50f, 7.0f);
     addBox({0.0f, 0.88f, carZ},
            {mTrainWidth * 0.53f, 0.40f, carLength * 0.47f},
            {0.78f, 0.80f, 0.77f, 1.0f}, 0.30f);
@@ -257,10 +258,10 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     // Koyu cam bandı.
     addBox({-mTrainWidth * 0.535f, 0.82f, carZ},
            {0.035f, 0.34f, carLength * 0.38f},
-           {0.02f, 0.065f, 0.10f, 1.0f}, 0.10f);
+           {0.02f, 0.065f, 0.10f, 1.0f}, 0.10f, 4.0f);
     addBox({mTrainWidth * 0.535f, 0.82f, carZ},
            {0.035f, 0.34f, carLength * 0.38f},
-           {0.02f, 0.065f, 0.10f, 1.0f}, 0.10f);
+           {0.02f, 0.065f, 0.10f, 1.0f}, 0.10f, 4.0f);
 
     // Dört vagonun her birinde iki kapı bölgesi.
     for (float doorZ : {-carLength * 0.28f, carLength * 0.28f}) {
@@ -277,13 +278,13 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     for (float bogieZ : {-carLength * 0.33f, carLength * 0.33f}) {
       addBox({0.0f, -0.76f, carZ + bogieZ},
              {mTrainWidth * 0.38f, 0.16f, 0.45f},
-             {0.10f, 0.11f, 0.13f, 1.0f}, 0.70f);
+             {0.10f, 0.11f, 0.13f, 1.0f}, 0.70f, 3.0f);
     }
 
     // Tavan üzerindeki ana ekipman.
     addBox({0.0f, 1.78f, carZ},
            {0.22f, 0.10f, carLength * 0.20f},
-           {0.26f, 0.28f, 0.30f, 1.0f}, 0.72f);
+           {0.26f, 0.28f, 0.30f, 1.0f}, 0.72f, 3.0f);
   }
 
   // Körük/bağlantı noktaları.
@@ -302,7 +303,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   for (float x : {-0.68f, 0.68f}) {
     addBox({x, 0.70f, setCenter - setLength * 0.50f - 0.10f},
            {0.11f, 0.11f, 0.05f},
-           {1.0f, 0.95f, 0.72f, 1.0f}, 0.16f);
+           {1.0f, 0.95f, 0.72f, 1.0f}, 0.16f, 5.0f);
   }
 
   // Kabin ön camı ve sürücü konsolu: kamera kabin içinde olduğunda sürüş hissini artırır.
@@ -314,7 +315,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
          {0.08f, 0.10f, 0.12f, 1.0f}, 0.65f);
   addBox({0.0f, 0.88f, -trainPosition - 37.0f},
          {mTrainWidth * 0.18f, 0.08f, 0.12f},
-         {0.18f, 0.65f, 0.78f, 1.0f}, 0.25f);
+         {0.18f, 0.65f, 0.78f, 1.0f}, 0.25f, 5.0f);
 
   // Kabin gösterge paneli: hız çubuğu, fren lambası ve kapı durumu.
   const float speedKmh = std::clamp(trainSpeed * 3.6f, 0.0f, 80.0f);
@@ -1176,6 +1177,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
       push.baseColor = instance.color;
       push.metallic = sub.metallic;
       push.roughness = instance.roughness;
+      push.materialId = instance.materialId;
       vkCmdPushConstants(cmd, mPipelineLayout,
                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                          0, sizeof(ModelPush), &push);
