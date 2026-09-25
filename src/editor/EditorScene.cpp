@@ -9,6 +9,7 @@
 #include <utility>
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_decompose.hpp>
 
 namespace metro::editor {
 
@@ -151,7 +152,7 @@ bool Scene::isDescendant(entt::entity entity, entt::entity possibleParent) const
   return false;
 }
 
-bool Scene::setParent(entt::entity entity, entt::entity parent) {
+bool Scene::setParent(entt::entity entity, entt::entity parent, bool keepWorldTransform) {
   SceneEntity* node = get(entity);
   if (node == nullptr)
     return false;
@@ -161,7 +162,28 @@ bool Scene::setParent(entt::entity entity, entt::entity parent) {
   if (parent == entity || isDescendant(entity, parent))
     return false;
 
+  const glm::mat4 previousWorld = keepWorldTransform ? worldTransform(entity) : glm::mat4(1.0f);
   node->parent = parent;
+
+  if (!keepWorldTransform)
+    return true;
+
+  const glm::mat4 parentWorld =
+      parent == entt::null ? glm::mat4(1.0f) : worldTransform(parent);
+  const glm::mat4 local = glm::inverse(parentWorld) * previousWorld;
+
+  glm::vec3 translation(0.0f);
+  glm::vec3 scale(1.0f);
+  glm::vec3 skew(0.0f);
+  glm::vec4 perspective(0.0f);
+  glm::quat orientation(1.0f, 0.0f, 0.0f, 0.0f);
+
+  if (!glm::decompose(local, scale, orientation, translation, skew, perspective))
+    return false;
+
+  node->transform.position = translation;
+  node->transform.scale = scale;
+  node->transform.rotation = glm::degrees(glm::eulerAngles(orientation));
   return true;
 }
 
@@ -304,7 +326,7 @@ bool Scene::load(const std::string& path) {
     if (p.oldParent != 0) {
       const auto parentIt = remap.find(p.oldParent);
       if (parentIt != remap.end())
-        setParent(entityIt->second, parentIt->second);
+        setParent(entityIt->second, parentIt->second, false);
     }
   }
 
