@@ -324,9 +324,12 @@ int Application::run() {
       const float roadVibration =
           std::sin(static_cast<float>(nowNs) * 0.000006f) *
           (0.004f + std::clamp(mTrain.speed() / 22.2f, 0.0f, 1.0f) * 0.009f);
+      // Kamera kabinin içinde kalmamalı: ilk vagonun ön yüzünü biraz
+      // geçerek doğrudan ön cama bakar. Eski konum gövdenin içine giriyordu
+      // ve ekranda dev bir koyu blok oluşturuyordu.
       renderCamera.position =
-          glm::vec3(motionSway, 1.72f + roadVibration,
-                    -renderTrainPosition - 36.8f);
+          glm::vec3(motionSway, 1.48f + roadVibration,
+                    -renderTrainPosition - 39.25f);
       renderCamera.yaw = -90.0f;
       renderCamera.pitch = -3.0f - motionSway * 25.0f;
     } else if (mCameraViewMode == CameraViewMode::Chase) {
@@ -360,7 +363,7 @@ int Application::run() {
           mRoute.nextStop(mTrain.position(), mRouteLength);
       char title[256];
       std::snprintf(title, sizeof(title),
-                    "Metro M4 | %5.1f km/s | %s | Kapi: %s",
+                    "Metro M4 | %5.1f km/h | %s | Kapi: %s",
                     mTrain.speed() * 3.6f, titleStop.name.c_str(),
                     mTrain.doorsOpen() ? "ACIK" : "KAPALI");
       SDL_SetWindowTitle(mWindow, title);
