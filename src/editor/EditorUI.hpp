@@ -41,6 +41,10 @@ public:
 
   const std::string& scenePath() const { return mScenePath; }
   bool viewportHovered() const { return mViewportHovered; }
+  bool viewportContains(float x, float y) const {
+    return x >= mViewportMin.x && y >= mViewportMin.y &&
+           x < mViewportMax.x && y < mViewportMax.y;
+  }
 
 private:
   void drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode);
