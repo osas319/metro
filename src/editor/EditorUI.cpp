@@ -132,6 +132,11 @@ void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMo
   ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),
                                ImGuiDockNodeFlags_PassthruCentralNode);
 
+  ImGuiIO& io = ImGui::GetIO();
+  if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S)) {
+    mStatus = scene.save(mScenePath) ? "Scene saved (Ctrl+S)" : "Save failed";
+  }
+
   drawToolbar(scene, editorMode, playMode, gizmoMode);
   drawHierarchy(scene);
   drawInspector(scene);
@@ -783,6 +788,27 @@ void UI::drawGameplayHUD(float trainSpeedMps, float trainPosition,
   ImGui::Text("NEXT  %s", gameplay.nextStation);
   ImGui::TextDisabled("%.0f m  |  advisory %.0f km/h",
                       gameplay.distanceToNextStation, recommendedKmh);
+
+  if (gameplay.stationCount > 0) {
+    const float mapWidth = 300.0f;
+    const float step = gameplay.stationCount > 1
+                           ? mapWidth / static_cast<float>(gameplay.stationCount - 1)
+                           : 0.0f;
+    ImDrawList* list = ImGui::GetWindowDrawList();
+    const ImVec2 mapOrigin = ImGui::GetCursorScreenPos();
+    const float lineY = mapOrigin.y + 18.0f;
+    list->AddLine(mapOrigin, ImVec2(mapOrigin.x + mapWidth, lineY),
+                  IM_COL32(130, 135, 145, 180), 2.0f);
+    for (size_t i = 0; i < gameplay.stationCount; ++i) {
+      const float x = mapOrigin.x + step * static_cast<float>(i);
+      const bool active = i == gameplay.nextStationIndex;
+      const float radius = active ? 5.0f : 3.0f;
+      list->AddCircleFilled(ImVec2(x, lineY), radius,
+                            active ? IM_COL32(255, 210, 70, 255)
+                                   : IM_COL32(180, 185, 195, 220));
+    }
+    ImGui::Dummy({mapWidth, 30.0f});
+  }
   ImGui::EndGroup();
 
   ImGui::SetCursorPos({size.x - 250.0f, 24.0f});
