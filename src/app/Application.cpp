@@ -302,10 +302,12 @@ int Application::run() {
     const float renderTrainPosition = mPhysics.interpolatedPosition(mTrain);
     Camera renderCamera = mCamera;
     if (!mMouseCaptured) {
+      // Sürücü kabini: kamera trenin önünde, ray eksenine hizalı.
+      // Serbest kamera için sol tıklama ile fareyi yakala.
       renderCamera.position =
-          glm::vec3(0.0f, 2.4f, 8.0f - renderTrainPosition);
+          glm::vec3(0.0f, 1.72f, -renderTrainPosition - 3.05f);
       renderCamera.yaw = -90.0f;
-      renderCamera.pitch = -4.0f;
+      renderCamera.pitch = -3.0f;
     }
     std::vector<glm::vec2> passengerPositions;
     passengerPositions.reserve(mPassengers.walkingAgents().size());
