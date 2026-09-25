@@ -8,9 +8,9 @@ layout(set = 0, binding = 0) uniform sampler2D uHdrColor;
 
 layout(push_constant) uniform PostProcessPush {
     float trainSpeedMps;
+    float editorBackdropBlur;
     float pad0;
     float pad1;
-    float pad2;
 };
 
 layout(location = 0) in vec2 vUv;
