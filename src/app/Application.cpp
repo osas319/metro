@@ -132,8 +132,7 @@ void Application::handleEvent(const SDL_Event& e) {
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
       if (mEditorMode) {
         if (e.button.button == SDL_BUTTON_RIGHT &&
-            mEditorUI.viewportHovered() &&
-            !mRenderer.editorWantsKeyboard()) {
+            mEditorUI.viewportContains(e.button.x, e.button.y)) {
           mEditorOrbitHeld = true;
         }
       } else if ((e.button.button == SDL_BUTTON_RIGHT ||
