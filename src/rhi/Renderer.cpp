@@ -143,6 +143,17 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     addBox({0.0f, -0.75f, z}, {mTrainWidth * 0.38f, 0.16f, 0.28f},
            {0.12f, 0.13f, 0.15f, 1.0f}, 0.70f);
 
+  // Kabin ön camı ve sürücü konsolu: kamera kabin içinde olduğunda sürüş hissini artırır.
+  addBox({0.0f, 1.15f, -trainPosition - 3.35f},
+         {mTrainWidth * 0.46f, 0.50f, 0.05f},
+         {0.025f, 0.055f, 0.075f, 1.0f}, 0.10f);
+  addBox({0.0f, 0.72f, -trainPosition - 2.85f},
+         {mTrainWidth * 0.30f, 0.18f, 0.70f},
+         {0.08f, 0.10f, 0.12f, 1.0f}, 0.65f);
+  addBox({0.0f, 0.88f, -trainPosition - 2.35f},
+         {mTrainWidth * 0.18f, 0.08f, 0.12f},
+         {0.18f, 0.65f, 0.78f, 1.0f}, 0.25f);
+
   // Yürüyen yolcular.
   for (const glm::vec2& p : passengerPositions) {
     addBox({p.x, 0.25f, p.y}, {0.16f, 0.50f, 0.16f},
