@@ -504,6 +504,32 @@ std::vector<BuiltinPart> makeStationModuleParts() {
          {0.10f, 0.14f, moduleLength});
   parts.push_back(std::move(rightService));
 
+  // Sağ duvarda servis erişim kapıları: yolcu peronu değil, teknik alan.
+  BuiltinPart rightServiceDoors;
+  rightServiceDoors.color = {0.065f, 0.075f, 0.090f, 1.0f};
+  rightServiceDoors.roughness = 0.68f;
+  rightServiceDoors.materialId = 3.0f;
+  for (float z : {-9.0f, 0.0f, 9.0f}) {
+    addBox(rightServiceDoors, {rightSide * 4.065f, 1.05f, z},
+           {0.040f, 1.90f, 1.15f});
+    addBox(rightServiceDoors, {rightSide * 4.040f, 2.00f, z},
+           {0.055f, 0.08f, 1.28f});
+    addBox(rightServiceDoors, {rightSide * 4.038f, 0.34f, z - 0.42f},
+           {0.060f, 0.05f, 0.055f});
+  }
+  parts.push_back(std::move(rightServiceDoors));
+
+  // Servis kapılarının üstünde seyrek acil durum/enerji göstergeleri.
+  BuiltinPart rightServiceLights;
+  rightServiceLights.color = {0.82f, 0.88f, 0.92f, 1.0f};
+  rightServiceLights.roughness = 0.18f;
+  rightServiceLights.materialId = 5.0f;
+  for (float z : {-9.0f, 0.0f, 9.0f}) {
+    addBox(rightServiceLights, {rightSide * 4.045f, 2.24f, z},
+           {0.045f, 0.11f, 0.30f});
+  }
+  parts.push_back(std::move(rightServiceLights));
+
   // Sağ duvar boyunca seyrek servis kutuları ve kablo kapakları.
   BuiltinPart rightDetails;
   rightDetails.color = {0.22f, 0.25f, 0.29f, 1.0f};
