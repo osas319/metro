@@ -129,7 +129,16 @@ void UI::drawHierarchy(Scene& scene) {
   ImGui::TextDisabled("%zu entities", scene.size());
   ImGui::SameLine();
   if (ImGui::SmallButton("+"))
-    scene.create("Empty", "Empty");
+    ImGui::OpenPopup("CreateEntityPopup");
+
+  if (ImGui::BeginPopup("CreateEntityPopup")) {
+    if (ImGui::MenuItem("Empty")) scene.create("Empty", "Empty");
+    if (ImGui::MenuItem("Folder")) scene.create("New Folder", "Folder");
+    if (ImGui::MenuItem("Station")) scene.create("New Station", "Station");
+    if (ImGui::MenuItem("Train")) scene.create("New Train", "Train");
+    if (ImGui::MenuItem("Rail")) scene.create("New Rail", "Rail");
+    ImGui::EndPopup();
+  }
 
   ImGui::Separator();
 
@@ -200,7 +209,10 @@ void UI::drawInspector(Scene& scene) {
     return;
   }
 
-  std::snprintf(mRenameBuffer, sizeof(mRenameBuffer), "%s", node->name.c_str());
+  if (mLastSelected != scene.selected()) {
+    std::snprintf(mRenameBuffer, sizeof(mRenameBuffer), "%s", node->name.c_str());
+    mLastSelected = scene.selected();
+  }
   if (ImGui::InputText("Name", mRenameBuffer, sizeof(mRenameBuffer),
                        ImGuiInputTextFlags_EnterReturnsTrue))
     node->name = mRenameBuffer;
