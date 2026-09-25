@@ -1181,10 +1181,17 @@ void Renderer::createPostPipeline() {
   dynamic.dynamicStateCount = 2;
   dynamic.pDynamicStates = dynamicStates;
 
+  VkPushConstantRange postPushRange{};
+  postPushRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  postPushRange.offset = 0;
+  postPushRange.size = sizeof(PostProcessPush);
+
   VkPipelineLayoutCreateInfo layoutCi{};
   layoutCi.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   layoutCi.setLayoutCount = 1;
   layoutCi.pSetLayouts = &mPostDescSetLayout;
+  layoutCi.pushConstantRangeCount = 1;
+  layoutCi.pPushConstantRanges = &postPushRange;
 
   if (vkCreatePipelineLayout(mCtx->device(), &layoutCi, nullptr, &mPostPipelineLayout) != VK_SUCCESS) {
     vkDestroyShaderModule(mCtx->device(), vert, nullptr);
@@ -1419,6 +1426,12 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, mPostPipeline);
   vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, mPostPipelineLayout, 0, 1,
                           &mPostDescriptorSets[imageIndex], 0, nullptr);
+
+  PostProcessPush postPush{};
+  postPush.trainSpeedMps = std::clamp(std::abs(trainSpeed), 0.0f, 22.2f);
+  vkCmdPushConstants(cmd, mPostPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT,
+                     0, sizeof(PostProcessPush), &postPush);
+
   vkCmdDraw(cmd, 3, 1, 0, 0); // tam ekran üçgen; vertex/index buffer yok
   renderEditorUI(cmd);
 
