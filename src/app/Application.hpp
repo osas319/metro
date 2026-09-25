@@ -63,6 +63,7 @@ private:
   size_t mLastSignalBlock = static_cast<size_t>(-1);
   float mStopDwellSeconds = 0.0f;
   bool mMouseCaptured = false;
+  bool mEditorOrbitHeld = false;
   bool mEditorMode = true;
   bool mPlayMode = false;
   bool mHornHeld = false;
