@@ -69,6 +69,7 @@ public:
   // Bir kareyi uçur (acquire → record → submit → present).
   struct EditorMarker {
     glm::vec3 position{0.0f};
+    glm::vec3 rotation{0.0f};
     glm::vec3 scale{0.25f};
     glm::vec4 color{0.85f, 0.55f, 0.10f, 1.0f};
   };
