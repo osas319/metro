@@ -66,9 +66,16 @@ public:
   void shutdown();
 
   // Bir kareyi uçur (acquire → record → submit → present).
+  struct EditorMarker {
+    glm::vec3 position{0.0f};
+    glm::vec3 scale{0.25f};
+    glm::vec4 color{0.85f, 0.55f, 0.10f, 1.0f};
+  };
+
   void drawFrame(const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
                  const std::vector<bool>& occupiedBlocks,
-                 const std::vector<glm::vec2>& passengerPositions = {});
+                 const std::vector<glm::vec2>& passengerPositions = {},
+                 const std::vector<EditorMarker>& editorMarkers = {});
 
   // Pencere boyutu değişti; swapchain'i güvenli anda yeniden kur.
   void onResize();
@@ -101,7 +108,8 @@ private:
   void recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                            const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
                            const std::vector<bool>& occupiedBlocks,
-                           const std::vector<glm::vec2>& passengerPositions);
+                           const std::vector<glm::vec2>& passengerPositions,
+                           const std::vector<EditorMarker>& editorMarkers);
   VkShaderModule loadShader(const char* filename);
   VkFormat pickDepthFormat() const;
 
