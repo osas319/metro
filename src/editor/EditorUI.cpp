@@ -31,6 +31,43 @@ bool hasChildren(const Scene& scene, entt::entity entity) {
   return false;
 }
 
+bool isBelow(const Scene& scene, entt::entity entity, entt::entity possibleAncestor) {
+  if (entity == entt::null || possibleAncestor == entt::null)
+    return false;
+
+  entt::entity current = entity;
+  for (size_t guard = 0; guard < scene.size() + 1; ++guard) {
+    const auto* node = scene.get(current);
+    if (node == nullptr)
+      return false;
+    if (node->parent == possibleAncestor)
+      return true;
+    if (node->parent == entt::null)
+      return false;
+    current = node->parent;
+  }
+  return true;
+}
+
+entt::entity creationParent(const Scene& scene) {
+  const auto* selected = scene.get(scene.selected());
+  if (selected != nullptr &&
+      (selected->type == "Scene" || selected->type == "Folder"))
+    return selected->id;
+
+  if (selected != nullptr)
+    return selected->parent;
+
+  return entt::null;
+}
+
+std::string parentLabel(const Scene& scene, entt::entity parent) {
+  if (parent == entt::null)
+    return "None";
+  const auto* node = scene.get(parent);
+  return node != nullptr ? node->name : "None";
+}
+
 } // namespace
 
 void UI::draw(Scene& scene, bool& editorMode, bool& playMode,
@@ -75,8 +112,10 @@ void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode) {
     playMode = false;
 
   ImGui::SameLine();
-  if (ImGui::Button(" +  ENTITY", {92.0f, 32.0f}))
-    scene.create("New Entity", "Empty");
+  if (ImGui::Button(" +  ENTITY", {92.0f, 32.0f})) {
+    scene.create("New Entity", "Empty", creationParent(scene));
+    mStatus = "Created entity";
+  }
 
   ImGui::SameLine();
   if (ImGui::Button("DUPLICATE", {96.0f, 32.0f}))
@@ -103,6 +142,9 @@ void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode) {
   ImGui::TextDisabled("Scene");
   ImGui::SameLine();
   ImGui::TextUnformatted(mScenePath.c_str());
+
+  ImGui::SameLine();
+  ImGui::TextDisabled("| %s", mStatus.c_str());
 
   ImGui::SameLine();
   const float right = ImGui::GetContentRegionAvail().x;
@@ -132,11 +174,12 @@ void UI::drawHierarchy(Scene& scene) {
     ImGui::OpenPopup("CreateEntityPopup");
 
   if (ImGui::BeginPopup("CreateEntityPopup")) {
-    if (ImGui::MenuItem("Empty")) scene.create("Empty", "Empty");
-    if (ImGui::MenuItem("Folder")) scene.create("New Folder", "Folder");
-    if (ImGui::MenuItem("Station")) scene.create("New Station", "Station");
-    if (ImGui::MenuItem("Train")) scene.create("New Train", "Train");
-    if (ImGui::MenuItem("Rail")) scene.create("New Rail", "Rail");
+    const entt::entity parent = creationParent(scene);
+    if (ImGui::MenuItem("Empty")) { scene.create("Empty", "Empty", parent); mStatus = "Created Empty"; }
+    if (ImGui::MenuItem("Folder")) { scene.create("New Folder", "Folder", parent); mStatus = "Created Folder"; }
+    if (ImGui::MenuItem("Station")) { scene.create("New Station", "Station", parent); mStatus = "Created Station"; }
+    if (ImGui::MenuItem("Train")) { scene.create("New Train", "Train", parent); mStatus = "Created Train"; }
+    if (ImGui::MenuItem("Rail")) { scene.create("New Rail", "Rail", parent); mStatus = "Created Rail"; }
     ImGui::EndPopup();
   }
 
@@ -214,8 +257,10 @@ void UI::drawInspector(Scene& scene) {
     mLastSelected = scene.selected();
   }
   if (ImGui::InputText("Name", mRenameBuffer, sizeof(mRenameBuffer),
-                       ImGuiInputTextFlags_EnterReturnsTrue))
+                       ImGuiInputTextFlags_EnterReturnsTrue)) {
     node->name = mRenameBuffer;
+    mStatus = "Renamed entity";
+  }
 
   ImGui::TextDisabled("Type: %s", node->type.c_str());
   if (!node->asset.empty())
@@ -223,9 +268,19 @@ void UI::drawInspector(Scene& scene) {
 
   ImGui::Separator();
   if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+    ImGui::BeginDisabled(node->locked);
     ImGui::DragFloat3("Position", &node->transform.position.x, 0.05f);
     ImGui::DragFloat3("Rotation", &node->transform.rotation.x, 0.5f);
     ImGui::DragFloat3("Scale", &node->transform.scale.x, 0.01f, 0.01f, 100.0f);
+    if (ImGui::Button("Reset Transform")) {
+      node->transform = {};
+      node->transform.scale = glm::vec3(1.0f);
+      mStatus = "Transform reset";
+    }
+    ImGui::EndDisabled();
+
+    const glm::vec3 world = scene.worldPosition(node->id);
+    ImGui::TextDisabled("World: %.2f, %.2f, %.2f", world.x, world.y, world.z);
   }
 
   if (ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -235,12 +290,43 @@ void UI::drawInspector(Scene& scene) {
 
   if (ImGui::CollapsingHeader("Entity", ImGuiTreeNodeFlags_DefaultOpen)) {
     ImGui::Text("ID: %u", entt::to_integral(node->id));
-    ImGui::Text("Parent: %s", node->parent == entt::null ? "None" : "Entity");
-    if (ImGui::Button("Duplicate"))
+
+    const std::string currentParent = parentLabel(scene, node->parent);
+    if (ImGui::BeginCombo("Parent", currentParent.c_str())) {
+      const bool noneSelected = node->parent == entt::null;
+      if (ImGui::Selectable("None", noneSelected)) {
+        if (scene.setParent(node->id, entt::null))
+          mStatus = "Parent cleared";
+      }
+      if (noneSelected)
+        ImGui::SetItemDefaultFocus();
+
+      for (const auto entity : scene.order()) {
+        const auto* candidate = scene.get(entity);
+        if (candidate == nullptr || candidate->id == node->id ||
+            isBelow(scene, candidate->id, node->id))
+          continue;
+
+        const bool selectedParent = candidate->id == node->parent;
+        if (ImGui::Selectable(candidate->name.c_str(), selectedParent)) {
+          if (scene.setParent(node->id, candidate->id))
+            mStatus = "Parent changed";
+        }
+        if (selectedParent)
+          ImGui::SetItemDefaultFocus();
+      }
+      ImGui::EndCombo();
+    }
+
+    if (ImGui::Button("Duplicate")) {
       scene.duplicate(node->id);
+      mStatus = "Entity duplicated";
+    }
     ImGui::SameLine();
-    if (ImGui::Button("Delete"))
+    if (ImGui::Button("Delete")) {
       scene.destroy(node->id);
+      mStatus = "Entity deleted";
+    }
   }
 
   ImGui::End();
@@ -325,7 +411,7 @@ void UI::drawViewport(float trainSpeedMps, float trainPosition,
   ImGui::SetCursorPos({16.0f, ImGui::GetWindowHeight() - 46.0f});
   ImGui::BeginGroup();
   ImGui::Text("GPU: %s", gpuName != nullptr ? gpuName : "Unknown");
-  ImGui::TextDisabled("Editor gizmos and selection rendering coming next");
+  ImGui::TextDisabled("Hierarchy transforms active | Select an entity to edit");
   ImGui::EndGroup();
 
   ImGui::End();
