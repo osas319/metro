@@ -13,6 +13,7 @@ public:
   };
 
   void setParameters(Parameters parameters);
+  void reset(float position = 0.0f);
   void update(float dt, bool throttle, bool brake, bool signalClear = true,
               float routeLength = 0.0f);
 
