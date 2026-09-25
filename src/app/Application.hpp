@@ -59,6 +59,7 @@ private:
   audio::AudioBackend mAudioBackend;
   bool mTerminalServiced = false;
   size_t mLastServicedStop = static_cast<size_t>(-1);
+  size_t mInitialWaitingPassengers = 24;
   size_t mLastSignalBlock = static_cast<size_t>(-1);
   float mStopDwellSeconds = 0.0f;
   bool mMouseCaptured = false;
