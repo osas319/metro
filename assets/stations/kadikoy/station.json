@@ -17,6 +17,7 @@
   "acceleration_mps2": 1.2,
   "service_brake_mps2": 2.4,
   "rolling_resistance_mps2": 0.08,
+  "max_jerk_mps3": 3.0,
   "stops": [
     {"name": "Kadikoy", "position": 0.00, "dwell_seconds": 3},
     {"name": "Ayrilik Cesmesi", "position": 1148.00, "dwell_seconds": 3},
