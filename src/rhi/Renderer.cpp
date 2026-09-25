@@ -155,6 +155,19 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   addBox({7.9f, 2.35f, -halfRoute}, {0.08f, 0.14f, halfRoute},
          {0.10f, 0.11f, 0.13f, 1.0f}, 0.78f);
 
+  // Tünel aydınlatması: görünür alana yalnızca gerekli armatürleri üret.
+  // Emissive materialId=5 sayesinde düşük ortam ışığında bile ritmik bir aydınlatma
+  // ve tren yaklaşırken farlarla birleşen bir ışık hissi oluşur.
+  const float firstLamp = std::ceil(visibleStart / 18.0f) * 18.0f;
+  for (float p = firstLamp; p <= visibleEnd; p += 18.0f) {
+    if (isInsideStation(p)) continue;
+    const float z = -p;
+    addBox({0.0f, 4.05f, z}, {0.72f, 0.055f, 0.16f},
+           {0.78f, 0.84f, 0.92f, 1.0f}, 0.20f, 5.0f);
+    addBox({0.0f, 3.96f, z}, {0.24f, 0.025f, 0.07f},
+           {0.48f, 0.62f, 0.86f, 1.0f}, 0.22f, 5.0f);
+  }
+
   // 1500 V havai hat için basit temas teli ve taşıyıcı sistemi.
   addBox({0.0f, 3.05f, -halfRoute}, {0.025f, 0.025f, halfRoute},
          {0.58f, 0.60f, 0.62f, 1.0f}, 0.22f);
