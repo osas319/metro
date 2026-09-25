@@ -8,6 +8,8 @@
 #include <cctype>
 #include <cstring>
 #include <fstream>
+#include <filesystem>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -83,10 +85,14 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   glm::mat4 editorTrainTransform(1.0f);
   bool editorTrainOverride = false;
   bool editorTrainVisible = true;
+  bool editorTrainExternal = false;
+  std::string editorTrainAsset;
 
   std::vector<glm::mat4> stationEditorTransforms(mStopPositions.size(), glm::mat4(1.0f));
   std::vector<bool> stationEditorOverride(mStopPositions.size(), false);
   std::vector<bool> stationEditorVisible(mStopPositions.size(), true);
+  std::vector<bool> stationEditorExternal(mStopPositions.size(), false);
+  std::vector<std::string> stationEditorAssets(mStopPositions.size());
 
   for (const EditorRenderOverride& override : editorOverrides) {
     if (override.kind == EditorRenderKind::Train) {
@@ -98,6 +104,20 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
       stationEditorTransforms[override.index] = override.transform;
       stationEditorOverride[override.index] = true;
       stationEditorVisible[override.index] = override.visible;
+    } else if (override.kind == EditorRenderKind::Asset) {
+      if (override.index == static_cast<size_t>(-1)) {
+        editorTrainTransform = override.transform;
+        editorTrainOverride = true;
+        editorTrainVisible = override.visible;
+        editorTrainExternal = true;
+        editorTrainAsset = override.assetPath;
+      } else if (override.index < stationEditorTransforms.size()) {
+        stationEditorTransforms[override.index] = override.transform;
+        stationEditorOverride[override.index] = true;
+        stationEditorVisible[override.index] = override.visible;
+        stationEditorExternal[override.index] = true;
+        stationEditorAssets[override.index] = override.assetPath;
+      }
     }
   }
 
@@ -163,6 +183,13 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     if (stationEditorOverride[stationIndex] && !stationEditorVisible[stationIndex])
       continue;
 
+    if (stationEditorExternal[stationIndex]) {
+      addModelInstance(SceneModel::External, {0.0f, 0.0f, 0.0f});
+      instances.back().transform = stationEditorTransforms[stationIndex];
+      instances.back().externalAsset = stationEditorAssets[stationIndex];
+      continue;
+    }
+
     const float firstCenter = p - stationHalfLength + stationModuleLength * 0.5f;
     for (int module = 0; module < stationModuleCount; ++module) {
       const float moduleCenter = firstCenter + static_cast<float>(module) * stationModuleLength;
@@ -189,7 +216,12 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   const float setCenter = -trainPosition;
 
   if (editorTrainVisible) {
-    for (size_t car = 0; car < carCount; ++car) {
+    if (editorTrainExternal) {
+      addModelInstance(SceneModel::External, {0.0f, 0.0f, 0.0f});
+      instances.back().transform = editorTrainTransform;
+      instances.back().externalAsset = editorTrainAsset;
+    } else {
+      for (size_t car = 0; car < carCount; ++car) {
       const float carZ =
           setCenter + (static_cast<float>(car) - 1.5f) * (carLength + carGap);
       if (editorTrainOverride) {
@@ -271,6 +303,9 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
 
   }
 
+    }
+  }
+
   // Yürüyen yolcular.
   for (const glm::vec2& p : passengerPositions) {
     addBox({p.x, 0.25f, p.y}, {0.16f, 0.50f, 0.16f},
@@ -311,6 +346,29 @@ VkShaderModule Renderer::loadShader(const char* filename) {
     throw std::runtime_error(std::string("vkCreateShaderModule: ") + filename);
   }
   return module;
+}
+
+Model* Renderer::getEditorModel(const std::string& path) {
+  if (path.empty()) return nullptr;
+  const auto cached = mEditorModels.find(path);
+  if (cached != mEditorModels.end()) return cached->second.get();
+  if (mFailedEditorAssets.contains(path)) return nullptr;
+  if (!std::filesystem::exists(path)) {
+    mFailedEditorAssets.insert(path);
+    METRO_WARN("Editor asseti bulunamadi: %s", path.c_str());
+    return nullptr;
+  }
+
+  auto model = std::make_unique<Model>();
+  if (!model->load(*mCtx, mCommandPool, path)) {
+    mFailedEditorAssets.insert(path);
+    METRO_WARN("Editor asseti yuklenemedi: %s", path.c_str());
+    return nullptr;
+  }
+  Model* result = model.get();
+  mEditorModels.emplace(path, std::move(model));
+  METRO_INFO("Editor asseti yuklendi: %s", path.c_str());
+  return result;
 }
 
 VkFormat Renderer::pickDepthFormat() const {
@@ -1229,6 +1287,11 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
     if (instance.model == SceneModel::TrainCar) model = &mTrainCarModel;
     if (instance.model == SceneModel::StationModule) model = &mStationModuleModel;
     if (instance.model == SceneModel::TunnelModule) model = &mTunnelModuleModel;
+    if (instance.model == SceneModel::External) {
+      model = getEditorModel(instance.externalAsset);
+      if (model == nullptr || model->subMeshCount() == 0)
+        continue;
+    }
 
     if (model != boundModel) {
       model->bind(cmd);
@@ -1506,6 +1569,12 @@ void Renderer::shutdown() {
 
   if (mCommandPool) vkDestroyCommandPool(mCtx->device(), mCommandPool, nullptr);
   mCommandPool = VK_NULL_HANDLE;
+
+  for (auto& [path, model] : mEditorModels) {
+    if (model) model->destroy(*mCtx);
+  }
+  mEditorModels.clear();
+  mFailedEditorAssets.clear();
 
   mModel.destroy(*mCtx);
   mTrainCarModel.destroy(*mCtx);
