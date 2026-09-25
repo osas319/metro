@@ -336,9 +336,21 @@ int Application::run() {
       renderCamera.pitch = -7.0f;
     }
     std::vector<glm::vec2> passengerPositions;
-    passengerPositions.reserve(mPassengers.walkingAgents().size());
+    const size_t waitingVisualCount = std::min<size_t>(mPassengers.waiting(), 32);
+    passengerPositions.reserve(mPassengers.walkingAgents().size() +
+                               waitingVisualCount);
     for (const auto& passenger : mPassengers.walkingAgents())
       passengerPositions.push_back(passenger.position(mPassengerNav));
+
+    // Kadıköy başlangıç peronunda bekleyen kalabalık: görsel temsil,
+    // simülasyondaki toplam bekleyen sayısını aşmaması için sınırlıdır.
+    for (size_t i = 0; i < waitingVisualCount; ++i) {
+      const size_t row = i / 4;
+      const size_t col = i % 4;
+      const float x = -3.1f + static_cast<float>(col) * 0.85f;
+      const float z = -12.0f - static_cast<float>(row) * 3.4f;
+      passengerPositions.emplace_back(x, z);
+    }
     mRenderer.drawFrame(renderCamera, renderTrainPosition, mTrain.speed(), mTrain.doorOpenFraction(),
                         mSignal.occupiedBlocks(), passengerPositions);
     ++frameCount;
