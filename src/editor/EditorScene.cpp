@@ -131,6 +131,18 @@ glm::vec3 Scene::worldPosition(entt::entity entity) const {
   return glm::vec3(position);
 }
 
+bool Scene::translateWorld(entt::entity entity, const glm::vec3& delta) {
+  SceneEntity* node = get(entity);
+  if (node == nullptr || node->locked)
+    return false;
+
+  const glm::mat4 parentWorld =
+      node->parent == entt::null ? glm::mat4(1.0f) : worldTransform(node->parent);
+  const glm::vec4 localDelta = glm::inverse(parentWorld) * glm::vec4(delta, 0.0f);
+  node->transform.position += glm::vec3(localDelta);
+  return true;
+}
+
 bool Scene::isDescendant(entt::entity entity, entt::entity possibleParent) const {
   if (entity == entt::null || possibleParent == entt::null)
     return false;
