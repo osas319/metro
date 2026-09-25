@@ -3,9 +3,9 @@ ENTITY 1 0 "M4 World" "Scene" "" 1 0
 TRANSFORM 0 0 0 0 0 0 1 1 1
 ENTITY 2 1 "M4 Route" "Folder" "" 1 0
 TRANSFORM 0 0 0 0 0 0 1 1 1
-ENTITY 3 2 "Kadikoy Station" "Station" "" 1 0
+ENTITY 3 2 "Kadikoy Station" "Station" "Station/0" 1 0
 TRANSFORM 0 0 0 0 0 0 1 1 1
-ENTITY 4 2 "Ayrilik Cesmesi Station" "Station" "" 1 0
+ENTITY 4 2 "Ayrilik Cesmesi Station" "Station" "Station/1" 1 0
 TRANSFORM 0 0 -1148 0 0 0 1 1 1
 ENTITY 5 2 "Track" "Rail" "" 1 0
 TRANSFORM 0 0 0 0 0 0 1 1 1
