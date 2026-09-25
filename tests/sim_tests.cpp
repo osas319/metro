@@ -226,9 +226,9 @@ int main() {
   assert(station.initialWaitingPassengers == 24);
   assert(station.blockCount == 8);
   assert(station.passengerCapacity == 320);
-  assert(station.routeLength == 2000.0f);
+  assert(station.routeLength == 33500.0f);
   assert(station.platformWidth == 4.0f);
-  assert(station.trackGauge == 2.4f);
+  assert(station.trackGauge == 1.435f);
   assert(station.trainWidth == 2.8f);
   assert(station.trainHeight == 3.2f);
   assert(station.columnSpacing == 24.0f);
