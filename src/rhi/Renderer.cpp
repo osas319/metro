@@ -15,6 +15,7 @@
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_vulkan.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "core/Log.hpp"
 #include "rhi/VulkanContext.hpp"
@@ -1257,9 +1258,15 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
     mModel.bind(cmd);
     for (const EditorMarker& marker : editorMarkers) {
       ModelPush push{};
-      push.model = glm::scale(
-          glm::translate(glm::mat4(1.0f), marker.position),
-          marker.scale);
+      glm::mat4 markerTransform =
+          glm::translate(glm::mat4(1.0f), marker.position);
+      markerTransform = glm::rotate(markerTransform, glm::radians(marker.rotation.x),
+                                    glm::vec3(1.0f, 0.0f, 0.0f));
+      markerTransform = glm::rotate(markerTransform, glm::radians(marker.rotation.y),
+                                    glm::vec3(0.0f, 1.0f, 0.0f));
+      markerTransform = glm::rotate(markerTransform, glm::radians(marker.rotation.z),
+                                    glm::vec3(0.0f, 0.0f, 1.0f));
+      push.model = glm::scale(markerTransform, marker.scale);
       push.baseColor = marker.color;
       push.metallic = 0.0f;
       push.roughness = 0.38f;
