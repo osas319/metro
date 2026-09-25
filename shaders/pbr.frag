@@ -102,6 +102,14 @@ void main() {
     vec3 ambient = albedo * 0.10 * (0.5 + 0.5 * N.y);
 
     vec3 color = ambient + Lo;
+
+    // Tünel atmosferi: uzak geometriyi yumuşatıp sahne derinliği sağlar.
+    const vec3 tunnelFogColor = vec3(0.028, 0.035, 0.050);
+    float cameraDistance = distance(frame.cameraPos.xyz, vWorldPos);
+    float fogFactor = exp(-cameraDistance * 0.0045);
+    fogFactor = clamp(fogFactor, 0.0, 1.0);
+    color = mix(tunnelFogColor, color, fogFactor);
+
     // Swapchain SRGB: lineer yaz, donanım kodlasın. ACES tonemap post ile.
     outColor = vec4(color, push.baseColor.a);
 }
