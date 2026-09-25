@@ -78,6 +78,26 @@ void main() {
     vec3 radiance = vec3(2.6); // tek yönlü ışık şiddeti (sonra: ışık listesi + intensity)
     vec3 Lo = (diffuse + specular) * radiance * NdotL;
 
+    // Tren farı: menzili yumuşak düşen lokal ışık.
+    vec3 toHeadlight = frame.headlightPos.xyz - vWorldPos;
+    float distanceToHeadlight = length(toHeadlight);
+    vec3 HL = normalize(toHeadlight);
+    float HNdL = max(dot(N, HL), 0.0);
+    float falloff = 1.0 - smoothstep(frame.headlightColor.a * 0.45,
+                                     frame.headlightColor.a,
+                                     distanceToHeadlight);
+    float headlightFacing = pow(max(dot(HL, vec3(0.0, 0.0, -1.0)), 0.0), 1.5);
+    vec3 Hh = normalize(V + HL);
+    float hNdotH = max(dot(N, Hh), 0.0);
+    float hHdotV = max(dot(Hh, V), 0.0);
+    vec3 hF = F0 + (1.0 - F0) * pow(clamp(1.0 - hHdotV, 0.0, 1.0), 5.0);
+    float hD = distributionGGX(hNdotH, alpha);
+    float hG = geometrySmith(NdotV, max(HNdL, 1e-4), k);
+    vec3 hSpec = (hD * hG * hF) / max(4.0 * NdotV * max(HNdL, 1e-4), 1e-4);
+    vec3 hDiffuse = (1.0 - hF) * (1.0 - metallic) * albedo / PI;
+    Lo += (hDiffuse + hSpec) * frame.headlightColor.rgb * HNdL *
+          falloff * headlightFacing * 3.0;
+
     // Hafif hemisfer ambient — tünelde gökyüzü yok, zemin yansıması hissi
     vec3 ambient = albedo * 0.10 * (0.5 + 0.5 * N.y);
 
