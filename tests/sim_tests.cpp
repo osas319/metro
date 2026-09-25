@@ -16,6 +16,10 @@ int main() {
   train.update(1.0f, true, false);
   assert(train.speed() > 0.0f);
   assert(train.position() > 0.0f);
+  assert(train.maxSpeed() > 0.0f);
+  assert(train.serviceBrake() > 0.0f);
+  assert(train.brakingDistance() > 0.0f);
+  assert(train.recommendedSpeed(100.0f) <= train.maxSpeed());
 
   assert(!train.requestDoorsOpen(true, false));
   assert(!train.doorsOpen());
@@ -193,6 +197,10 @@ int main() {
   assert(audioEvent.type == metro::audio::EventType::SignalChanged);
   assert(std::string(metro::audio::eventName(audioEvent.type)) ==
          "signal_changed");
+  audioEvents.push({metro::audio::EventType::Horn, 0});
+  assert(audioEvents.tryPop(audioEvent));
+  assert(audioEvent.type == metro::audio::EventType::Horn);
+  assert(std::string(metro::audio::eventName(audioEvent.type)) == "horn");
 
   metro::sim::Route route;
   route.buildBlockStops(3, 900.0f);
