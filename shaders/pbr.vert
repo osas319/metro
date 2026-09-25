@@ -12,6 +12,7 @@ layout(push_constant) uniform ModelPush {
     vec4 baseColor;  // rgb + alpha (metallic-roughness baseColorFactor)
     float metallic;
     float roughness;
+    float materialId;
 } push;
 
 layout(location = 0) in vec3 inPosition;
