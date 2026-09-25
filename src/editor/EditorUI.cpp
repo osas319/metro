@@ -3,6 +3,8 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <cstdint>
+#include <cstdio>
 #include <cmath>
 #include <filesystem>
 #include <vector>
