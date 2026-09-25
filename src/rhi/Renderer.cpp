@@ -25,7 +25,8 @@
 namespace metro::rhi {
 
 std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
-    float trainPosition, float trainSpeed, float doorOpenFraction, const std::vector<bool>& occupiedBlocks,
+    float trainPosition, float trainSpeed, float doorOpenFraction, bool trainBraking,
+    const std::vector<bool>& occupiedBlocks,
     const std::vector<glm::vec2>& passengerPositions,
     const std::vector<EditorRenderOverride>& editorOverrides) const {
   std::vector<SceneInstance> instances;
@@ -332,6 +333,15 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     addParentedBox(editorTrainTransform, {x, 0.72f, frontZ - 0.08f},
            {0.12f, 0.12f, 0.06f},
            {1.0f, 0.94f, 0.72f, 1.0f}, 0.14f, 5.0f);
+  }
+
+  // Arka kırmızı stop lambaları: tren gerçekten yavaşlarken parlaklaşır.
+  const float rearZ = setCenter + setLength * 0.50f;
+  const float brakeIntensity = trainBraking ? 1.0f : 0.18f;
+  for (float x : {-0.72f, 0.72f}) {
+    addParentedBox(editorTrainTransform, {x, 0.72f, rearZ + 0.08f},
+           {0.12f, 0.12f, 0.06f},
+           {0.95f * brakeIntensity, 0.035f, 0.025f, 1.0f}, 0.14f, 5.0f);
   }
 
   // Kabin ön camı ve sürücü konsolu: kamera kabin içinde olduğunda sürüş hissini artırır.
@@ -1297,7 +1307,8 @@ void Renderer::createSyncObjects() {
 }
 
 void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
-                                   const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
+                                   const app::Camera& camera, float trainPosition, float trainSpeed,
+                                   float doorOpenFraction, bool trainBraking,
                                    const std::vector<bool>& occupiedBlocks,
                                    const std::vector<glm::vec2>& passengerPositions,
                                    const std::vector<EditorMarker>& editorMarkers,
@@ -1347,8 +1358,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                           &mDescriptorSets[imageIndex], 0, nullptr);
 
   const std::vector<SceneInstance> instances =
-      buildKadikoyScene(trainPosition, trainSpeed, doorOpenFraction, occupiedBlocks,
-                        passengerPositions, editorOverrides);
+      buildKadikoyScene(trainPosition, trainSpeed, doorOpenFraction, trainBraking,
+                        occupiedBlocks, passengerPositions, editorOverrides);
 
   const Model* boundModel = nullptr;
   for (const SceneInstance& instance : instances) {
@@ -1447,7 +1458,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
   if (vkEndCommandBuffer(cmd) != VK_SUCCESS) throw std::runtime_error("vkEndCommandBuffer");
 }
 
-void Renderer::drawFrame(const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
+void Renderer::drawFrame(const app::Camera& camera, float trainPosition, float trainSpeed,
+                         float doorOpenFraction, bool trainBraking,
                          const std::vector<bool>& occupiedBlocks,
                          const std::vector<glm::vec2>& passengerPositions,
                          const std::vector<EditorMarker>& editorMarkers,
@@ -1476,7 +1488,7 @@ void Renderer::drawFrame(const app::Camera& camera, float trainPosition, float t
   // 2) Komut tamponunu bu image için yeniden yaz.
   vkResetCommandBuffer(mCommands[mFrame], 0);
   recordCommandBuffer(mCommands[mFrame], imageIndex, camera, trainPosition,
-                      trainSpeed, doorOpenFraction, occupiedBlocks,
+                      trainSpeed, doorOpenFraction, trainBraking, occupiedBlocks,
                       passengerPositions, editorMarkers, editorOverrides);
 
   // 3) Submit: renk çıktısı aşamasına kadar bekle.
