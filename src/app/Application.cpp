@@ -13,6 +13,27 @@
 
 namespace metro::app {
 
+void Application::enterFreeCamera() {
+  // Freecam her açıldığında trenin mevcut konumunun hemen dışından başlar.
+  // Kamerayı vagonun içine koymak yerine sağ-ön tarafta güvenli bir başlangıç
+  // noktası seçip trenin orta gövdesine baktırıyoruz.
+  const float trainZ = -mTrain.position();
+  const glm::vec3 target{0.0f, 1.0f, trainZ};
+  mCamera.position = {5.5f, 3.0f, trainZ + 7.0f};
+
+  const glm::vec3 direction = glm::normalize(target - mCamera.position);
+  mCamera.yaw = glm::degrees(std::atan2(direction.z, direction.x));
+  mCamera.pitch =
+      glm::degrees(std::asin(std::clamp(direction.y, -1.0f, 1.0f)));
+  mCamera.fovDegrees = 60.0f;
+  mCamera.moveSpeed = 8.0f;
+
+  mCameraViewMode = CameraViewMode::Free;
+  mMouseCaptured = true;
+  mEditorOrbitHeld = false;
+  SDL_SetWindowRelativeMouseMode(mWindow, true);
+}
+
 bool Application::init() {
   const char* manifestPath = std::getenv("METRO_STATION_MANIFEST");
   StationManifest station;
@@ -262,9 +283,7 @@ void Application::handleEvent(const SDL_Event& e) {
         mMouseCaptured = false;
         SDL_SetWindowRelativeMouseMode(mWindow, false);
       } else if (!mRenderer.editorWantsKeyboard() && e.key.key == SDLK_F3) {
-        mCameraViewMode = CameraViewMode::Free;
-        mMouseCaptured = true;
-        SDL_SetWindowRelativeMouseMode(mWindow, true);
+        enterFreeCamera();
       } else if (e.key.key == SDLK_ESCAPE && (mMouseCaptured || mEditorOrbitHeld)) {
         mMouseCaptured = false;
         mEditorOrbitHeld = false;
@@ -278,7 +297,10 @@ void Application::handleEvent(const SDL_Event& e) {
         mEmergencyBrakeHeld = false;
       break;
     case SDL_EVENT_MOUSE_MOTION:
-      if (mMouseCaptured || mEditorOrbitHeld) {
+      // Editör orbit'i event tabanlı kalır. Gameplay freecam ise relative
+      // mouse'u update() içinde doğrudan okur; böylece Wayland/SDL relative
+      // mouse eventlerinin kaybolması freecam bakışını bozmaz.
+      if (!mMouseCaptured && mEditorOrbitHeld) {
         mCamera.yaw += e.motion.xrel * mCamera.mouseSensitivity;
         mCamera.pitch -= e.motion.yrel * mCamera.mouseSensitivity;
         mCamera.pitch = std::clamp(mCamera.pitch, -89.0f, 89.0f);
@@ -396,6 +418,18 @@ void Application::update(float dt) {
       mEditorMode && mEditorUI.viewportHovered();
   if (!mMouseCaptured && !editorCameraMove)
     return;
+
+  if (mMouseCaptured && !mEditorMode &&
+      mCameraViewMode == CameraViewMode::Free) {
+    float relativeX = 0.0f;
+    float relativeY = 0.0f;
+    SDL_GetRelativeMouseState(&relativeX, &relativeY);
+    if (relativeX != 0.0f || relativeY != 0.0f) {
+      mCamera.yaw += relativeX * mCamera.mouseSensitivity;
+      mCamera.pitch -= relativeY * mCamera.mouseSensitivity;
+      mCamera.pitch = std::clamp(mCamera.pitch, -89.0f, 89.0f);
+    }
+  }
 
   float velocity = mCamera.moveSpeed * dt;
   if (mKeyboardState[SDL_SCANCODE_LSHIFT] ||
