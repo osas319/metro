@@ -12,6 +12,11 @@ namespace metro::rhi {
 
 class VulkanContext;
 
+enum class BuiltinModelType {
+  TrainCar,
+  StationModule
+};
+
 struct SubMesh {
   uint32_t firstIndex = 0;
   uint32_t indexCount = 0;
@@ -28,6 +33,7 @@ public:
 
   // glTF/glbb dosyasını yükler; staging → device-local kopyası dahil.
   bool load(VulkanContext& ctx, VkCommandPool pool, const std::string& path);
+  bool loadBuiltin(VulkanContext& ctx, VkCommandPool pool, BuiltinModelType type);
   void destroy(VulkanContext& ctx);
 
   // Vertex/index buffer'larını bağla; çizim Renderer'da per-submesh yapılır
