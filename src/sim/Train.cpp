@@ -42,7 +42,7 @@ bool Train::requestDoorsOpen(bool open, bool platformAligned) {
 void Train::update(float dt, bool throttle, bool brake, bool signalClear,
                    float routeLength) {
   if (!std::isfinite(dt) || dt <= 0.0f) return;
-  if (mDoorsOpen || !signalClear) throttle = false;
+  if (mDoorsOpen || mDoorOpenFraction > 0.01f || !signalClear) throttle = false;
   if (routeLength > 0.0f && mPosition >= routeLength) {
     throttle = false;
     brake = true;
