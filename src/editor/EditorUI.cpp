@@ -801,6 +801,14 @@ void UI::drawGameplayHUD(float trainSpeedMps, float trainPosition,
 
   ImGui::SetCursorPos({24.0f, size.y - 142.0f});
   ImGui::BeginGroup();
+  if (gameplay.emergencyBrakeActive)
+    ImGui::TextColored({1.0f, 0.18f, 0.16f, 1.0f}, "EMERGENCY BRAKE");
+  else if (gameplay.serviceBrakeActive)
+    ImGui::TextColored({1.0f, 0.72f, 0.18f, 1.0f}, "SERVICE BRAKE");
+  else if (gameplay.tractionActive)
+    ImGui::TextColored({0.25f, 0.85f, 0.45f, 1.0f}, "TRACTION");
+  else
+    ImGui::TextDisabled("COAST");
   ImGui::Text("ACCEL  %+0.2f m/s²", gameplay.accelerationMps2);
   ImGui::Text("PASSENGERS  %zu / %zu", gameplay.onboardPassengers,
               gameplay.onboardPassengers + gameplay.waitingPassengers);
