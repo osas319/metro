@@ -10,6 +10,7 @@ const char* eventName(EventType type) {
   case EventType::TerminalServiced: return "terminal_serviced";
   case EventType::TrainDeparted: return "train_departed";
   case EventType::SignalChanged: return "signal_changed";
+  case EventType::Horn: return "horn";
   }
   return "unknown";
 }
