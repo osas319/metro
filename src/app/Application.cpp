@@ -436,6 +436,15 @@ int Application::run() {
     editor::GameplayHUDData gameplayHUD{};
     gameplayHUD.nextStation = hudStop.name.c_str();
     gameplayHUD.distanceToNextStation = hudDistance;
+    gameplayHUD.stationCount = mRoute.stopCount();
+    gameplayHUD.nextStationIndex = 0;
+    for (size_t i = 0; i < mRoute.stopCount(); ++i) {
+      if (mRoute.stops()[i].name == hudStop.name &&
+          std::abs(mRoute.stops()[i].position - hudStop.position) < 0.01f) {
+        gameplayHUD.nextStationIndex = i;
+        break;
+      }
+    }
     gameplayHUD.signalAspect = hudSignal;
     gameplayHUD.recommendedSpeedMps = mTrain.recommendedSpeed(hudDistance);
     gameplayHUD.accelerationMps2 = mTrain.acceleration();
