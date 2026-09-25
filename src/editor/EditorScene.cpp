@@ -1,0 +1,218 @@
+#include "editor/EditorScene.hpp"
+
+#include <algorithm>
+#include <fstream>
+#include <iomanip>
+#include <string>
+#include <unordered_map>
+#include <utility>
+
+namespace metro::editor {
+
+Scene::Scene() {
+  createDefaultScene();
+}
+
+void Scene::clear() {
+  mRegistry.clear();
+  mOrder.clear();
+  mSelected = entt::null;
+}
+
+entt::entity Scene::create(std::string name, std::string type, entt::entity parent) {
+  const entt::entity entity = mRegistry.create();
+  auto& node = mRegistry.emplace<SceneEntity>(entity);
+  node.id = entity;
+  node.parent = parent;
+  node.name = std::move(name);
+  node.type = std::move(type);
+  mOrder.push_back(entity);
+  if (mSelected == entt::null)
+    mSelected = entity;
+  return entity;
+}
+
+bool Scene::destroy(entt::entity entity) {
+  if (entity == entt::null || !mRegistry.valid(entity))
+    return false;
+
+  for (auto child : mOrder) {
+    if (auto* node = get(child); node != nullptr && node->parent == entity)
+      node->parent = entt::null;
+  }
+
+  mRegistry.destroy(entity);
+  mOrder.erase(std::remove(mOrder.begin(), mOrder.end(), entity), mOrder.end());
+  if (mSelected == entity)
+    mSelected = mOrder.empty() ? entt::null : mOrder.front();
+  return true;
+}
+
+entt::entity Scene::duplicate(entt::entity entity) {
+  const auto* source = get(entity);
+  if (source == nullptr)
+    return entt::null;
+
+  const entt::entity copy = create(source->name + " Copy", source->type, source->parent);
+  auto* dst = get(copy);
+  if (dst != nullptr) {
+    dst->asset = source->asset;
+    dst->transform = source->transform;
+    dst->transform.position.x += 0.5f;
+    dst->transform.position.z += 0.5f;
+    dst->visible = source->visible;
+    dst->locked = source->locked;
+  }
+  mSelected = copy;
+  return copy;
+}
+
+SceneEntity* Scene::get(entt::entity entity) {
+  if (!mRegistry.valid(entity))
+    return nullptr;
+  return mRegistry.try_get<SceneEntity>(entity);
+}
+
+const SceneEntity* Scene::get(entt::entity entity) const {
+  if (!mRegistry.valid(entity))
+    return nullptr;
+  return mRegistry.try_get<SceneEntity>(entity);
+}
+
+size_t Scene::visibleCount() const {
+  size_t count = 0;
+  for (auto entity : mOrder) {
+    const auto* node = get(entity);
+    if (node != nullptr && node->visible)
+      ++count;
+  }
+  return count;
+}
+
+void Scene::createDefaultScene() {
+  clear();
+
+  const auto world = create("M4 World", "Scene");
+  const auto route = create("M4 Route", "Folder", world);
+  create("Kadikoy Station", "Station", route);
+  create("Ayrilik Cesmesi Station", "Station", route);
+  create("Track", "Rail", route);
+  create("Catenary", "Infrastructure", route);
+
+  const auto rollingStock = create("Rolling Stock", "Folder", world);
+  const auto train = create("M4 CAF Train", "Train", rollingStock);
+  if (auto* node = get(train)) {
+    node->asset = "Builtin/TrainCar";
+    node->transform.position = {0.0f, 0.0f, 0.0f};
+  }
+
+  create("Passenger System", "Simulation", world);
+  create("Signal System", "Simulation", world);
+  mSelected = train;
+}
+
+bool Scene::save(const std::string& path) const {
+  std::ofstream file(path);
+  if (!file)
+    return false;
+
+  file << "METRO_SCENE 1\n";
+  for (auto entity : mOrder) {
+    const auto* node = get(entity);
+    if (node == nullptr)
+      continue;
+
+    const uint32_t id = entt::to_integral(entity) + 1u;
+    const uint32_t parent = node->parent == entt::null
+                                ? 0u
+                                : entt::to_integral(node->parent) + 1u;
+    file << "ENTITY " << id << ' ' << parent << ' '
+         << std::quoted(node->name) << ' '
+         << std::quoted(node->type) << ' '
+         << std::quoted(node->asset) << ' '
+         << node->visible << ' ' << node->locked << '\n';
+    file << "TRANSFORM "
+         << node->transform.position.x << ' '
+         << node->transform.position.y << ' '
+         << node->transform.position.z << ' '
+         << node->transform.rotation.x << ' '
+         << node->transform.rotation.y << ' '
+         << node->transform.rotation.z << ' '
+         << node->transform.scale.x << ' '
+         << node->transform.scale.y << ' '
+         << node->transform.scale.z << '\n';
+  }
+  return true;
+}
+
+bool Scene::load(const std::string& path) {
+  std::ifstream file(path);
+  if (!file)
+    return false;
+
+  std::string magic;
+  int version = 0;
+  file >> magic >> version;
+  if (magic != "METRO_SCENE" || version != 1)
+    return false;
+
+  struct Pending {
+    uint32_t oldId = 0;
+    uint32_t oldParent = 0;
+    std::string name;
+    std::string type;
+    std::string asset;
+    bool visible = true;
+    bool locked = false;
+    Transform transform{};
+  };
+
+  std::vector<Pending> pending;
+  std::string tag;
+  while (file >> tag) {
+    if (tag == "ENTITY") {
+      Pending p;
+      file >> p.oldId >> p.oldParent
+           >> std::quoted(p.name) >> std::quoted(p.type)
+           >> std::quoted(p.asset) >> p.visible >> p.locked;
+      pending.push_back(std::move(p));
+    } else if (tag == "TRANSFORM" && !pending.empty()) {
+      auto& p = pending.back();
+      file >> p.transform.position.x >> p.transform.position.y >> p.transform.position.z
+           >> p.transform.rotation.x >> p.transform.rotation.y >> p.transform.rotation.z
+           >> p.transform.scale.x >> p.transform.scale.y >> p.transform.scale.z;
+    }
+  }
+
+  clear();
+
+  std::unordered_map<uint32_t, entt::entity> remap;
+  for (const auto& p : pending)
+    remap[p.oldId] = create(p.name, p.type);
+
+  for (const auto& p : pending) {
+    const auto entityIt = remap.find(p.oldId);
+    if (entityIt == remap.end())
+      continue;
+
+    auto* node = get(entityIt->second);
+    if (node == nullptr)
+      continue;
+
+    node->asset = p.asset;
+    node->visible = p.visible;
+    node->locked = p.locked;
+    node->transform = p.transform;
+
+    if (p.oldParent != 0) {
+      const auto parentIt = remap.find(p.oldParent);
+      if (parentIt != remap.end())
+        node->parent = parentIt->second;
+    }
+  }
+
+  mSelected = mOrder.empty() ? entt::null : mOrder.front();
+  return true;
+}
+
+} // namespace metro::editor
