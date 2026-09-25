@@ -15,7 +15,7 @@
 namespace metro::rhi {
 
 std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
-    float trainPosition, float doorOpenFraction, const std::vector<bool>& occupiedBlocks,
+    float trainPosition, float trainSpeed, float doorOpenFraction, const std::vector<bool>& occupiedBlocks,
     const std::vector<glm::vec2>& passengerPositions) const {
   std::vector<SceneInstance> instances;
   instances.reserve(128);
@@ -243,6 +243,26 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   addBox({0.0f, 0.88f, -trainPosition - 37.0f},
          {mTrainWidth * 0.18f, 0.08f, 0.12f},
          {0.18f, 0.65f, 0.78f, 1.0f}, 0.25f);
+
+  // Kabin gösterge paneli: hız çubuğu, fren lambası ve kapı durumu.
+  const float speedKmh = std::clamp(trainSpeed * 3.6f, 0.0f, 80.0f);
+  const float speedFraction = speedKmh / 80.0f;
+  addBox({-0.65f, 0.92f, -trainPosition - 37.0f},
+         {1.55f, 0.035f, 0.08f},
+         {0.05f, 0.07f, 0.09f, 1.0f}, 0.40f);
+  addBox({-0.65f + speedFraction * 1.55f, 0.98f, -trainPosition - 37.0f},
+         {0.035f, 0.08f, 0.10f},
+         {1.0f, 0.72f, 0.16f, 1.0f}, 0.18f);
+  addBox({0.90f, 0.92f, -trainPosition - 37.0f},
+         {0.16f, 0.10f, 0.10f},
+         {doorOpenFraction > 0.05f ? 0.10f : 0.70f,
+          doorOpenFraction > 0.05f ? 0.85f : 0.72f,
+          doorOpenFraction > 0.05f ? 0.22f : 0.12f, 1.0f}, 0.25f);
+  addBox({1.25f, 0.92f, -trainPosition - 37.0f},
+         {0.16f, 0.10f, 0.10f},
+         {speedKmh < 0.1f ? 0.10f : 0.75f,
+          speedKmh < 0.1f ? 0.85f : 0.12f,
+          0.12f, 1.0f}, 0.25f);
 
   // Yürüyen yolcular.
   for (const glm::vec2& p : passengerPositions) {
@@ -1026,7 +1046,7 @@ void Renderer::createSyncObjects() {
 }
 
 void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
-                                   const app::Camera& camera, float trainPosition, float doorOpenFraction,
+                                   const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
                                    const std::vector<bool>& occupiedBlocks,
                                    const std::vector<glm::vec2>& passengerPositions) {
   VkCommandBufferBeginInfo begin{};
@@ -1074,7 +1094,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                           &mDescriptorSets[imageIndex], 0, nullptr);
 
   const std::vector<SceneInstance> instances =
-      buildKadikoyScene(trainPosition, doorOpenFraction, occupiedBlocks, passengerPositions);
+      buildKadikoyScene(trainPosition, trainSpeed, doorOpenFraction, occupiedBlocks, passengerPositions);
   mModel.bind(cmd);
   for (const SceneInstance& instance : instances) {
     for (size_t i = 0; i < mModel.subMeshCount(); ++i) {
@@ -1120,7 +1140,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
   if (vkEndCommandBuffer(cmd) != VK_SUCCESS) throw std::runtime_error("vkEndCommandBuffer");
 }
 
-void Renderer::drawFrame(const app::Camera& camera, float trainPosition, float doorOpenFraction,
+void Renderer::drawFrame(const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
                          const std::vector<bool>& occupiedBlocks,
                          const std::vector<glm::vec2>& passengerPositions) {
   const VkDevice dev = mCtx->device();
