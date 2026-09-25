@@ -4,10 +4,12 @@
 #include <SDL3/SDL_vulkan.h>
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <fstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 #include "core/Log.hpp"
 #include "rhi/VulkanContext.hpp"
@@ -107,6 +109,55 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
              {0.30f, 0.33f, 0.38f, 1.0f}, 0.62f);
     }
   }
+
+  // Basit 5x5 bitmap font: kritik istasyon tabelalarını gerçek geometri olarak çizer.
+  auto glyph = [](char ch) -> std::array<std::string_view, 5> {
+    switch (ch) {
+      case 'A': return {"01110","10001","11111","10001","10001"};
+      case 'D': return {"11110","10001","10001","10001","11110"};
+      case 'E': return {"11111","10000","11110","10000","11111"};
+      case 'I': return {"11111","00100","00100","00100","11111"};
+      case 'K': return {"10001","10010","11100","10010","10001"};
+      case 'M': return {"10001","11011","10101","10001","10001"};
+      case 'O': return {"01110","10001","10001","10001","01110"};
+      case 'T': return {"11111","00100","00100","00100","00100"};
+      case 'Y': return {"10001","01010","00100","00100","00100"};
+      case '4': return {"10010","10010","11111","00010","00010"};
+      default: return {"00000","00000","00000","00000","00000"};
+    }
+  };
+  auto addText = [&](std::string_view text, glm::vec3 origin,
+                     float pixel = 0.065f, float gap = 0.018f) {
+    float cursorX = origin.x;
+    for (char raw : text) {
+      const char ch = static_cast<char>(std::toupper(
+          static_cast<unsigned char>(raw)));
+      if (ch == ' ') {
+        cursorX += pixel * 3.0f;
+        continue;
+      }
+      const auto rows = glyph(ch);
+      for (size_t row = 0; row < rows.size(); ++row) {
+        for (size_t col = 0; col < rows[row].size(); ++col) {
+          if (rows[row][col] != '1') continue;
+          addBox({cursorX + static_cast<float>(col) * (pixel + gap),
+                  origin.y - static_cast<float>(row) * (pixel + gap),
+                  origin.z},
+                 {pixel * 0.45f, pixel * 0.45f, 0.035f},
+                 {0.90f, 0.94f, 0.82f, 1.0f}, 0.20f, 5.0f);
+        }
+      }
+      cursorX += 5.0f * (pixel + gap) + pixel;
+    }
+  };
+
+  addBox({0.0f, 3.12f, -24.0f}, {3.25f, 0.52f, 0.08f},
+         {0.025f, 0.14f, 0.22f, 1.0f}, 0.35f, 8.0f);
+  addText("KADIKOY", {-2.55f, 3.36f, -24.10f});
+
+  addBox({0.0f, 2.82f, -44.0f}, {1.25f, 0.42f, 0.06f},
+         {0.025f, 0.14f, 0.22f, 1.0f}, 0.35f, 8.0f);
+  addText("M4", {-0.36f, 3.02f, -44.10f}, 0.055f, 0.014f);
 
   // Kadıköy başlangıç bölümünün mimari hacmi: duvar kaplamaları, geçiş katı ve merdivenler.
   for (float z = -6.0f; z > -102.0f; z -= 6.0f) {
