@@ -86,8 +86,9 @@ unsigned JoltWorkerCount() {
 } // namespace
 
 struct PhysicsWorld::JoltState {
-  JoltState(float trainWidth, float trainHeight, float trackGauge,
-            float routeLength, float platformWidth, float columnSpacing)
+  JoltState(float trainWidth, float trainHeight, float trainLength,
+            float trackGauge, float routeLength, float platformWidth,
+            float columnSpacing)
       : tempAllocator(4 * 1024 * 1024),
         jobSystem(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers,
                 JoltWorkerCount()),
@@ -109,7 +110,7 @@ struct PhysicsWorld::JoltState {
       throw std::runtime_error("Jolt ground body olusturulamadi");
 
     const JPH::BoxShapeSettings trainShape(
-        JPH::Vec3(trainWidth * 0.5f, trainHeight * 0.5f, trackGauge * 0.8f));
+        JPH::Vec3(trainWidth * 0.5f, trainHeight * 0.5f, trainLength * 0.5f));
     JPH::BodyCreationSettings trainSettings(
         trainShape.Create().Get(), JPH::RVec3::sZero(), JPH::Quat::sIdentity(),
         JPH::EMotionType::Kinematic, 1);
@@ -238,8 +239,10 @@ PhysicsWorld::PhysicsWorld(Settings settings) : mSettings(settings) {
     mSettings.trainWidth = 2.8f;
   if (!std::isfinite(mSettings.trainHeight) || mSettings.trainHeight <= 0.0f)
     mSettings.trainHeight = 3.2f;
+  if (!std::isfinite(mSettings.trainLength) || mSettings.trainLength <= 0.0f)
+    mSettings.trainLength = 22.43f;
   if (!std::isfinite(mSettings.trackGauge) || mSettings.trackGauge <= 0.0f)
-    mSettings.trackGauge = 2.4f;
+    mSettings.trackGauge = 1.435f;
   if (!std::isfinite(mSettings.routeLength) || mSettings.routeLength <= 0.0f)
     mSettings.routeLength = 2000.0f;
   if (!std::isfinite(mSettings.platformWidth) ||
@@ -250,7 +253,9 @@ PhysicsWorld::PhysicsWorld(Settings settings) : mSettings(settings) {
     mSettings.columnSpacing = 24.0f;
   mJolt = std::make_unique<JoltState>(mSettings.trainWidth,
                                       mSettings.trainHeight,
-                                      mSettings.trackGauge, mSettings.routeLength,
+                                      mSettings.trainLength,
+                                      mSettings.trackGauge,
+                                      mSettings.routeLength,
                                       mSettings.platformWidth,
                                       mSettings.columnSpacing);
 }
