@@ -8,14 +8,16 @@ public:
     float maxSpeed = 22.2f;
     float acceleration = 1.2f;
     float serviceBrake = 2.4f;
+    float emergencyBrake = 3.6f;
     float rollingResistance = 0.08f;
     float maxJerk = 3.0f;
+    float tractionResponse = 4.0f;
   };
 
   void setParameters(Parameters parameters);
   void reset(float position = 0.0f);
   void update(float dt, bool throttle, bool brake, bool signalClear = true,
-              float routeLength = 0.0f);
+              float routeLength = 0.0f, bool emergencyBrake = false);
 
   float speed() const { return mSpeed; }
   float acceleration() const { return mAcceleration; }
@@ -35,6 +37,8 @@ private:
   float mAcceleration = 0.0f;
   bool mDoorsOpen = false;
   float mDoorOpenFraction = 0.0f;
+  float mTractionCommand = 0.0f;
+  float mBrakeCommand = 0.0f;
   Parameters mParameters;
 };
 
