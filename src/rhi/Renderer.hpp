@@ -54,6 +54,13 @@ struct ModelPush {
   float materialId;
 };
 
+struct PostProcessPush {
+  float trainSpeedMps = 0.0f;
+  float pad0 = 0.0f;
+  float pad1 = 0.0f;
+  float pad2 = 0.0f;
+};
+
 class Renderer {
 public:
   static constexpr uint32_t MaxFramesInFlight = 2;
