@@ -950,6 +950,9 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
   fu.viewProj = camera.getProjectionMatrix(aspect) * camera.getViewMatrix();
   fu.lightDir = glm::vec4(glm::normalize(glm::vec3(0.25f, -1.0f, -0.35f)), 0.0f);
   fu.cameraPos = glm::vec4(camera.position, 1.0f);
+  // Far, trenin hareketiyle birlikte ilerler; tüneldeki yakın yüzeyleri aydınlatır.
+  fu.headlightPos = glm::vec4(0.0f, 1.05f, -trainPosition - 3.55f, 1.0f);
+  fu.headlightColor = glm::vec4(1.0f, 0.92f, 0.78f, 18.0f);
   std::memcpy(mFrameUboMapped[imageIndex], &fu, sizeof(fu));
 
   VkClearValue clears[2]{};
