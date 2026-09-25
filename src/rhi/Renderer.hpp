@@ -9,6 +9,7 @@
 #include <volk.h>
 #include <vk_mem_alloc.h>
 #include <SDL3/SDL.h>
+#include <imgui.h>
 
 #include <vector>
 #include <string>
@@ -56,9 +57,9 @@ struct ModelPush {
 
 struct PostProcessPush {
   float trainSpeedMps = 0.0f;
-  float editorBackdropBlur = 0.0f;
   float pad0 = 0.0f;
   float pad1 = 0.0f;
+  float pad2 = 0.0f;
 };
 
 class Renderer {
@@ -114,6 +115,7 @@ public:
   void beginEditorFrame();
   void finishEditorFrame();
   void renderEditorUI(VkCommandBuffer cmd);
+  ImTextureID editorBlurTexture() const { return mEditorBlurTexture; }
   void processEditorEvent(const SDL_Event& e);
   bool editorWantsMouse() const;
   bool editorWantsKeyboard() const;
@@ -124,6 +126,9 @@ private:
   void createHdrResources();     // offscreen HDR renk hedefi (per swapchain image) + sampler
   void createMaterialTextures(); // gerçek BMP PBR albedo texture array
   void destroyMaterialTextures();
+  void createEditorBlurResources();
+  void destroyEditorBlurResources();
+  void createEditorBlurPipeline();
   void createFrameUniforms();   // UBO + descriptor pool/set'ler (per image)
   void createPipeline();
   void createFramebuffers();
@@ -198,6 +203,21 @@ private:
   VmaAllocation mMaterialTextureAlloc = VK_NULL_HANDLE;
   VkImageView mMaterialTextureView = VK_NULL_HANDLE;
   VkSampler mMaterialTextureSampler = VK_NULL_HANDLE;
+
+  // Editör camı için düşük çözünürlüklü bulanık sahne hedefi. Bu görüntü
+  // yalnızca ImGui panellerinin arkasında örneklenir; ana viewport bulanmaz.
+  static constexpr VkFormat kEditorBlurFormat = VK_FORMAT_R8G8B8A8_UNORM;
+  VkImage mEditorBlurImage = VK_NULL_HANDLE;
+  VmaAllocation mEditorBlurAlloc = VK_NULL_HANDLE;
+  VkImageView mEditorBlurView = VK_NULL_HANDLE;
+  VkSampler mEditorBlurSampler = VK_NULL_HANDLE;
+  VkRenderPass mEditorBlurRenderPass = VK_NULL_HANDLE;
+  VkDescriptorSetLayout mEditorBlurDescSetLayout = VK_NULL_HANDLE;
+  VkDescriptorPool mEditorBlurDescriptorPool = VK_NULL_HANDLE;
+  std::vector<VkDescriptorSet> mEditorBlurDescriptorSets;
+  VkPipelineLayout mEditorBlurPipelineLayout = VK_NULL_HANDLE;
+  VkPipeline mEditorBlurPipeline = VK_NULL_HANDLE;
+  ImTextureID mEditorBlurTexture = 0;
 
   // --- Post-process geçişi: HDR'ı örnekleyip ACES tonemap ile swapchain'e (LDR) yazar ---
   VkRenderPass mPostRenderPass = VK_NULL_HANDLE;
