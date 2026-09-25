@@ -21,10 +21,18 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     float trainPosition, float trainSpeed, float doorOpenFraction, const std::vector<bool>& occupiedBlocks,
     const std::vector<glm::vec2>& passengerPositions) const {
   std::vector<SceneInstance> instances;
-  instances.reserve(128);
+  instances.reserve(1024);
 
   const glm::vec3 o = mPlatformEdgePosition;
   const float halfRoute = mRouteLength * 0.5f;
+  // Yalnızca trenin çevresindeki statik detayları üret. Ana zemin/tünel
+  // tekil kutular olarak kalır; tekrarlayan travers/kolon/aydınlatmalar
+  // görünür bölgeyle sınırlandırılır. Bu, 33.5 km hatta CPU/draw-call
+  // maliyetini dramatik biçimde düşürür.
+  const float visibleStart = std::max(0.0f, trainPosition - 220.0f);
+  const float visibleEnd = std::min(mRouteLength, trainPosition + 420.0f);
+  const float visibleMinZ = -visibleEnd;
+  const float visibleMaxZ = -visibleStart;
 
   auto addBox = [&](glm::vec3 pos, glm::vec3 scale, glm::vec4 color,
                     float roughness = 0.7f, float materialId = 0.0f) {
@@ -40,12 +48,14 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   addBox({0.0f, -1.5f, -halfRoute},
           {mPlatformWidth * 2.0f + 3.0f, 0.15f, halfRoute},
           {0.22f, 0.25f, 0.30f, 1.0f}, 0.92f, 1.0f);
-  addBox({-mPlatformWidth, -0.2f, -halfRoute},
-          {mPlatformWidth * 0.95f, 0.30f, halfRoute},
-          {0.48f, 0.50f, 0.54f, 1.0f}, 0.78f, 2.0f);
-  addBox({mPlatformWidth, -0.2f, -halfRoute},
-          {mPlatformWidth * 0.95f, 0.30f, halfRoute},
-          {0.48f, 0.50f, 0.54f, 1.0f}, 0.78f, 2.0f);
+  // İstasyon dışındaki dar servis/yürüyüş yolu.
+  const float walkwayX = mTrackGauge * 0.5f + 0.60f;
+  addBox({-walkwayX, -0.30f, -halfRoute},
+          {0.95f, 0.22f, halfRoute},
+          {0.26f, 0.28f, 0.31f, 1.0f}, 0.90f, 2.0f);
+  addBox({walkwayX, -0.30f, -halfRoute},
+          {0.95f, 0.22f, halfRoute},
+          {0.26f, 0.28f, 0.31f, 1.0f}, 0.90f, 2.0f);
   addBox({0.0f, 4.0f, -halfRoute},
           {9.0f, 0.15f, halfRoute},
           {0.13f, 0.16f, 0.20f, 1.0f}, 0.96f);
@@ -55,12 +65,16 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     addBox({x, -1.24f, -halfRoute}, {0.055f, 0.055f, halfRoute},
            {0.72f, 0.74f, 0.78f, 1.0f}, 0.28f, 3.0f);
   }
-  for (float z = -2.0f; z > -mRouteLength; z -= 2.0f)
+  const float firstTraverse = std::floor(visibleStart / 2.0f) * 2.0f;
+  for (float p = firstTraverse; p <= visibleEnd; p += 2.0f) {
+    const float z = -p;
     addBox({0.0f, -1.27f, z}, {1.0f, 0.035f, 0.10f},
            {0.26f, 0.28f, 0.30f, 1.0f}, 0.85f);
+  }
 
   // Kolonlar ve üst kirişler: gerçek asset gelene kadar istasyonun ritmini verir.
   for (float z = -mColumnSpacing; z > -mRouteLength; z -= mColumnSpacing) {
+    if (z < visibleMinZ || z > visibleMaxZ) continue;
     for (float x : {-mPlatformWidth - 3.0f, mPlatformWidth + 3.0f})
       addBox({x, 1.2f, z}, {0.35f, 2.8f, 0.35f},
              {0.34f, 0.36f, 0.40f, 1.0f}, 0.72f);
@@ -82,6 +96,8 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   addBox({0.0f, 3.05f, -halfRoute}, {0.025f, 0.025f, halfRoute},
          {0.58f, 0.60f, 0.62f, 1.0f}, 0.22f);
   for (float z = -12.0f; z > -mRouteLength; z -= 24.0f) {
+    if (z < visibleMinZ || z > visibleMaxZ) continue;
+    if (z < visibleMinZ || z > visibleMaxZ) continue;
     addBox({0.0f, 3.02f, z},
            {mPlatformWidth + 3.3f, 0.035f, 0.035f},
            {0.42f, 0.44f, 0.48f, 1.0f}, 0.35f);
@@ -160,12 +176,15 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
          {0.025f, 0.14f, 0.22f, 1.0f}, 0.35f, 8.0f);
   addText("M4", {-0.36f, 3.02f, -44.10f}, 0.055f, 0.014f);
 
-  // Kadıköy başlangıç bölümünün mimari hacmi: duvar kaplamaları, geçiş katı ve merdivenler.
+  // Kadıköy başlangıç bölümünün mimari hacmi: yalnızca başlangıçta görünür.
+  if (visibleStart < 120.0f) {
   for (float z = -6.0f; z > -102.0f; z -= 6.0f) {
     addBox({-8.35f, 1.35f, z}, {0.10f, 2.55f, 2.75f},
            {0.20f, 0.22f, 0.25f, 1.0f}, 0.88f);
     addBox({8.35f, 1.35f, z}, {0.10f, 2.55f, 2.75f},
            {0.20f, 0.22f, 0.25f, 1.0f}, 0.88f);
+  }
+
   }
 
   // Üst geçiş/asma kat hissi.
@@ -215,6 +234,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
 
   // Tünel boyunca periyodik aydınlatma kutuları.
   for (float z = -18.0f; z > -mRouteLength; z -= 32.0f) {
+    if (z < visibleMinZ || z > visibleMaxZ) continue;
     addBox({0.0f, 3.72f, z}, {0.34f, 0.08f, 0.16f},
            {0.95f, 0.92f, 0.78f, 1.0f}, 0.18f, 5.0f);
     addBox({-7.85f, 1.95f, z}, {0.10f, 0.10f, 0.10f},
@@ -229,12 +249,6 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
            {0.14f, 0.16f, 0.18f, 1.0f}, 0.55f);
   }
 
-  // Peron kenar güvenlik şeridi.
-  addBox({-mPlatformWidth + 0.10f, 0.14f, -halfRoute},
-         {0.08f, 0.035f, halfRoute}, {0.95f, 0.70f, 0.08f, 1.0f}, 0.45f, 6.0f);
-  addBox({mPlatformWidth - 0.10f, 0.14f, -halfRoute},
-         {0.08f, 0.035f, halfRoute}, {0.95f, 0.70f, 0.08f, 1.0f}, 0.45f, 6.0f);
-
   // Kadıköy peronundaki tabela/aydınlatma ritmi.
   for (float z = -12.0f; z > -mRouteLength; z -= 24.0f) {
     for (float x : {-mPlatformWidth + 0.7f, mPlatformWidth - 0.7f}) {
@@ -243,6 +257,45 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
       addBox({x, 2.45f, z}, {0.45f, 0.025f, 0.06f},
              {0.12f, 0.38f, 0.55f, 1.0f}, 0.35f);
     }
+  }
+
+  // Her durakta gerçek bir istasyon hacmi: iki yan peron, kanopi,
+  // taşıyıcılar ve peron aydınlatması. Tünel boyunca artık peron yok.
+  constexpr float stationHalfLength = 58.0f;
+  for (size_t i = 0; i < mStopPositions.size(); ++i) {
+    const float p = mStopPositions[i];
+    if (p < 0.0f || p > mRouteLength) continue;
+    if (p + stationHalfLength < visibleStart || p - stationHalfLength > visibleEnd) continue;
+
+    const float z = -p;
+    for (float side : {-1.0f, 1.0f}) {
+      const float x = side * mPlatformWidth;
+      addBox({x, -0.10f, z},
+             {mPlatformWidth * 0.95f, 0.22f, stationHalfLength},
+             {0.42f, 0.44f, 0.47f, 1.0f}, 0.82f, 2.0f);
+      addBox({x, 3.35f, z},
+             {mPlatformWidth * 0.82f, 0.10f, stationHalfLength},
+             {0.22f, 0.24f, 0.28f, 1.0f}, 0.78f);
+      for (float supportP = p - 48.0f; supportP <= p + 48.0f; supportP += 24.0f) {
+        addBox({x + side * 3.0f, 1.55f, -supportP},
+               {0.18f, 1.80f, 0.18f},
+               {0.34f, 0.36f, 0.41f, 1.0f}, 0.72f);
+        addBox({x, 3.08f, -supportP},
+               {mPlatformWidth * 0.82f, 0.12f, 0.16f},
+               {0.28f, 0.30f, 0.34f, 1.0f}, 0.76f);
+        addBox({x, 3.22f, -supportP},
+               {1.2f, 0.035f, 0.08f},
+               {0.98f, 0.90f, 0.72f, 1.0f}, 0.18f, 5.0f);
+      }
+      // Peron kenarındaki sarı güvenlik çizgisi yalnızca istasyon bölgesinde.
+      addBox({side * (mPlatformWidth * 1.15f), 0.08f, z},
+             {0.055f, 0.025f, stationHalfLength - 1.0f},
+             {0.95f, 0.70f, 0.08f, 1.0f}, 0.42f, 6.0f);
+    }
+    // Peron tabelası: M4 + istasyon numarası görsel işareti.
+    addBox({0.0f, 3.08f, z},
+           {1.8f, 0.42f, 0.08f},
+           {0.025f, 0.14f, 0.22f, 1.0f}, 0.35f, 8.0f);
   }
 
   // Her gerçek stop için sinyal direği + durak işareti.
