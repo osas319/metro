@@ -233,6 +233,11 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
     METRO_ERROR("Station manifest tren yuksekligi gecersiz: %s", path.c_str());
     return false;
   }
+  if (source.find("\"train_length\"") != std::string::npos &&
+      !readPositiveNumber(source, "train_length", parsed.trainLength)) {
+    METRO_ERROR("Station manifest tren uzunlugu gecersiz: %s", path.c_str());
+    return false;
+  }
   if (source.find("\"column_spacing\"") != std::string::npos &&
       !readPositiveNumber(source, "column_spacing", parsed.columnSpacing)) {
     METRO_ERROR("Station manifest kolon araligi gecersiz: %s", path.c_str());
