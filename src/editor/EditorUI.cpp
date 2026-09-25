@@ -878,7 +878,7 @@ void UI::drawGameplayHUD(float trainSpeedMps, float trainPosition,
         std::clamp(gameplay.dwellSeconds / gameplay.dwellLimitSeconds, 0.0f, 1.0f);
     ImGui::ProgressBar(dwell, {220.0f, 12.0f}, "DWELL");
   }
-  ImGui::TextDisabled("UP throttle | DOWN brake | SPACE emergency | MMB free-look | O/C doors | H horn | F6 restart");
+  ImGui::TextDisabled("W/UP throttle | S/DOWN brake | SPACE emergency | MMB free-look | O/C doors | H horn | F6 restart");
   ImGui::EndGroup();
 
   ImGui::SetCursorPos({size.x - 290.0f, size.y - 174.0f});
