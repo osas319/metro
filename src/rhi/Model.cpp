@@ -103,6 +103,45 @@ void addBox(BuiltinPart& part, glm::vec3 center, glm::vec3 size) {
   addFace(part, {x1,y0,z1}, {x1,y1,z1}, {x0,y1,z1}, {x0,y0,z1});
 }
 
+void addCylinder(BuiltinPart& part, glm::vec3 center, float radius,
+                 float depth, int segments, bool axisX) {
+  segments = std::max(8, segments);
+  const uint32_t base = static_cast<uint32_t>(part.vertices.size());
+  const float half = depth * 0.5f;
+  for (int i = 0; i < segments; ++i) {
+    const float a = 2.0f * 3.14159265359f *
+                    static_cast<float>(i) / static_cast<float>(segments);
+    const float c = std::cos(a);
+    const float s = std::sin(a);
+    for (float side : {-1.0f, 1.0f}) {
+      Vertex v{};
+      if (axisX) {
+        v.pos[0] = center.x + side * half;
+        v.pos[1] = center.y + radius * c;
+        v.pos[2] = center.z + radius * s;
+        v.normal[0] = side;
+        v.normal[1] = c;
+        v.normal[2] = s;
+      } else {
+        v.pos[0] = center.x + radius * c;
+        v.pos[1] = center.y + radius * s;
+        v.pos[2] = center.z + side * half;
+        v.normal[0] = c;
+        v.normal[1] = s;
+        v.normal[2] = side;
+      }
+      v.texCoord[0] = static_cast<float>(i) / static_cast<float>(segments);
+      v.texCoord[1] = side * 0.5f + 0.5f;
+      part.vertices.push_back(v);
+    }
+  }
+  for (int i = 0; i < segments; ++i) {
+    const uint32_t a = base + static_cast<uint32_t>(i * 2);
+    const uint32_t b = base + static_cast<uint32_t>(((i + 1) % segments) * 2);
+    part.indices.insert(part.indices.end(), {a, b, a + 1, b, b + 1, a + 1});
+  }
+}
+
 void addFrustum(BuiltinPart& part, float z0, float z1,
                 float xHalf0, float xHalf1, float yBottom, float yTop) {
   const glm::vec3 p000{-xHalf0, yBottom, z0};
@@ -237,6 +276,11 @@ std::vector<BuiltinPart> makeTrainCarParts() {
     addBox(bogies, {0.0f, -1.06f, z}, {1.95f, 0.32f, 1.65f});
     addBox(bogies, {-0.62f, -1.25f, z}, {0.36f, 0.20f, 1.08f});
     addBox(bogies, {0.62f, -1.25f, z}, {0.36f, 0.20f, 1.08f});
+    // Gidon bogie altinda dondurme ekseni boyunca gorunur tekerlek ciftleri.
+    for (float wheelZ : {z - 0.48f, z + 0.48f}) {
+      addCylinder(bogies, {-0.82f, -1.30f, wheelZ}, 0.34f, 0.16f, 16, true);
+      addCylinder(bogies, { 0.82f, -1.30f, wheelZ}, 0.34f, 0.16f, 16, true);
+    }
   }
   parts.push_back(std::move(bogies));
 
