@@ -14,6 +14,18 @@ layout(set = 0, binding = 0) uniform FrameUniforms {
     vec4 headlightColor; // rgb: far rengi, a: menzil
 } frame;
 
+layout(set = 0, binding = 1) uniform sampler2DArray uMaterialTextures;
+
+float materialTextureLayer(float id) {
+    if (id == 2.0 || id == 9.0 || id == 12.0) return 1.0; // tile/beton istasyon
+    if (id == 6.0) return 2.0;                             // ballast/bakim
+    if (id == 14.0) return 3.0;                            // rail steel
+    if (id == 11.0) return 4.0;                            // train paint
+    if (id == 4.0 || id == 13.0) return 5.0;              // glass
+    if (id == 3.0 || id == 10.0) return 3.0;              // painted/brushed metal
+    return 0.0;                                            // concrete/default
+}
+
 layout(push_constant) uniform ModelPush {
     mat4 model;
     vec4 baseColor;
@@ -91,7 +103,15 @@ void main() {
     vec3 albedo = push.baseColor.rgb;
     float materialId = push.materialId;
 
-    // Dahili materyaller için görünür yüzey dokusu: çok ölçekli beton/metal
+    // Gerçek GPU texture: materialId her geometri yüzeyini ilgili 128x128
+    // sRGB texture katmanına yönlendirir. UV olmayan builtin yüzeylerde de
+    // addFace() tarafından üretilen koordinatlar tile edilir.
+    vec2 textureUv = fract(vTexCoord);
+    vec3 sampledAlbedo =
+        texture(uMaterialTextures, vec3(textureUv, materialTextureLayer(materialId))).rgb;
+    albedo *= mix(vec3(1.0), sampledAlbedo, 0.52);
+
+    // Dahili materyaller için ek yüzey detayı: çok ölçekli beton/metal
     // tanesi, panel kirleri ve kireç derzleri. Bunlar düz renk yerine
     // UV + dünya koordinatlarından örneklenen prosedürel texture katmanlarıdır.
     float macroNoise = noise3(vWorldPos * 0.42);
