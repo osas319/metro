@@ -13,13 +13,15 @@ void BlockSignal::setOccupied(size_t block, bool occupied) {
 }
 
 SignalAspect BlockSignal::aspect(size_t block) const {
-  return block < mOccupied.size() && mOccupied[block]
-             ? SignalAspect::Stop
-             : SignalAspect::Proceed;
+  if (block >= mOccupied.size()) return SignalAspect::Proceed;
+  if (mOccupied[block]) return SignalAspect::Stop;
+  if (block + 1 < mOccupied.size() && mOccupied[block + 1])
+    return SignalAspect::Caution;
+  return SignalAspect::Proceed;
 }
 
 bool BlockSignal::canEnter(size_t block) const {
-  return aspect(block) == SignalAspect::Proceed;
+  return aspect(block) != SignalAspect::Stop;
 }
 
 const std::vector<bool>& BlockSignal::occupiedBlocks() const {
