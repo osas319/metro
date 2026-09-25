@@ -64,6 +64,7 @@ private:
   bool mMouseCaptured = false;
   bool mEditorMode = true;
   bool mPlayMode = false;
+  bool mHornHeld = false;
   CameraViewMode mCameraViewMode = CameraViewMode::Free;
   editor::Scene mEditorScene;
   editor::UI mEditorUI;
