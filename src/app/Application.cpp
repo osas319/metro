@@ -512,7 +512,8 @@ int Application::run() {
     mRenderer.beginEditorFrame();
     mEditorUI.draw(mEditorScene, mEditorMode, mPlayMode, mEditorGizmoMode,
                    mCamera, mTrain.speed(), mTrain.position(), mRouteLength,
-                   mContext.deviceName(), mDisplayFps, gameplayHUD);
+                   mContext.deviceName(), mDisplayFps,
+                   mRenderer.editorBlurTexture(), gameplayHUD);
 
     // Editor toolbar PLAY ile F5 ayni gameplay gecisini kullansin.
     if (editorModeBeforeUI && !mEditorMode && mPlayMode) {
@@ -554,13 +555,13 @@ int Application::run() {
       const float targetFov = 45.0f + speed01 * 3.5f;
       mCabFov += (targetFov - mCabFov) * std::min(dt * 5.0f, 1.0f);
 
-      // Dört vagonlu setin ön burnu yaklaşık -40.8 m'dedir.
-      // Kamerayı burun içine sokmamak için ön cama yakın görüş hattı.
+      // Sürücü noktası ön kabindeki konsol/ön cam hizasına alınır.
+      // Böylece kamera gövdenin ortasında/ön kaportanın içinde kalmaz.
       renderCamera.position =
-          glm::vec3(mCabSway, 1.62f + mCabBounce,
-                    -renderTrainPosition - 40.9f);
+          glm::vec3(mCabSway, 1.56f + mCabBounce,
+                    -renderTrainPosition - 37.25f);
       renderCamera.yaw = -90.0f;
-      renderCamera.pitch = -3.0f - mCabSway * 23.0f;
+      renderCamera.pitch = -2.0f - mCabSway * 23.0f;
       renderCamera.fovDegrees = mCabFov;
       renderCamera.mouseSensitivity = mCamera.mouseSensitivity;
     } else if (mCameraViewMode == CameraViewMode::Chase) {
