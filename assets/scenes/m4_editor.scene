@@ -1,0 +1,21 @@
+METRO_SCENE 1
+ENTITY 1 0 "M4 World" "Scene" "" 1 0
+TRANSFORM 0 0 0 0 0 0 1 1 1
+ENTITY 2 1 "M4 Route" "Folder" "" 1 0
+TRANSFORM 0 0 0 0 0 0 1 1 1
+ENTITY 3 2 "Kadikoy Station" "Station" "" 1 0
+TRANSFORM 0 0 0 0 0 0 1 1 1
+ENTITY 4 2 "Ayrilik Cesmesi Station" "Station" "" 1 0
+TRANSFORM 0 0 -1148 0 0 0 1 1 1
+ENTITY 5 2 "Track" "Rail" "" 1 0
+TRANSFORM 0 0 0 0 0 0 1 1 1
+ENTITY 6 2 "Catenary" "Infrastructure" "" 1 0
+TRANSFORM 0 0 0 0 0 0 1 1 1
+ENTITY 7 1 "Rolling Stock" "Folder" "" 1 0
+TRANSFORM 0 0 0 0 0 0 1 1 1
+ENTITY 8 7 "M4 CAF Train" "Train" "Builtin/TrainCar" 1 0
+TRANSFORM 0 0 0 0 0 0 1 1 1
+ENTITY 9 1 "Passenger System" "Simulation" "" 1 0
+TRANSFORM 0 0 0 0 0 0 1 1 1
+ENTITY 10 1 "Signal System" "Simulation" "" 1 0
+TRANSFORM 0 0 0 0 0 0 1 1 1
