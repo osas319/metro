@@ -125,6 +125,7 @@ void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMo
               float routeLength, const char* gpuName, float fps,
               const GameplayHUDData& gameplay) {
   if (!editorMode) {
+    mViewportHovered = false;
     drawGameplayHUD(trainSpeedMps, trainPosition, routeLength, gameplay);
     return;
   }
@@ -552,8 +553,11 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
   ImGui::SetCursorPos({0.0f, 0.0f});
   const ImVec2 inputSize = ImGui::GetContentRegionAvail();
   ImGui::InvisibleButton("##ViewportInput", inputSize,
-                         ImGuiButtonFlags_MouseButtonLeft);
+                         ImGuiButtonFlags_MouseButtonLeft |
+                         ImGuiButtonFlags_MouseButtonMiddle |
+                         ImGuiButtonFlags_MouseButtonRight);
   const bool hovered = ImGui::IsItemHovered();
+  mViewportHovered = hovered;
 
   if (hovered && ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
     ImGui::SetWindowFocus();
