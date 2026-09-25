@@ -70,7 +70,7 @@ std::string parentLabel(const Scene& scene, entt::entity parent) {
 
 } // namespace
 
-void UI::draw(Scene& scene, bool& editorMode, bool& playMode,
+void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode,
               float trainSpeedMps, float trainPosition, float routeLength,
               const char* gpuName, float fps) {
   if (!editorMode)
@@ -82,14 +82,14 @@ void UI::draw(Scene& scene, bool& editorMode, bool& playMode,
   ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),
                                ImGuiDockNodeFlags_PassthruCentralNode);
 
-  drawToolbar(scene, editorMode, playMode);
+  drawToolbar(scene, editorMode, playMode, gizmoMode);
   drawHierarchy(scene);
   drawInspector(scene);
   drawContentBrowser(scene);
   drawViewport(trainSpeedMps, trainPosition, routeLength, gpuName, fps);
 }
 
-void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode) {
+void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode) {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
   ImGui::SetNextWindowPos(viewport->WorkPos);
   ImGui::SetNextWindowSize({viewport->WorkSize.x, 54.0f});
@@ -112,26 +112,51 @@ void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode) {
     playMode = false;
 
   ImGui::SameLine();
+  const bool moveMode = gizmoMode == GizmoMode::Translate;
+  const bool rotateMode = gizmoMode == GizmoMode::Rotate;
+  const bool scaleMode = gizmoMode == GizmoMode::Scale;
+  if (moveMode) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+  if (ImGui::Button("W  MOVE", {82.0f, 32.0f})) gizmoMode = GizmoMode::Translate;
+  if (moveMode) ImGui::PopStyleColor();
+
+  ImGui::SameLine();
+  if (rotateMode) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+  if (ImGui::Button("E  ROTATE", {90.0f, 32.0f})) gizmoMode = GizmoMode::Rotate;
+  if (rotateMode) ImGui::PopStyleColor();
+
+  ImGui::SameLine();
+  if (scaleMode) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+  if (ImGui::Button("R  SCALE", {82.0f, 32.0f})) gizmoMode = GizmoMode::Scale;
+  if (scaleMode) ImGui::PopStyleColor();
+
+  ImGui::SameLine();
   if (ImGui::Button(" +  ENTITY", {92.0f, 32.0f})) {
     scene.create("New Entity", "Empty", creationParent(scene));
     mStatus = "Created entity";
   }
 
   ImGui::SameLine();
-  if (ImGui::Button("DUPLICATE", {96.0f, 32.0f}))
+  if (ImGui::Button("DUPLICATE", {96.0f, 32.0f})) {
     scene.duplicate(scene.selected());
+    mStatus = "Entity duplicated";
+  }
 
   ImGui::SameLine();
-  if (ImGui::Button("DELETE", {76.0f, 32.0f}))
+  if (ImGui::Button("DELETE", {76.0f, 32.0f})) {
     scene.destroy(scene.selected());
+    mStatus = "Entity deleted";
+  }
 
   ImGui::SameLine();
-  if (ImGui::Button("SAVE", {72.0f, 32.0f}))
-    scene.save(mScenePath);
+  if (ImGui::Button("SAVE", {72.0f, 32.0f})) {
+    mStatus = scene.save(mScenePath) ? "Scene saved" : "Save failed";
+  }
 
   ImGui::SameLine();
-  if (ImGui::Button("LOAD", {72.0f, 32.0f}))
-    scene.load(mScenePath);
+  if (ImGui::Button("LOAD", {72.0f, 32.0f})) {
+    mStatus = scene.load(mScenePath) ? "Scene loaded" : "Load failed";
+    mLastSelected = entt::null;
+  }
 
   ImGui::SameLine();
   ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
@@ -411,7 +436,7 @@ void UI::drawViewport(float trainSpeedMps, float trainPosition,
   ImGui::SetCursorPos({16.0f, ImGui::GetWindowHeight() - 46.0f});
   ImGui::BeginGroup();
   ImGui::Text("GPU: %s", gpuName != nullptr ? gpuName : "Unknown");
-  ImGui::TextDisabled("Hierarchy transforms active | Select an entity to edit");
+  ImGui::TextDisabled("W Move | E Rotate | R Scale | Arrow keys edit selected entity");
   ImGui::EndGroup();
 
   ImGui::End();
