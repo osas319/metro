@@ -54,6 +54,36 @@ endif()
 find_package(Vulkan REQUIRED)
 
 # ---------------------------------------------------------------------------
+# Dear ImGui — editor tooling (docking + SDL3 + Vulkan)
+# Pinned docking release so editor builds stay reproducible.
+# ---------------------------------------------------------------------------
+include(FetchContent)
+FetchContent_Declare(
+  imgui
+  GIT_REPOSITORY https://github.com/ocornut/imgui.git
+  GIT_TAG v1.92.9-docking
+  GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(imgui)
+
+add_library(metro_imgui STATIC
+  ${imgui_SOURCE_DIR}/imgui.cpp
+  ${imgui_SOURCE_DIR}/imgui_draw.cpp
+  ${imgui_SOURCE_DIR}/imgui_tables.cpp
+  ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+  ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
+  ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp)
+target_include_directories(metro_imgui PUBLIC
+  ${imgui_SOURCE_DIR}
+  ${imgui_SOURCE_DIR}/backends
+  third_party/volk)
+target_compile_definitions(metro_imgui PRIVATE
+  IMGUI_IMPL_VULKAN_USE_VOLK
+  VK_NO_PROTOTYPES)
+target_link_libraries(metro_imgui PUBLIC
+  volk
+  ${METRO_SDL_TARGET})
+
+# ---------------------------------------------------------------------------
 # Shader'lar: GLSL -> SPIR-V (glslc veya glslangValidator, hangisi varsa)
 # ---------------------------------------------------------------------------
 include(cmake/Shaders.cmake)
@@ -80,7 +110,8 @@ target_compile_definitions(metro PRIVATE
   # fonksiyon işaretçilerinden gitsin (VMA da bunları kullanır).
   VK_NO_PROTOTYPES
   VMA_VULKAN_VERSION=1003000
-  METRO_SHADER_DIR="${CMAKE_BINARY_DIR}/shaders")
+  METRO_SHADER_DIR="${CMAKE_BINARY_DIR}/shaders"
+  IMGUI_IMPL_VULKAN_USE_VOLK)
 
 if(METRO_VALIDATION)
   target_compile_definitions(metro PRIVATE METRO_ENABLE_VALIDATION)
@@ -90,7 +121,8 @@ target_link_libraries(metro PRIVATE
   volk
   glm::glm
   Jolt
-  ${METRO_SDL_TARGET})
+  ${METRO_SDL_TARGET}
+  metro_imgui)
 
 # SPIR-V'ler derlenmeden exe kurulmasın
 add_dependencies(metro metro_shaders)
