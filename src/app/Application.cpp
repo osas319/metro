@@ -28,6 +28,7 @@ bool Application::init() {
   mRouteLength = station.routeLength;
   mPassengers = sim::PassengerSystem(station.passengerCapacity,
                                      station.initialWaitingPassengers);
+  mInitialWaitingPassengers = station.initialWaitingPassengers;
   mPhysics = sim::PhysicsWorld(
       {.fixedStep = station.physicsFixedStep,
        .maxSubsteps = station.physicsMaxSubsteps,
@@ -213,7 +214,7 @@ void Application::handleEvent(const SDL_Event& e) {
         mTrain.reset(0.0f);
         mPhysics.reset(0.0f);
         mSignal.resize(mSignal.blockCount());
-        mPassengers = sim::PassengerSystem(320, 24);
+        mPassengers.reset(mInitialWaitingPassengers);
         mPassengers.setNavGraph(mPassengerNav);
         mStopDwellSeconds = 0.0f;
         mTerminalServiced = false;
