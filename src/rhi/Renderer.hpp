@@ -91,6 +91,18 @@ private:
   VkShaderModule loadShader(const char* filename);
   VkFormat pickDepthFormat() const;
 
+  struct SceneInstance {
+    glm::mat4 transform{1.0f};
+    glm::vec4 color{1.0f};
+    float roughness = 0.7f;
+  };
+
+  // Kadıköy sahnesini veri tabanlı placeholder geometriyle kurar.
+  // İleride gerçek GLB asset'leri aynı instance listesinin yerini alabilir.
+  std::vector<SceneInstance> buildKadikoyScene(
+      float trainPosition, const std::vector<bool>& occupiedBlocks,
+      const std::vector<glm::vec2>& passengerPositions) const;
+
   VulkanContext* mCtx = nullptr;
   SDL_Window* mWindow = nullptr;
 
