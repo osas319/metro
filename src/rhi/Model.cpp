@@ -376,12 +376,14 @@ std::vector<BuiltinPart> makeTunnelModuleParts() {
   addBox(walkway, {-2.58f, -1.02f, 0.0f}, {0.42f, 0.30f, 30.0f});
   addBox(walkway, {2.58f, -1.02f, 0.0f}, {0.42f, 0.30f, 30.0f});
 
-  // Sürekli beton zemin: ray yatağının altında boşluk kalmaz.
+  // Sürekli beton zemin + ray yatağı omuzları: tünel tabanında açık boşluk bırakma.
   BuiltinPart floor;
-  floor.color = {0.075f, 0.085f, 0.10f, 1.0f};
+  floor.color = {0.055f, 0.062f, 0.075f, 1.0f};
   floor.roughness = 0.98f;
   floor.materialId = 6.0f;
-  addBox(floor, {0.0f, -1.64f, 0.0f}, {6.35f, 0.24f, 30.0f});
+  addBox(floor, {0.0f, -1.48f, 0.0f}, {7.75f, 0.34f, 30.0f});
+  addBox(floor, {-3.55f, -1.28f, 0.0f}, {0.35f, 0.22f, 30.0f});
+  addBox(floor, { 3.55f, -1.28f, 0.0f}, {0.35f, 0.22f, 30.0f});
   parts.push_back(std::move(walkway));
   parts.push_back(std::move(floor));
 
@@ -461,6 +463,45 @@ std::vector<BuiltinPart> makeStationModuleParts() {
   addBox(wallTiles, {platformSide * 4.215f, 2.55f, 0.0f},
          {0.025f, 0.025f, moduleLength});
   parts.push_back(std::move(wallTiles));
+
+  // Sağ tarafta platform yok ama istasyon kabuğu devam eder:
+  // sürekli duvar, servis şeridi, kablo kanalı ve dikey derzler.
+  constexpr float rightSide = 1.0f;
+  BuiltinPart rightWall;
+  rightWall.color = {0.16f, 0.18f, 0.21f, 1.0f};
+  rightWall.roughness = 0.88f;
+  rightWall.materialId = 12.0f;
+  addBox(rightWall, {rightSide * 4.20f, 1.35f, 0.0f},
+         {0.24f, 3.15f, moduleLength});
+  addBox(rightWall, {rightSide * 3.92f, -0.18f, 0.0f},
+         {0.28f, 0.24f, moduleLength});
+  for (float z = -12.5f; z <= 12.5f; z += 2.5f)
+    addBox(rightWall, {rightSide * 4.055f, 1.45f, z},
+           {0.035f, 2.90f, 0.025f});
+  parts.push_back(std::move(rightWall));
+
+  BuiltinPart rightService;
+  rightService.color = {0.075f, 0.085f, 0.10f, 1.0f};
+  rightService.roughness = 0.92f;
+  rightService.materialId = 6.0f;
+  addBox(rightService, {rightSide * 3.45f, -0.72f, 0.0f},
+         {1.05f, 0.18f, moduleLength});
+  addBox(rightService, {rightSide * 3.55f, 1.95f, 0.0f},
+         {0.10f, 0.14f, moduleLength});
+  parts.push_back(std::move(rightService));
+
+  // Sağ duvar boyunca seyrek servis kutuları ve kablo kapakları.
+  BuiltinPart rightDetails;
+  rightDetails.color = {0.22f, 0.25f, 0.29f, 1.0f};
+  rightDetails.roughness = 0.72f;
+  rightDetails.materialId = 3.0f;
+  for (float z = -10.0f; z <= 10.0f; z += 10.0f) {
+    addBox(rightDetails, {rightSide * 3.72f, 0.80f, z},
+           {0.18f, 1.05f, 0.72f});
+    addBox(rightDetails, {rightSide * 3.78f, 2.20f, z},
+           {0.08f, 0.45f, 0.62f});
+  }
+  parts.push_back(std::move(rightDetails));
 
   // M4 mavi yönlendirme aksı yalnızca yolcu tarafında.
   BuiltinPart wallAccent;
