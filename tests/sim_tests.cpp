@@ -67,6 +67,24 @@ int main() {
   assert(brakingTrain.position() <= 25.0f);
   assert(brakingTrain.speed() == 0.0f);
 
+  metro::sim::Train serviceBrakeTest;
+  metro::sim::Train emergencyBrakeTest;
+  for (int i = 0; i < 360; ++i) {
+    serviceBrakeTest.update(1.0f / 60.0f, true, false);
+    emergencyBrakeTest.update(1.0f / 60.0f, true, false);
+  }
+  assert(serviceBrakeTest.speed() > 5.0f);
+  assert(emergencyBrakeTest.speed() == serviceBrakeTest.speed());
+  const float speedBeforeService = serviceBrakeTest.speed();
+  const float speedBeforeEmergency = emergencyBrakeTest.speed();
+  for (int i = 0; i < 30; ++i) {
+    serviceBrakeTest.update(1.0f / 60.0f, false, true);
+    emergencyBrakeTest.update(1.0f / 60.0f, false, true, true, 1000.0f, true);
+  }
+  assert(emergencyBrakeTest.speed() < speedBeforeEmergency);
+  assert(serviceBrakeTest.speed() < speedBeforeService);
+  assert(emergencyBrakeTest.speed() < serviceBrakeTest.speed());
+
   metro::sim::Train largeFrameTrain;
   largeFrameTrain.update(10.0f, true, false, true, 5.0f);
   assert(largeFrameTrain.position() == 5.0f);
