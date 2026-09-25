@@ -107,6 +107,69 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     }
   }
 
+  // Kadıköy başlangıç bölümünün mimari hacmi: duvar kaplamaları, geçiş katı ve merdivenler.
+  for (float z = -6.0f; z > -102.0f; z -= 6.0f) {
+    addBox({-8.35f, 1.35f, z}, {0.10f, 2.55f, 2.75f},
+           {0.20f, 0.22f, 0.25f, 1.0f}, 0.88f);
+    addBox({8.35f, 1.35f, z}, {0.10f, 2.55f, 2.75f},
+           {0.20f, 0.22f, 0.25f, 1.0f}, 0.88f);
+  }
+
+  // Üst geçiş/asma kat hissi.
+  addBox({0.0f, 2.95f, -58.0f},
+         {7.4f, 0.18f, 16.0f},
+         {0.30f, 0.32f, 0.36f, 1.0f}, 0.76f);
+  for (float x : {-6.4f, 6.4f}) {
+    for (float z : {-46.0f, -58.0f, -70.0f}) {
+      addBox({x, 1.45f, z}, {0.28f, 2.85f, 0.28f},
+             {0.36f, 0.38f, 0.43f, 1.0f}, 0.70f);
+    }
+  }
+
+  // Merdivenler ve yürüyen merdiven hacimleri.
+  for (int step = 0; step < 9; ++step) {
+    const float x = -4.6f + static_cast<float>(step) * 0.24f;
+    const float y = 0.30f + static_cast<float>(step) * 0.11f;
+    addBox({x, y, -58.0f},
+           {0.24f, 0.20f, 2.2f},
+           {0.44f, 0.45f, 0.49f, 1.0f}, 0.80f);
+  }
+  for (int step = 0; step < 9; ++step) {
+    const float x = 4.6f - static_cast<float>(step) * 0.24f;
+    const float y = 0.30f + static_cast<float>(step) * 0.11f;
+    addBox({x, y, -58.0f},
+           {0.24f, 0.20f, 2.2f},
+           {0.44f, 0.45f, 0.49f, 1.0f}, 0.80f);
+  }
+
+  // Turnike adaları ve üst tabela çerçeveleri.
+  for (float z : {-24.0f, -34.0f, -44.0f}) {
+    for (float x : {-2.0f, -0.75f, 0.75f, 2.0f}) {
+      addBox({x, 0.55f, z}, {0.22f, 0.55f, 0.62f},
+             {0.08f, 0.22f, 0.30f, 1.0f}, 0.42f);
+    }
+    addBox({0.0f, 2.40f, z}, {3.4f, 0.08f, 0.10f},
+           {0.04f, 0.20f, 0.30f, 1.0f}, 0.30f);
+  }
+
+  // Acil çıkış ve elektrik servis kutuları.
+  for (float z = -30.0f; z > -120.0f; z -= 30.0f) {
+    addBox({-7.75f, 0.75f, z}, {0.50f, 0.75f, 0.16f},
+           {0.18f, 0.20f, 0.24f, 1.0f}, 0.68f);
+    addBox({7.75f, 0.75f, z}, {0.50f, 0.75f, 0.16f},
+           {0.18f, 0.20f, 0.24f, 1.0f}, 0.68f);
+  }
+
+  // Tünel boyunca periyodik aydınlatma kutuları.
+  for (float z = -18.0f; z > -mRouteLength; z -= 32.0f) {
+    addBox({0.0f, 3.72f, z}, {0.34f, 0.08f, 0.16f},
+           {0.95f, 0.92f, 0.78f, 1.0f}, 0.18f);
+    addBox({-7.85f, 1.95f, z}, {0.10f, 0.10f, 0.10f},
+           {0.92f, 0.74f, 0.20f, 1.0f}, 0.22f);
+    addBox({7.85f, 1.95f, z}, {0.10f, 0.10f, 0.10f},
+           {0.92f, 0.74f, 0.20f, 1.0f}, 0.22f);
+  }
+
   // Güvenlik kapıları/peron sonu bariyerleri.
   for (float x : {-mPlatformWidth - 0.20f, mPlatformWidth + 0.20f}) {
     addBox({x, 0.65f, -110.0f}, {1.25f, 0.65f, 0.08f},
