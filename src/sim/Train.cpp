@@ -23,6 +23,9 @@ void Train::setParameters(Parameters parameters) {
       parameters.rollingResistance < 0.0f) {
     parameters.rollingResistance = defaults.rollingResistance;
   }
+  if (!std::isfinite(parameters.maxJerk) || parameters.maxJerk <= 0.0f) {
+    parameters.maxJerk = defaults.maxJerk;
+  }
   mParameters = parameters;
 }
 
@@ -54,11 +57,18 @@ void Train::update(float dt, bool throttle, bool brake, bool signalClear,
       brake = true;
     }
   }
-  float accelerationValue =
+  float targetAcceleration =
       throttle ? mParameters.acceleration : -mParameters.rollingResistance;
-  if (brake || !signalClear) accelerationValue = -mParameters.serviceBrake;
-  mSpeed = std::clamp(mSpeed + accelerationValue * dt, 0.0f,
+  if (brake || !signalClear)
+    targetAcceleration = -mParameters.serviceBrake;
+
+  const float maxAccelerationChange = mParameters.maxJerk * dt;
+  mAcceleration += std::clamp(targetAcceleration - mAcceleration,
+                              -maxAccelerationChange, maxAccelerationChange);
+  mSpeed = std::clamp(mSpeed + mAcceleration * dt, 0.0f,
                       mParameters.maxSpeed);
+  if (mSpeed <= 0.0f && mAcceleration < 0.0f)
+    mAcceleration = 0.0f;
   const float targetDoorFraction = mDoorsOpen ? 1.0f : 0.0f;
   const float doorRate = 2.5f;
   if (mDoorOpenFraction < targetDoorFraction)
@@ -73,6 +83,7 @@ void Train::update(float dt, bool throttle, bool brake, bool signalClear,
       (nextPosition >= routeLength || settledAtTarget)) {
     mPosition = routeLength;
     mSpeed = 0.0f;
+    mAcceleration = 0.0f;
   } else {
     mPosition = nextPosition;
   }
