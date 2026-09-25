@@ -1595,3 +1595,42 @@ void Renderer::shutdown() {
 
   shutdownEditorUI();
   destroySwapchainDependent();
+
+  if (mCommandPool) vkDestroyCommandPool(mCtx->device(), mCommandPool, nullptr);
+  mCommandPool = VK_NULL_HANDLE;
+
+  for (auto& [path, model] : mEditorModels) {
+    if (model) model->destroy(*mCtx);
+  }
+  mEditorModels.clear();
+  mFailedEditorAssets.clear();
+
+  mModel.destroy(*mCtx);
+  mTrainCarModel.destroy(*mCtx);
+  mStationModuleModel.destroy(*mCtx);
+  mTunnelModuleModel.destroy(*mCtx);
+
+  if (mPipeline) vkDestroyPipeline(mCtx->device(), mPipeline, nullptr);
+  mPipeline = VK_NULL_HANDLE;
+  if (mPipelineLayout) vkDestroyPipelineLayout(mCtx->device(), mPipelineLayout, nullptr);
+  mPipelineLayout = VK_NULL_HANDLE;
+  if (mDescSetLayout) vkDestroyDescriptorSetLayout(mCtx->device(), mDescSetLayout, nullptr);
+  mDescSetLayout = VK_NULL_HANDLE;
+  if (mRenderPass) vkDestroyRenderPass(mCtx->device(), mRenderPass, nullptr);
+  mRenderPass = VK_NULL_HANDLE;
+
+  if (mHdrSampler) vkDestroySampler(mCtx->device(), mHdrSampler, nullptr);
+  mHdrSampler = VK_NULL_HANDLE;
+  if (mPostPipeline) vkDestroyPipeline(mCtx->device(), mPostPipeline, nullptr);
+  mPostPipeline = VK_NULL_HANDLE;
+  if (mPostPipelineLayout) vkDestroyPipelineLayout(mCtx->device(), mPostPipelineLayout, nullptr);
+  mPostPipelineLayout = VK_NULL_HANDLE;
+  if (mPostDescSetLayout) vkDestroyDescriptorSetLayout(mCtx->device(), mPostDescSetLayout, nullptr);
+  mPostDescSetLayout = VK_NULL_HANDLE;
+  if (mPostRenderPass) vkDestroyRenderPass(mCtx->device(), mPostRenderPass, nullptr);
+  mPostRenderPass = VK_NULL_HANDLE;
+
+  mSwapchain.destroy(*mCtx);
+}
+
+} // namespace metro::rhi
