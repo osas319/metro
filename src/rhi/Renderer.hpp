@@ -56,9 +56,9 @@ struct ModelPush {
 
 struct PostProcessPush {
   float trainSpeedMps = 0.0f;
+  float editorBackdropBlur = 0.0f;
   float pad0 = 0.0f;
   float pad1 = 0.0f;
-  float pad2 = 0.0f;
 };
 
 class Renderer {
@@ -99,7 +99,7 @@ public:
   };
 
   void drawFrame(const app::Camera& camera, float trainPosition, float trainSpeed,
-                 float doorOpenFraction, bool trainBraking,
+                 float doorOpenFraction, bool trainBraking, bool editorBackdropBlur,
                  const std::vector<bool>& occupiedBlocks,
                  const std::vector<glm::vec2>& passengerPositions = {},
                  const std::vector<EditorMarker>& editorMarkers = {},
@@ -135,7 +135,7 @@ private:
   void recreateSwapchain();
   void recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                            const app::Camera& camera, float trainPosition, float trainSpeed,
-                           float doorOpenFraction, bool trainBraking,
+                           float doorOpenFraction, bool trainBraking, bool editorBackdropBlur,
                            const std::vector<bool>& occupiedBlocks,
                            const std::vector<glm::vec2>& passengerPositions,
                            const std::vector<EditorMarker>& editorMarkers,
