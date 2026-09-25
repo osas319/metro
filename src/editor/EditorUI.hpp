@@ -29,6 +29,8 @@ private:
   char mPathBuffer[256] = "assets/scenes/m4_editor.scene";
   char mRenameBuffer[128] = {};
   bool mPathPopup = false;
+  entt::entity mLastSelected{entt::null};
+  bool mCreatePopup = false;
 };
 
 } // namespace metro::editor
