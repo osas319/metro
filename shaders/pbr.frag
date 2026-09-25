@@ -86,7 +86,7 @@ void main() {
     float falloff = 1.0 - smoothstep(frame.headlightColor.a * 0.45,
                                      frame.headlightColor.a,
                                      distanceToHeadlight);
-    float headlightFacing = pow(max(dot(HL, vec3(0.0, 0.0, -1.0)), 0.0), 1.5);
+    float headlightFacing = pow(max(dot(-HL, vec3(0.0, 0.0, -1.0)), 0.0), 1.5);
     vec3 Hh = normalize(V + HL);
     float hNdotH = max(dot(N, Hh), 0.0);
     float hHdotV = max(dot(Hh, V), 0.0);
