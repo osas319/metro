@@ -1155,11 +1155,26 @@ void Renderer::createEditorBlurResources() {
                          &mEditorBlurRenderPass) != VK_SUCCESS)
     throw std::runtime_error("vkCreateRenderPass (editor blur)");
 
+  VkFramebufferCreateInfo framebuffer{};
+  framebuffer.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+  framebuffer.renderPass = mEditorBlurRenderPass;
+  framebuffer.attachmentCount = 1;
+  framebuffer.pAttachments = &mEditorBlurView;
+  framebuffer.width = std::max(1u, mSwapchain.extent().width / 2u);
+  framebuffer.height = std::max(1u, mSwapchain.extent().height / 2u);
+  framebuffer.layers = 1;
+  if (vkCreateFramebuffer(mCtx->device(), &framebuffer, nullptr,
+                          &mEditorBlurFramebuffer) != VK_SUCCESS)
+    throw std::runtime_error("vkCreateFramebuffer (editor blur)");
+
   createEditorBlurPipeline();
 }
 
 void Renderer::destroyEditorBlurResources() {
   mEditorBlurTexture = 0;
+  if (mEditorBlurFramebuffer)
+    vkDestroyFramebuffer(mCtx->device(), mEditorBlurFramebuffer, nullptr);
+  mEditorBlurFramebuffer = VK_NULL_HANDLE;
   mEditorBlurDescriptorSets.clear();
   if (mEditorBlurDescriptorPool)
     vkDestroyDescriptorPool(mCtx->device(), mEditorBlurDescriptorPool, nullptr);
@@ -1917,27 +1932,40 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
   vkCmdEndRenderPass(cmd);
 
   // --- Editor glass blur -------------------------------------------------
-  // Sadece editör modunda düşük çözünürlüklü blur hedefini üret. Ana HDR
-  // görüntüsü değiştirilmediği için merkez viewport ve oyun görüntüsü keskin kalır.
-  if (editorBackdropBlur && mEditorBlurRenderPass != VK_NULL_HANDLE) {
+  // Yalnızca editor modunda blur hedefi üretilir. HDR/swapchain görüntüsüne
+  // dokunulmaz; ImGui daha sonra bu texture'ı yalnız panellerin arkasına çizer.
+  if (editorBackdropBlur && mEditorBlurRenderPass != VK_NULL_HANDLE &&
+      mEditorBlurFramebuffer != VK_NULL_HANDLE) {
     VkClearValue blurClear{};
     blurClear.color = {{0.02f, 0.03f, 0.05f, 1.0f}};
 
-    VkFramebufferCreateInfo blurFbInfo{};
-    blurFbInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    blurFbInfo.renderPass = mEditorBlurRenderPass;
-    VkImageView blurAttachment = mEditorBlurView;
-    blurFbInfo.attachmentCount = 1;
-    blurFbInfo.pAttachments = &blurAttachment;
-    blurFbInfo.width = std::max(1u, mSwapchain.extent().width / 2u);
-    blurFbInfo.height = std::max(1u, mSwapchain.extent().height / 2u);
-    blurFbInfo.layers = 1;
+    VkRenderPassBeginInfo blurRp{};
+    blurRp.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    blurRp.renderPass = mEditorBlurRenderPass;
+    blurRp.framebuffer = mEditorBlurFramebuffer;
+    blurRp.renderArea.extent = {
+        std::max(1u, mSwapchain.extent().width / 2u),
+        std::max(1u, mSwapchain.extent().height / 2u)};
+    blurRp.clearValueCount = 1;
+    blurRp.pClearValues = &blurClear;
+    vkCmdBeginRenderPass(cmd, &blurRp, VK_SUBPASS_CONTENTS_INLINE);
 
-    // Tek hedef olduğu için framebuffer'ı init'te saklamak yerine resize-safe
-    // şekilde bir kez oluşturmak daha doğru; burada cache mekanizması gerekli.
-    // createEditorBlurResources() framebuffer'ı henüz oluşturmadığı için bu
-    // pass'ta geçici FB oluşturmak istemiyoruz; onun yerine aşağıdaki static
-    // fonksiyonal yapı kullanılmıyor.
+    VkViewport blurViewport{};
+    blurViewport.width = static_cast<float>(std::max(1u, mSwapchain.extent().width / 2u));
+    blurViewport.height = static_cast<float>(std::max(1u, mSwapchain.extent().height / 2u));
+    blurViewport.minDepth = 0.0f;
+    blurViewport.maxDepth = 1.0f;
+    VkRect2D blurScissor{};
+    blurScissor.extent = blurRp.renderArea.extent;
+    vkCmdSetViewport(cmd, 0, 1, &blurViewport);
+    vkCmdSetScissor(cmd, 0, 1, &blurScissor);
+
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, mEditorBlurPipeline);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            mEditorBlurPipelineLayout, 0, 1,
+                            &mEditorBlurDescriptorSets[imageIndex], 0, nullptr);
+    vkCmdDraw(cmd, 3, 1, 0, 0);
+    vkCmdEndRenderPass(cmd);
   }
 
   // --- Post-process: HDR hedefi örnekle, ACES tonemap uygula, swapchain'e yaz ---
@@ -2049,6 +2077,10 @@ void Renderer::onResize() {
 }
 
 void Renderer::destroySwapchainDependent() {
+  // Editor blur hedefi swapchain extentine bağlıdır ve UI texture descriptor'ı
+  // shutdownEditorUI() sırasında kaldırılmış olur.
+  destroyEditorBlurResources();
+
   for (VkFramebuffer fb : mFramebuffers) vkDestroyFramebuffer(mCtx->device(), fb, nullptr);
   mFramebuffers.clear();
   for (VkFramebuffer fb : mPostFramebuffers) vkDestroyFramebuffer(mCtx->device(), fb, nullptr);
