@@ -28,6 +28,17 @@ int main() {
   assert(train.requestDoorsOpen(false, false));
   assert(!train.doorsOpen());
 
+  metro::sim::Train doorAnimationTrain;
+  assert(doorAnimationTrain.requestDoorsOpen(true, true));
+  doorAnimationTrain.update(0.1f, false, false);
+  assert(doorAnimationTrain.doorOpenFraction() > 0.0f);
+  assert(doorAnimationTrain.doorOpenFraction() < 1.0f);
+  doorAnimationTrain.update(1.0f, false, false);
+  assert(doorAnimationTrain.doorOpenFraction() == 1.0f);
+  doorAnimationTrain.requestDoorsOpen(false, false);
+  doorAnimationTrain.update(0.1f, false, false);
+  assert(doorAnimationTrain.doorOpenFraction() < 1.0f);
+
   metro::sim::Train signalTrain;
   signalTrain.update(1.0f, true, false, false);
   assert(signalTrain.speed() == 0.0f);
