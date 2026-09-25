@@ -227,7 +227,7 @@ std::vector<BuiltinPart> makeStationModuleParts() {
   pillars.roughness = 0.60f;
   for (float side : {-1.0f, 1.0f})
     for (float z = -12.0f; z <= 12.0f; z += 6.0f)
-      addBox(pillars, {side * 3.85f, 1.88f, z}, {0.30f, 3.55f, 0.30f});
+      addBox(pillars, {side * 3.85f, 1.96f, z}, {0.30f, 3.72f, 0.30f});
   parts.push_back(std::move(pillars));
 
   BuiltinPart safety;
