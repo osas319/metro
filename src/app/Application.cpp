@@ -343,16 +343,16 @@ int Application::run() {
                         mSignal.occupiedBlocks(), passengerPositions);
     ++frameCount;
 
-    if ((nowNs / Uint64(250000000)) !=
-        ((nowNs - static_cast<Uint64>(std::min(dt, 0.25f) * 1e9f)) /
-         Uint64(250000000))) {
-      const sim::Stop& titleStop = mRoute.nextStop(mTrain.position(), mRouteLength);
+    if (nowNs - mLastTitleNs >= Uint64(250000000)) {
+      const sim::Stop& titleStop =
+          mRoute.nextStop(mTrain.position(), mRouteLength);
       char title[256];
       std::snprintf(title, sizeof(title),
                     "Metro M4 | %5.1f km/s | %s | Kapi: %s",
                     mTrain.speed() * 3.6f, titleStop.name.c_str(),
                     mTrain.doorsOpen() ? "ACIK" : "KAPALI");
       SDL_SetWindowTitle(mWindow, title);
+      mLastTitleNs = nowNs;
     }
 
     if (nowNs - lastStatsNs >= Uint64(2e9)) {
