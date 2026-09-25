@@ -180,8 +180,19 @@ void Scene::createDefaultScene() {
 
   const auto world = create("M4 World", "Scene");
   const auto route = create("M4 Route", "Folder", world);
-  create("Kadikoy Station", "Station", route);
-  create("Ayrilik Cesmesi Station", "Station", route);
+
+  const auto kadikoy = create("Kadikoy Station", "Station", route);
+  if (auto* node = get(kadikoy)) {
+    node->asset = "Station/0";
+    node->transform.position = {0.0f, 0.0f, 0.0f};
+  }
+
+  const auto ayrilik = create("Ayrilik Cesmesi Station", "Station", route);
+  if (auto* node = get(ayrilik)) {
+    node->asset = "Station/1";
+    node->transform.position = {0.0f, 0.0f, -1148.0f};
+  }
+
   create("Track", "Rail", route);
   create("Catenary", "Infrastructure", route);
 
