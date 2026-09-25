@@ -748,7 +748,7 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
   ImGui::Text("Scene: M4 World");
   ImGui::Text("Camera | FPS %.1f | %.1f km/h | %.0f / %.0f m",
               fps, trainSpeedMps * 3.6f, trainPosition, routeLength);
-  ImGui::TextDisabled("MMB orbit | Shift+MMB pan | Wheel zoom | Click entity");
+  ImGui::TextDisabled("MMB drag orbit | Shift+MMB pan | Wheel zoom | Click entity");
   ImGui::EndGroup();
 
   ImGui::SetCursorPos({16.0f, ImGui::GetWindowHeight() - 46.0f});
@@ -849,7 +849,7 @@ void UI::drawGameplayHUD(float trainSpeedMps, float trainPosition,
         std::clamp(gameplay.dwellSeconds / gameplay.dwellLimitSeconds, 0.0f, 1.0f);
     ImGui::ProgressBar(dwell, {220.0f, 12.0f}, "DWELL");
   }
-  ImGui::TextDisabled("UP throttle | DOWN brake | SPACE emergency | O/C doors | H horn | F6 restart");
+  ImGui::TextDisabled("UP throttle | DOWN brake | SPACE emergency | MMB free-look | O/C doors | H horn | F6 restart");
   ImGui::EndGroup();
 
   ImGui::SetCursorPos({size.x - 290.0f, size.y - 174.0f});
