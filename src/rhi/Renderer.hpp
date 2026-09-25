@@ -8,6 +8,7 @@
 // Sahne sistemi (EnTT entity render) buraya eklenerek Forward+'a evrilir.
 #include <volk.h>
 #include <vk_mem_alloc.h>
+#include <SDL3/SDL.h>
 
 #include <vector>
 #include <string>
@@ -99,7 +100,7 @@ private:
   void createFramebuffers();
   void createPostRenderPass();   // tonemap render pass — swapchain'e (LDR) yazar
   void createPostResources();    // HDR örnekleme descriptor set layout/pool/set'ler
-  void createPostPipeline();     // tam ekran üçgen + ACES tonemap pipeline
+  void createPostPipeline();     // tam fullscreen üçgen + ACES tonemap pipeline
   void createPostFramebuffers();
   void createCommandObjects();
   void createSyncObjects();
@@ -116,7 +117,8 @@ private:
   enum class SceneModel : uint8_t {
     Box,
     TrainCar,
-    StationModule
+    StationModule,
+    TunnelModule
   };
 
   struct SceneInstance {
