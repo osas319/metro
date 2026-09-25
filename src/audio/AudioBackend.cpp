@@ -72,6 +72,12 @@ void AudioBackend::play(EventType type) {
                {988.0f, 0.09f, 0.06f}}};
       toneCount = 2;
       break;
+    case EventType::Horn:
+      tones = {{{330.0f, 0.26f, 0.10f},
+               {247.0f, 0.26f, 0.085f},
+               {330.0f, 0.18f, 0.08f}}};
+      toneCount = 3;
+      break;
   }
 
   constexpr int sampleRate = 48000;
