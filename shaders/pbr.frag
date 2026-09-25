@@ -17,6 +17,7 @@ layout(push_constant) uniform ModelPush {
     vec4 baseColor;
     float metallic;
     float roughness;
+    float materialId;
 } push;
 
 layout(location = 0) in vec3 vWorldPos;
@@ -54,6 +55,28 @@ void main() {
     float HdotV = max(dot(H, V), 0.0);
 
     vec3 albedo = push.baseColor.rgb;
+    float materialId = push.materialId;
+
+    // Gercek doku assetleri gelene kadar yüzeylere uygun prosedürel varyantlar.
+    float checker = mod(abs(floor(vWorldPos.x) + floor(vWorldPos.z)), 2.0);
+    if (materialId == 1.0) {
+        float seam = max(step(0.94, fract(vWorldPos.x)),
+                         step(0.94, fract(vWorldPos.z)));
+        albedo *= mix(0.96, 0.80, seam);
+    } else if (materialId == 2.0) {
+        float variation = 0.94 + 0.06 *
+            sin(dot(floor(vWorldPos * 0.5), vec3(1.7, 2.3, 3.1)));
+        albedo *= variation;
+    } else if (materialId == 3.0) {
+        albedo = mix(albedo, vec3(0.52, 0.55, 0.60), 0.35);
+    } else if (materialId == 4.0) {
+        albedo = mix(albedo, vec3(0.012, 0.040, 0.070), 0.72);
+    } else if (materialId == 6.0) {
+        albedo *= checker < 1.0 ? 1.0 : 0.10;
+    } else if (materialId == 7.0) {
+        float stripe = smoothstep(0.40, 0.60, fract(vWorldPos.y * 1.5));
+        albedo = mix(albedo, vec3(0.05, 0.34, 0.62), stripe * 0.35);
+    }
     float metallic = clamp(push.metallic, 0.0, 1.0);
     float roughness = clamp(push.roughness, 0.045, 1.0); // sıfır parlaklık patlamasını önle
     float alpha = roughness * roughness;
@@ -102,6 +125,11 @@ void main() {
     vec3 ambient = albedo * 0.10 * (0.5 + 0.5 * N.y);
 
     vec3 color = ambient + Lo;
+    if (materialId == 5.0) {
+        color += push.baseColor.rgb * 2.5;
+    } else if (materialId == 8.0) {
+        color += push.baseColor.rgb * 1.4;
+    }
 
     // Tünel atmosferi: uzak geometriyi yumuşatıp sahne derinliği sağlar.
     const vec3 tunnelFogColor = vec3(0.028, 0.035, 0.050);
