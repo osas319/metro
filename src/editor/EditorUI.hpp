@@ -10,14 +10,14 @@ namespace metro::editor {
 
 class UI {
 public:
-  void draw(Scene& scene, bool& editorMode, bool& playMode,
+  void draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode,
             float trainSpeedMps, float trainPosition, float routeLength,
             const char* gpuName, float fps);
 
   const std::string& scenePath() const { return mScenePath; }
 
 private:
-  void drawToolbar(Scene& scene, bool& editorMode, bool& playMode);
+  void drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode);
   void drawHierarchy(Scene& scene);
   void drawInspector(Scene& scene);
   void drawContentBrowser(Scene& scene);
