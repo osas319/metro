@@ -11,6 +11,8 @@ void Train::reset(float position) {
   mAcceleration = 0.0f;
   mDoorsOpen = false;
   mDoorOpenFraction = 0.0f;
+  mTractionCommand = 0.0f;
+  mBrakeCommand = 0.0f;
 }
 
 void Train::setParameters(Parameters parameters) {
@@ -23,9 +25,13 @@ void Train::setParameters(Parameters parameters) {
     parameters.acceleration = defaults.acceleration;
   }
   if (!std::isfinite(parameters.serviceBrake) ||
-      parameters.serviceBrake < parameters.acceleration) {
-    parameters.serviceBrake =
-        std::max(defaults.serviceBrake, parameters.acceleration);
+      parameters.serviceBrake <= 0.0f) {
+    parameters.serviceBrake = defaults.serviceBrake;
+  }
+  if (!std::isfinite(parameters.emergencyBrake) ||
+      parameters.emergencyBrake < parameters.serviceBrake) {
+    parameters.emergencyBrake =
+        std::max(defaults.emergencyBrake, parameters.serviceBrake);
   }
   if (!std::isfinite(parameters.rollingResistance) ||
       parameters.rollingResistance < 0.0f) {
@@ -33,6 +39,10 @@ void Train::setParameters(Parameters parameters) {
   }
   if (!std::isfinite(parameters.maxJerk) || parameters.maxJerk <= 0.0f) {
     parameters.maxJerk = defaults.maxJerk;
+  }
+  if (!std::isfinite(parameters.tractionResponse) ||
+      parameters.tractionResponse <= 0.0f) {
+    parameters.tractionResponse = defaults.tractionResponse;
   }
   mParameters = parameters;
 }
@@ -67,9 +77,10 @@ float Train::recommendedSpeed(float distanceMeters) const {
 }
 
 void Train::update(float dt, bool throttle, bool brake, bool signalClear,
-                   float routeLength) {
+                   float routeLength, bool emergencyBrake) {
   if (!std::isfinite(dt) || dt <= 0.0f) return;
-  if (mDoorsOpen || mDoorOpenFraction > 0.01f || !signalClear) throttle = false;
+  if (mDoorsOpen || mDoorOpenFraction > 0.01f || !signalClear)
+    throttle = false;
   if (routeLength > 0.0f && mPosition >= routeLength) {
     throttle = false;
     brake = true;
@@ -87,17 +98,37 @@ void Train::update(float dt, bool throttle, bool brake, bool signalClear,
       mParameters.maxSpeed > 0.0f
           ? std::clamp(mSpeed / mParameters.maxSpeed, 0.0f, 1.0f)
           : 0.0f;
-  // Hafif aerodinamik direnç: düşük hızda yuvarlanma direnci baskın,
-  // yüksek hızda ise direnç kademeli olarak artar.
+
+  // Kumanda kolu ani sekilde degismez: motor ve fren komutlari yumusak
+  // bicimde baslar/kesilir. Jerk limiti bunun uzerine ikinci bir konfor katmani ekler.
+  const float commandAlpha = std::clamp(mParameters.tractionResponse * dt, 0.0f, 1.0f);
+  const float targetTraction = throttle ? 1.0f : 0.0f;
+  const float targetBrake = (brake || !signalClear || emergencyBrake) ? 1.0f : 0.0f;
+  mTractionCommand += (targetTraction - mTractionCommand) * commandAlpha;
+  mBrakeCommand += (targetBrake - mBrakeCommand) * commandAlpha;
+
+  // Hafif aerodinamik direnc: dusuk hizda yuvarlanma, yuksek hizda hava direnci.
   const float resistance =
       mParameters.rollingResistance + 0.00035f * mSpeed * mSpeed;
+
+  // CERCEVE traction curve: dusuk/orta hizda yuksek cekis, Vmax'a yaklasirken
+  // daha yumusak guc azalmasi. Maksimum ivme korunurken fizik daha doğal hissettirir.
   const float tractionFactor =
-      1.0f - 0.28f * speedRatio * speedRatio;
-  float targetAcceleration =
-      throttle ? (mParameters.acceleration * tractionFactor - resistance)
-               : -resistance;
-  if (brake || !signalClear)
-    targetAcceleration = -mParameters.serviceBrake;
+      std::clamp(1.0f - 0.30f * std::pow(speedRatio, 1.7f), 0.52f, 1.0f);
+  const float tractionAcceleration =
+      mParameters.acceleration * tractionFactor * mTractionCommand - resistance;
+
+  float targetAcceleration = tractionAcceleration;
+  if (mBrakeCommand > 0.001f) {
+    const float serviceDecel =
+        mParameters.serviceBrake * (0.82f + 0.18f * speedRatio);
+    const float brakeDecel = emergencyBrake
+                                 ? mParameters.emergencyBrake * (0.96f + 0.04f * speedRatio)
+                                 : serviceDecel;
+    targetAcceleration = -brakeDecel * mBrakeCommand - resistance * 0.20f;
+  } else if (mTractionCommand <= 0.001f) {
+    targetAcceleration = -resistance;
+  }
 
   const float maxAccelerationChange = mParameters.maxJerk * dt;
   mAcceleration += std::clamp(targetAcceleration - mAcceleration,
