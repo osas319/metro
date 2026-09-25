@@ -107,16 +107,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     }
   }
 
-  // İstasyon armatürleri ve reklam/tabela panelleri.
-  for (float z = -8.0f; z > -120.0f; z -= 16.0f) {
-    addBox({0.0f, 3.55f, z}, {2.4f, 0.06f, 0.20f},
-           {0.86f, 0.90f, 0.82f, 1.0f}, 0.25f);
-    for (float x : {-mPlatformWidth + 0.75f, mPlatformWidth - 0.75f}) {
-      addBox({x, 2.05f, z}, {0.75f, 0.70f, 0.06f},
-             {0.04f, 0.16f, 0.24f, 1.0f}, 0.35f);
-    }
-  }
-
+  // Aydınlatmalar istasyon geometrisinin içinde, tavana bağlı olarak üretilir.
   // Kadıköy başlangıç bölümünde banklar, çöp kutuları ve turnike adaları.
   for (float z : {-18.0f, -42.0f, -66.0f, -90.0f}) {
     for (float x : {-mPlatformWidth + 1.1f, mPlatformWidth - 1.1f}) {
