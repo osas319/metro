@@ -459,7 +459,7 @@ int Application::run() {
       lastStatsNs = nowNs;
     }
     if (autoExitSec > 0.0 && double(nowNs - startNs) / 1e9 >= autoExitSec) {
-      METRO_INFO("METRO_AUTO_EXIT (%.1fs) — cikiliyor");
+      METRO_INFO("METRO_AUTO_EXIT (%.1fs) — cikiliyor", autoExitSec);
       mRunning = false;
     }
   }
