@@ -311,7 +311,7 @@ int Application::run() {
     passengerPositions.reserve(mPassengers.walkingAgents().size());
     for (const auto& passenger : mPassengers.walkingAgents())
       passengerPositions.push_back(passenger.position(mPassengerNav));
-    mRenderer.drawFrame(renderCamera, renderTrainPosition,
+    mRenderer.drawFrame(renderCamera, renderTrainPosition, mTrain.doorOpenFraction(),
                         mSignal.occupiedBlocks(), passengerPositions);
     ++frameCount;
 
