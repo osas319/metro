@@ -528,18 +528,38 @@ int Application::run() {
       renderCamera.yaw = mCamera.yaw;
       renderCamera.pitch = mCamera.pitch;
     } else if (mCameraViewMode == CameraViewMode::Cab) {
-      const float motionSway =
-          std::clamp(mTrain.acceleration() * 0.018f, -0.035f, 0.035f);
-      const float roadVibration =
-          std::sin(static_cast<float>(nowNs) * 0.000006f) *
-          (0.004f + std::clamp(mTrain.speed() / 22.2f, 0.0f, 1.0f) * 0.009f);
+      const float speed01 = std::clamp(mTrain.speed() / 22.2f, 0.0f, 1.0f);
+      const float acceleration = mTrain.acceleration();
+
+      // Kamera fiziksel bir yay gibi davranır: hızlanma/fren darbeleri doğrudan
+      // kameraya yapışmaz, birkaç kare içinde yumuşakça sönümlenir.
+      const float targetSway = std::clamp(acceleration * 0.022f, -0.050f, 0.050f);
+      const float swayAcceleration = (targetSway - mCabSway) * 18.0f -
+                                     mCabSwayVelocity * 5.5f;
+      mCabSwayVelocity += swayAcceleration * dt;
+      mCabSway += mCabSwayVelocity * dt;
+
+      const float trackFrequency = 5.0f + speed01 * 3.0f;
+      const float trackAmplitude = 0.0015f + speed01 * 0.0075f;
+      const float trackPhase = static_cast<float>(nowNs) * 0.000001f * trackFrequency;
+      const float targetBounce = std::sin(trackPhase) * trackAmplitude;
+      const float bounceAcceleration = (targetBounce - mCabBounce) * 24.0f -
+                                       mCabBounceVelocity * 6.5f;
+      mCabBounceVelocity += bounceAcceleration * dt;
+      mCabBounce += mCabBounceVelocity * dt;
+
+      // Hız arttıkça görüş açısı da çok hafif açılır; o da yumuşak geçiş yapar.
+      const float targetFov = 45.0f + speed01 * 3.5f;
+      mCabFov += (targetFov - mCabFov) * std::min(dt * 5.0f, 1.0f);
+
       // Dört vagonlu setin ön burnu yaklaşık -40.8 m'dedir.
       // Kamerayı burun içine sokmamak için ön cama yakın görüş hattı.
       renderCamera.position =
-          glm::vec3(motionSway, 1.62f + roadVibration,
+          glm::vec3(mCabSway, 1.62f + mCabBounce,
                     -renderTrainPosition - 40.9f);
       renderCamera.yaw = -90.0f;
-      renderCamera.pitch = -3.0f - motionSway * 25.0f;
+      renderCamera.pitch = -3.0f - mCabSway * 23.0f;
+      renderCamera.mouseSensitivity = mCamera.mouseSensitivity;
     } else if (mCameraViewMode == CameraViewMode::Chase) {
       renderCamera.position =
           glm::vec3(4.8f, 4.2f, -renderTrainPosition + 22.0f);
