@@ -21,9 +21,11 @@ bool Application::init() {
           station)) {
     return false;
   }
-  mCamera.position = station.spawnPosition;
-  mCamera.yaw = station.spawnYaw;
-  mCamera.pitch = station.spawnPitch;
+  // Editor açılışında tren + ray koridoru kadraja girsin; oyun modunda
+  // F5 ile kabin kamerası zaten fiziksel tren konumuna geçiyor.
+  mCamera.position = station.spawnPosition + glm::vec3(5.5f, 2.8f, 10.0f);
+  mCamera.yaw = station.spawnYaw - 12.0f;
+  mCamera.pitch = -8.0f;
   mSignal.resize(station.blockCount);
   mRouteLength = station.routeLength;
   mPassengers = sim::PassengerSystem(station.passengerCapacity,
