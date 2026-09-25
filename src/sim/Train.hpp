@@ -9,6 +9,7 @@ public:
     float acceleration = 1.2f;
     float serviceBrake = 2.4f;
     float rollingResistance = 0.08f;
+    float maxJerk = 3.0f;
   };
 
   void setParameters(Parameters parameters);
@@ -16,6 +17,7 @@ public:
               float routeLength = 0.0f);
 
   float speed() const { return mSpeed; }
+  float acceleration() const { return mAcceleration; }
   float position() const { return mPosition; }
   bool doorsOpen() const { return mDoorsOpen; }
   float doorOpenFraction() const { return mDoorOpenFraction; }
@@ -24,6 +26,7 @@ public:
 private:
   float mPosition = 0.0f;
   float mSpeed = 0.0f;
+  float mAcceleration = 0.0f;
   bool mDoorsOpen = false;
   float mDoorOpenFraction = 0.0f;
   Parameters mParameters;
