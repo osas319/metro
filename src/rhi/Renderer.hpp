@@ -73,10 +73,23 @@ public:
     glm::vec4 color{0.85f, 0.55f, 0.10f, 1.0f};
   };
 
+  enum class EditorRenderKind : uint8_t {
+    Train,
+    Station
+  };
+
+  struct EditorRenderOverride {
+    EditorRenderKind kind{EditorRenderKind::Train};
+    size_t index{0};
+    glm::mat4 transform{1.0f};
+    bool visible{true};
+  };
+
   void drawFrame(const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
                  const std::vector<bool>& occupiedBlocks,
                  const std::vector<glm::vec2>& passengerPositions = {},
-                 const std::vector<EditorMarker>& editorMarkers = {});
+                 const std::vector<EditorMarker>& editorMarkers = {},
+                 const std::vector<EditorRenderOverride>& editorOverrides = {});
 
   // Pencere boyutu değişti; swapchain'i güvenli anda yeniden kur.
   void onResize();
@@ -110,7 +123,8 @@ private:
                            const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
                            const std::vector<bool>& occupiedBlocks,
                            const std::vector<glm::vec2>& passengerPositions,
-                           const std::vector<EditorMarker>& editorMarkers);
+                           const std::vector<EditorMarker>& editorMarkers,
+                           const std::vector<EditorRenderOverride>& editorOverrides);
   VkShaderModule loadShader(const char* filename);
   VkFormat pickDepthFormat() const;
 
@@ -134,7 +148,8 @@ private:
   // İleride gerçek GLB asset'leri aynı instance listesinin yerini alabilir.
   std::vector<SceneInstance> buildKadikoyScene(
       float trainPosition, float trainSpeed, float doorOpenFraction, const std::vector<bool>& occupiedBlocks,
-      const std::vector<glm::vec2>& passengerPositions) const;
+      const std::vector<glm::vec2>& passengerPositions,
+      const std::vector<EditorRenderOverride>& editorOverrides) const;
 
   VulkanContext* mCtx = nullptr;
   SDL_Window* mWindow = nullptr;
