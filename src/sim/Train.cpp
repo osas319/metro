@@ -32,7 +32,6 @@ void Train::setParameters(Parameters parameters) {
 bool Train::requestDoorsOpen(bool open, bool platformAligned) {
   if (!open) {
     mDoorsOpen = false;
-    mDoorOpenFraction = 0.0f;
     return true;
   }
   if (mSpeed > 0.05f || !platformAligned) return false;
