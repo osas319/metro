@@ -105,7 +105,7 @@ bool Application::init() {
                       }(), station.blockCount)) return false;
 
   METRO_INFO("Pencere acildi; dongu basliyor (kapatmak icin pencereyi kapat)");
-  METRO_INFO("Kontroller: Yukari=cekis Asagi=fren O/C=kapi Sol tik=fare ESC=serbest");
+  METRO_INFO("Kontroller: Yukari=cekis Asagi=fren O/C=kapi F1=kabin F2=takip F3=serbest W/A/S/D");
   return true;
 }
 
@@ -133,7 +133,19 @@ void Application::handleEvent(const SDL_Event& e) {
       }
       break;
     case SDL_EVENT_KEY_DOWN:
-      if (e.key.key == SDLK_ESCAPE && mMouseCaptured) {
+      if (e.key.key == SDLK_F1) {
+        mCameraViewMode = CameraViewMode::Cab;
+        mMouseCaptured = false;
+        SDL_SetWindowRelativeMouseMode(mWindow, false);
+      } else if (e.key.key == SDLK_F2) {
+        mCameraViewMode = CameraViewMode::Chase;
+        mMouseCaptured = false;
+        SDL_SetWindowRelativeMouseMode(mWindow, false);
+      } else if (e.key.key == SDLK_F3) {
+        mCameraViewMode = CameraViewMode::Free;
+        mMouseCaptured = true;
+        SDL_SetWindowRelativeMouseMode(mWindow, true);
+      } else if (e.key.key == SDLK_ESCAPE && mMouseCaptured) {
         mMouseCaptured = false;
         SDL_SetWindowRelativeMouseMode(mWindow, false);
       }
@@ -302,9 +314,7 @@ int Application::run() {
 
     const float renderTrainPosition = mPhysics.interpolatedPosition(mTrain);
     Camera renderCamera = mCamera;
-    if (!mMouseCaptured) {
-      // Sürücü kabini: kamera trenin önünde, ray eksenine hizalı.
-      // Serbest kamera için sol tıklama ile fareyi yakala.
+    if (mCameraViewMode == CameraViewMode::Cab) {
       const float motionSway =
           std::clamp(mTrain.acceleration() * 0.018f, -0.035f, 0.035f);
       const float roadVibration =
@@ -315,6 +325,11 @@ int Application::run() {
                     -renderTrainPosition - 36.8f);
       renderCamera.yaw = -90.0f;
       renderCamera.pitch = -3.0f - motionSway * 25.0f;
+    } else if (mCameraViewMode == CameraViewMode::Chase) {
+      renderCamera.position =
+          glm::vec3(4.8f, 4.2f, -renderTrainPosition + 22.0f);
+      renderCamera.yaw = -96.0f;
+      renderCamera.pitch = -7.0f;
     }
     std::vector<glm::vec2> passengerPositions;
     passengerPositions.reserve(mPassengers.walkingAgents().size());
