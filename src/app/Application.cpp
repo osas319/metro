@@ -686,7 +686,7 @@ int Application::run() {
 
     const bool renderTrainBraking = mTrain.acceleration() < -0.20f;
     mRenderer.drawFrame(renderCamera, renderTrainPosition, mTrain.speed(),
-                        mTrain.doorOpenFraction(), renderTrainBraking,
+                        mTrain.doorOpenFraction(), renderTrainBraking, mEditorMode,
                         mSignal.occupiedBlocks(), passengerPositions, editorMarkers,
                         editorOverrides);
     ++frameCount;
