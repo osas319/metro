@@ -91,7 +91,8 @@ metro_add_shader_target(
   shaders/pbr.vert
   shaders/pbr.frag
   shaders/tonemap.vert
-  shaders/tonemap.frag)
+  shaders/tonemap.frag
+  shaders/editor_blur.frag)
 
 # ---------------------------------------------------------------------------
 # Uygulama
