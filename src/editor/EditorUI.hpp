@@ -3,6 +3,8 @@
 #include "editor/EditorScene.hpp"
 #include "app/Camera.hpp"
 
+#include <imgui.h>
+
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
@@ -37,6 +39,7 @@ public:
   void draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode,
             app::Camera& camera, float trainSpeedMps, float trainPosition,
             float routeLength, const char* gpuName, float fps,
+            ImTextureID editorBlurTexture,
             const GameplayHUDData& gameplay);
 
   const std::string& scenePath() const { return mScenePath; }
@@ -47,16 +50,19 @@ public:
   }
 
 private:
-  void drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode);
-  void drawHierarchy(Scene& scene);
-  void drawInspector(Scene& scene);
-  void drawContentBrowser(Scene& scene);
+  void drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode,
+                   ImTextureID editorBlurTexture);
+  void drawHierarchy(Scene& scene, ImTextureID editorBlurTexture);
+  void drawInspector(Scene& scene, ImTextureID editorBlurTexture);
+  void drawContentBrowser(Scene& scene, ImTextureID editorBlurTexture);
   void drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
+                    ImTextureID editorBlurTexture,
                     float trainSpeedMps, float trainPosition,
                     float routeLength, const char* gpuName, float fps);
   void drawGameplayHUD(float trainSpeedMps, float trainPosition,
                        float routeLength, const GameplayHUDData& gameplay);
   void drawEntityTree(Scene& scene, entt::entity entity);
+  void drawGlassBackground(ImTextureID editorBlurTexture, float tintAlpha = 0.56f);
 
   std::string mScenePath = "assets/scenes/m4_editor.scene";
   char mPathBuffer[256] = "assets/scenes/m4_editor.scene";
