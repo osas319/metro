@@ -31,6 +31,8 @@ private:
   bool mPathPopup = false;
   entt::entity mLastSelected{entt::null};
   bool mCreatePopup = false;
+  std::string mStatus = "Ready";
+  float mStatusTimer = 0.0f;
 };
 
 } // namespace metro::editor
