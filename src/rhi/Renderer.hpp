@@ -212,6 +212,7 @@ private:
   VkImageView mEditorBlurView = VK_NULL_HANDLE;
   VkSampler mEditorBlurSampler = VK_NULL_HANDLE;
   VkRenderPass mEditorBlurRenderPass = VK_NULL_HANDLE;
+  VkFramebuffer mEditorBlurFramebuffer = VK_NULL_HANDLE;
   VkDescriptorSetLayout mEditorBlurDescSetLayout = VK_NULL_HANDLE;
   VkDescriptorPool mEditorBlurDescriptorPool = VK_NULL_HANDLE;
   std::vector<VkDescriptorSet> mEditorBlurDescriptorSets;
