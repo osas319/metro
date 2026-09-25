@@ -209,6 +209,18 @@ void Application::handleEvent(const SDL_Event& e) {
         if (auto* node = mEditorScene.get(mEditorScene.selected()))
           node->locked = !node->locked;
       } else if (!mRenderer.editorWantsKeyboard() && !mEditorMode &&
+                 e.key.key == SDLK_F6) {
+        mTrain.reset(0.0f);
+        mPhysics.reset(0.0f);
+        mSignal.resize(mSignal.blockCount());
+        mPassengers = sim::PassengerSystem(320, 24);
+        mPassengers.setNavGraph(mPassengerNav);
+        mStopDwellSeconds = 0.0f;
+        mTerminalServiced = false;
+        mLastServicedStop = static_cast<size_t>(-1);
+        mLastSignalBlock = static_cast<size_t>(-1);
+        mAudioEvents.drain();
+      } else if (!mRenderer.editorWantsKeyboard() && !mEditorMode &&
                  e.key.key == SDLK_SPACE && !mEmergencyBrakeHeld) {
         mEmergencyBrakeHeld = true;
         mAudioEvents.push({audio::EventType::EmergencyBrake, 0});
@@ -464,6 +476,9 @@ int Application::run() {
                                      !mKeyboardState[SDL_SCANCODE_SPACE];
     gameplayHUD.emergencyBrakeActive = !mEditorMode &&
                                        mKeyboardState[SDL_SCANCODE_SPACE];
+    gameplayHUD.overspeed = !mEditorMode &&
+                            mTrain.speed() > gameplayHUD.recommendedSpeedMps + 1.0f &&
+                            gameplayHUD.distanceToNextStation > 25.0f;
 
     mRenderer.beginEditorFrame();
     mEditorUI.draw(mEditorScene, mEditorMode, mPlayMode, mEditorGizmoMode,
