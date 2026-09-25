@@ -73,6 +73,16 @@ public:
   // Pencere boyutu değişti; swapchain'i güvenli anda yeniden kur.
   void onResize();
 
+  // Editor UI (Dear ImGui) yaşam döngüsü.
+  bool initEditorUI();
+  void shutdownEditorUI();
+  void beginEditorFrame();
+  void finishEditorFrame();
+  void renderEditorUI(VkCommandBuffer cmd);
+  void processEditorEvent(const SDL_Event& e);
+  bool editorWantsMouse() const;
+  bool editorWantsKeyboard() const;
+
 private:
   void createRenderPass();       // sahne (PBR) render pass — HDR renk hedefine yazar
   void createDepthResources();
@@ -183,6 +193,7 @@ private:
   std::vector<VkFence> mInFlight;
   uint32_t mFrame = 0;
   VkFormat mSwapFormat = VK_FORMAT_UNDEFINED; // render pass formatı değişim kontrolü
+  bool mEditorUIInitialized = false;
 };
 
 } // namespace metro::rhi
