@@ -129,6 +129,8 @@ void Application::handleEvent(const SDL_Event& e) {
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
       if (e.button.button == SDL_BUTTON_LEFT) {
         mMouseCaptured = !mMouseCaptured;
+        mCameraViewMode =
+            mMouseCaptured ? CameraViewMode::Free : CameraViewMode::Cab;
         SDL_SetWindowRelativeMouseMode(mWindow, mMouseCaptured);
       }
       break;
