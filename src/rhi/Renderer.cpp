@@ -1137,20 +1137,33 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
 
   const std::vector<SceneInstance> instances =
       buildKadikoyScene(trainPosition, trainSpeed, doorOpenFraction, occupiedBlocks, passengerPositions);
-  mModel.bind(cmd);
+
+  const Model* boundModel = nullptr;
   for (const SceneInstance& instance : instances) {
-    for (size_t i = 0; i < mModel.subMeshCount(); ++i) {
-      const SubMesh& sub = mModel.subMesh(i);
+    const Model* model = &mModel;
+    if (instance.model == SceneModel::TrainCar) model = &mTrainCarModel;
+    if (instance.model == SceneModel::StationModule) model = &mStationModuleModel;
+
+    if (model != boundModel) {
+      model->bind(cmd);
+      boundModel = model;
+    }
+
+    for (size_t i = 0; i < model->subMeshCount(); ++i) {
+      const SubMesh& sub = model->subMesh(i);
       ModelPush push{};
       push.model = instance.transform;
-      push.baseColor = instance.color;
+      push.baseColor = instance.useModelMaterial
+                           ? glm::vec4(sub.baseColor[0], sub.baseColor[1],
+                                       sub.baseColor[2], sub.baseColor[3])
+                           : instance.color;
       push.metallic = sub.metallic;
-      push.roughness = instance.roughness;
-      push.materialId = instance.materialId;
+      push.roughness = instance.useModelMaterial ? sub.roughness : instance.roughness;
+      push.materialId = instance.useModelMaterial ? sub.materialId : instance.materialId;
       vkCmdPushConstants(cmd, mPipelineLayout,
                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                          0, sizeof(ModelPush), &push);
-      mModel.drawSubMesh(cmd, i);
+      model->drawSubMesh(cmd, i);
     }
   }
 
