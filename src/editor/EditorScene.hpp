@@ -53,7 +53,7 @@ public:
   glm::vec3 worldPosition(entt::entity entity) const;
 
   // Parent değiştirirken entity'nin çocuklarından birinin altına taşınmasını engeller.
-  bool setParent(entt::entity entity, entt::entity parent);
+  bool setParent(entt::entity entity, entt::entity parent, bool keepWorldTransform = true);
 
   const std::vector<entt::entity>& order() const { return mOrder; }
   entt::entity selected() const { return mSelected; }
