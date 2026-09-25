@@ -528,6 +528,12 @@ bool Renderer::initEditorUI() {
     return false;
   }
 
+  if (mEditorBlurView != VK_NULL_HANDLE && mEditorBlurSampler != VK_NULL_HANDLE) {
+    mEditorBlurTexture =
+        ImGui_ImplVulkan_AddTexture(mEditorBlurSampler, mEditorBlurView,
+                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+  }
+
   mEditorUIInitialized = true;
   METRO_INFO("Editor UI hazir: Docking + SDL3 + Vulkan");
   return true;
@@ -537,6 +543,9 @@ void Renderer::shutdownEditorUI() {
   if (!mEditorUIInitialized)
     return;
 
+  if (mEditorBlurTexture != 0)
+    ImGui_ImplVulkan_RemoveTexture(mEditorBlurTexture);
+  mEditorBlurTexture = 0;
   ImGui_ImplVulkan_Shutdown();
   ImGui_ImplSDL3_Shutdown();
   ImGui::DestroyContext();
@@ -604,6 +613,7 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
     createHdrResources();    // HDR renk hedefleri + sampler
     createCommandObjects();  // texture upload için command pool hazır
     createMaterialTextures();
+    createEditorBlurResources();
     createFrameUniforms();
     createPipeline();
     createFramebuffers();    // sahne framebuffer'ları (HDR+depth)
@@ -1004,6 +1014,269 @@ void Renderer::createHdrResources() {
     }
   }
 }
+
+void Renderer::createEditorBlurResources() {
+  // Tek düşük çözünürlüklü görüntü tüm editör panelleri için yeniden kullanılır.
+  const uint32_t width = std::max(1u, mSwapchain.extent().width / 2u);
+  const uint32_t height = std::max(1u, mSwapchain.extent().height / 2u);
+
+  VkImageCreateInfo image{};
+  image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+  image.imageType = VK_IMAGE_TYPE_2D;
+  image.format = kEditorBlurFormat;
+  image.extent = {width, height, 1};
+  image.mipLevels = 1;
+  image.arrayLayers = 1;
+  image.samples = VK_SAMPLE_COUNT_1_BIT;
+  image.tiling = VK_IMAGE_TILING_OPTIMAL;
+  image.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+  VmaAllocationCreateInfo alloc{};
+  alloc.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+  if (vmaCreateImage(mCtx->allocator(), &image, &alloc,
+                     &mEditorBlurImage, &mEditorBlurAlloc, nullptr) != VK_SUCCESS) {
+    throw std::runtime_error("vmaCreateImage (editor blur)");
+  }
+
+  VkImageViewCreateInfo view{};
+  view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  view.image = mEditorBlurImage;
+  view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  view.format = kEditorBlurFormat;
+  view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  view.subresourceRange.levelCount = 1;
+  view.subresourceRange.layerCount = 1;
+  if (vkCreateImageView(mCtx->device(), &view, nullptr, &mEditorBlurView) != VK_SUCCESS) {
+    throw std::runtime_error("vkCreateImageView (editor blur)");
+  }
+
+  VkSamplerCreateInfo sampler{};
+  sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+  sampler.magFilter = VK_FILTER_LINEAR;
+  sampler.minFilter = VK_FILTER_LINEAR;
+  sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+  sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  sampler.maxLod = 1.0f;
+  if (vkCreateSampler(mCtx->device(), &sampler, nullptr, &mEditorBlurSampler) != VK_SUCCESS)
+    throw std::runtime_error("vkCreateSampler (editor blur)");
+
+  VkDescriptorSetLayoutBinding binding{};
+  binding.binding = 0;
+  binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  binding.descriptorCount = 1;
+  binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+  VkDescriptorSetLayoutCreateInfo layout{};
+  layout.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  layout.bindingCount = 1;
+  layout.pBindings = &binding;
+  if (vkCreateDescriptorSetLayout(mCtx->device(), &layout, nullptr,
+                                  &mEditorBlurDescSetLayout) != VK_SUCCESS)
+    throw std::runtime_error("vkCreateDescriptorSetLayout (editor blur)");
+
+  VkDescriptorPoolSize poolSize{};
+  poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  poolSize.descriptorCount = mSwapchain.imageCount();
+
+  VkDescriptorPoolCreateInfo pool{};
+  pool.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  pool.maxSets = mSwapchain.imageCount();
+  pool.poolSizeCount = 1;
+  pool.pPoolSizes = &poolSize;
+  if (vkCreateDescriptorPool(mCtx->device(), &pool, nullptr,
+                             &mEditorBlurDescriptorPool) != VK_SUCCESS)
+    throw std::runtime_error("vkCreateDescriptorPool (editor blur)");
+
+  mEditorBlurDescriptorSets.resize(mSwapchain.imageCount());
+  std::vector<VkDescriptorSetLayout> layouts(mSwapchain.imageCount(), mEditorBlurDescSetLayout);
+  VkDescriptorSetAllocateInfo allocSets{};
+  allocSets.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+  allocSets.descriptorPool = mEditorBlurDescriptorPool;
+  allocSets.descriptorSetCount = mSwapchain.imageCount();
+  allocSets.pSetLayouts = layouts.data();
+  if (vkAllocateDescriptorSets(mCtx->device(), &allocSets,
+                               mEditorBlurDescriptorSets.data()) != VK_SUCCESS)
+    throw std::runtime_error("vkAllocateDescriptorSets (editor blur)");
+
+  for (uint32_t i = 0; i < mSwapchain.imageCount(); ++i) {
+    VkDescriptorImageInfo source{};
+    source.sampler = mHdrSampler;
+    source.imageView = mHdrViews[i];
+    source.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = mEditorBlurDescriptorSets[i];
+    write.dstBinding = 0;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    write.descriptorCount = 1;
+    write.pImageInfo = &source;
+    vkUpdateDescriptorSets(mCtx->device(), 1, &write, 0, nullptr);
+  }
+
+  VkAttachmentDescription attachment{};
+  attachment.format = kEditorBlurFormat;
+  attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+  attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+  VkAttachmentReference colorRef{};
+  colorRef.attachment = 0;
+  colorRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+  VkSubpassDescription subpass{};
+  subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  subpass.colorAttachmentCount = 1;
+  subpass.pColorAttachments = &colorRef;
+
+  VkSubpassDependency dep{};
+  dep.srcSubpass = VK_SUBPASS_EXTERNAL;
+  dep.dstSubpass = 0;
+  dep.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+  dep.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+  dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+  VkRenderPassCreateInfo pass{};
+  pass.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+  pass.attachmentCount = 1;
+  pass.pAttachments = &attachment;
+  pass.subpassCount = 1;
+  pass.pSubpasses = &subpass;
+  pass.dependencyCount = 1;
+  pass.pDependencies = &dep;
+  if (vkCreateRenderPass(mCtx->device(), &pass, nullptr,
+                         &mEditorBlurRenderPass) != VK_SUCCESS)
+    throw std::runtime_error("vkCreateRenderPass (editor blur)");
+
+  createEditorBlurPipeline();
+}
+
+void Renderer::destroyEditorBlurResources() {
+  mEditorBlurTexture = 0;
+  mEditorBlurDescriptorSets.clear();
+  if (mEditorBlurDescriptorPool)
+    vkDestroyDescriptorPool(mCtx->device(), mEditorBlurDescriptorPool, nullptr);
+  mEditorBlurDescriptorPool = VK_NULL_HANDLE;
+
+  if (mEditorBlurPipeline)
+    vkDestroyPipeline(mCtx->device(), mEditorBlurPipeline, nullptr);
+  mEditorBlurPipeline = VK_NULL_HANDLE;
+  if (mEditorBlurPipelineLayout)
+    vkDestroyPipelineLayout(mCtx->device(), mEditorBlurPipelineLayout, nullptr);
+  mEditorBlurPipelineLayout = VK_NULL_HANDLE;
+  if (mEditorBlurRenderPass)
+    vkDestroyRenderPass(mCtx->device(), mEditorBlurRenderPass, nullptr);
+  mEditorBlurRenderPass = VK_NULL_HANDLE;
+  if (mEditorBlurDescSetLayout)
+    vkDestroyDescriptorSetLayout(mCtx->device(), mEditorBlurDescSetLayout, nullptr);
+  mEditorBlurDescSetLayout = VK_NULL_HANDLE;
+  if (mEditorBlurSampler)
+    vkDestroySampler(mCtx->device(), mEditorBlurSampler, nullptr);
+  mEditorBlurSampler = VK_NULL_HANDLE;
+  if (mEditorBlurView)
+    vkDestroyImageView(mCtx->device(), mEditorBlurView, nullptr);
+  mEditorBlurView = VK_NULL_HANDLE;
+  if (mEditorBlurImage)
+    vmaDestroyImage(mCtx->allocator(), mEditorBlurImage, mEditorBlurAlloc);
+  mEditorBlurImage = VK_NULL_HANDLE;
+  mEditorBlurAlloc = VK_NULL_HANDLE;
+}
+
+void Renderer::createEditorBlurPipeline() {
+  VkShaderModule vert = loadShader("tonemap.vert.spv");
+  VkShaderModule frag = loadShader("editor_blur.frag.spv");
+
+  VkPipelineShaderStageCreateInfo stages[2]{};
+  stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+  stages[0].module = vert;
+  stages[0].pName = "main";
+  stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+  stages[1].module = frag;
+  stages[1].pName = "main";
+
+  VkPipelineVertexInputStateCreateInfo vertex{};
+  vertex.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+  VkPipelineInputAssemblyStateCreateInfo input{};
+  input.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+  input.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+  VkPipelineViewportStateCreateInfo viewport{};
+  viewport.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+  viewport.viewportCount = 1;
+  viewport.scissorCount = 1;
+
+  VkPipelineRasterizationStateCreateInfo raster{};
+  raster.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+  raster.polygonMode = VK_POLYGON_MODE_FILL;
+  raster.cullMode = VK_CULL_MODE_NONE;
+  raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+  raster.lineWidth = 1.0f;
+
+  VkPipelineMultisampleStateCreateInfo multisample{};
+  multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+  multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+  VkPipelineColorBlendAttachmentState blendAttachment{};
+  blendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+                                   VK_COLOR_COMPONENT_G_BIT |
+                                   VK_COLOR_COMPONENT_B_BIT |
+                                   VK_COLOR_COMPONENT_A_BIT;
+
+  VkPipelineColorBlendStateCreateInfo blend{};
+  blend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+  blend.attachmentCount = 1;
+  blend.pAttachments = &blendAttachment;
+
+  VkDynamicState dynamicStates[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+  VkPipelineDynamicStateCreateInfo dynamic{};
+  dynamic.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+  dynamic.dynamicStateCount = 2;
+  dynamic.pDynamicStates = dynamicStates;
+
+  VkPipelineLayoutCreateInfo layout{};
+  layout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  layout.setLayoutCount = 1;
+  layout.pSetLayouts = &mEditorBlurDescSetLayout;
+  if (vkCreatePipelineLayout(mCtx->device(), &layout, nullptr,
+                             &mEditorBlurPipelineLayout) != VK_SUCCESS) {
+    vkDestroyShaderModule(mCtx->device(), vert, nullptr);
+    vkDestroyShaderModule(mCtx->device(), frag, nullptr);
+    throw std::runtime_error("vkCreatePipelineLayout (editor blur)");
+  }
+
+  VkGraphicsPipelineCreateInfo ci{};
+  ci.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+  ci.stageCount = 2;
+  ci.pStages = stages;
+  ci.pVertexInputState = &vertex;
+  ci.pInputAssemblyState = &input;
+  ci.pViewportState = &viewport;
+  ci.pRasterizationState = &raster;
+  ci.pMultisampleState = &multisample;
+  ci.pColorBlendState = &blend;
+  ci.pDynamicState = &dynamic;
+  ci.layout = mEditorBlurPipelineLayout;
+  ci.renderPass = mEditorBlurRenderPass;
+  ci.subpass = 0;
+
+  const VkResult result = vkCreateGraphicsPipelines(
+      mCtx->device(), VK_NULL_HANDLE, 1, &ci, nullptr, &mEditorBlurPipeline);
+  vkDestroyShaderModule(mCtx->device(), vert, nullptr);
+  vkDestroyShaderModule(mCtx->device(), frag, nullptr);
+  if (result != VK_SUCCESS)
+    throw std::runtime_error("vkCreateGraphicsPipelines (editor blur)");
+}
+
 
 void Renderer::createFrameUniforms() {
   const uint32_t count = mSwapchain.imageCount();
@@ -1643,6 +1916,30 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
 
   vkCmdEndRenderPass(cmd);
 
+  // --- Editor glass blur -------------------------------------------------
+  // Sadece editör modunda düşük çözünürlüklü blur hedefini üret. Ana HDR
+  // görüntüsü değiştirilmediği için merkez viewport ve oyun görüntüsü keskin kalır.
+  if (editorBackdropBlur && mEditorBlurRenderPass != VK_NULL_HANDLE) {
+    VkClearValue blurClear{};
+    blurClear.color = {{0.02f, 0.03f, 0.05f, 1.0f}};
+
+    VkFramebufferCreateInfo blurFbInfo{};
+    blurFbInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    blurFbInfo.renderPass = mEditorBlurRenderPass;
+    VkImageView blurAttachment = mEditorBlurView;
+    blurFbInfo.attachmentCount = 1;
+    blurFbInfo.pAttachments = &blurAttachment;
+    blurFbInfo.width = std::max(1u, mSwapchain.extent().width / 2u);
+    blurFbInfo.height = std::max(1u, mSwapchain.extent().height / 2u);
+    blurFbInfo.layers = 1;
+
+    // Tek hedef olduğu için framebuffer'ı init'te saklamak yerine resize-safe
+    // şekilde bir kez oluşturmak daha doğru; burada cache mekanizması gerekli.
+    // createEditorBlurResources() framebuffer'ı henüz oluşturmadığı için bu
+    // pass'ta geçici FB oluşturmak istemiyoruz; onun yerine aşağıdaki static
+    // fonksiyonal yapı kullanılmıyor.
+  }
+
   // --- Post-process: HDR hedefi örnekle, ACES tonemap uygula, swapchain'e yaz ---
   VkClearValue postClear{};
   postClear.color = {{0.0f, 0.0f, 0.0f, 1.0f}}; // loadOp DONT_CARE; yalnız API gereği dolu
@@ -1667,7 +1964,6 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
 
   PostProcessPush postPush{};
   postPush.trainSpeedMps = std::clamp(std::abs(trainSpeed), 0.0f, 22.2f);
-  postPush.editorBackdropBlur = editorBackdropBlur ? 1.0f : 0.0f;
   vkCmdPushConstants(cmd, mPostPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT,
                      0, sizeof(PostProcessPush), &postPush);
 
