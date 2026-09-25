@@ -527,10 +527,16 @@ int Application::run() {
 
         if (node->type == "Train") {
           rhi::Renderer::EditorRenderOverride override{};
-          override.kind = rhi::Renderer::EditorRenderKind::Train;
           override.transform = mEditorScene.worldTransform(entity);
           override.visible = node->visible;
-          editorOverrides.push_back(override);
+          if (!node->asset.empty() && node->asset.rfind("Builtin/", 0) != 0) {
+            override.kind = rhi::Renderer::EditorRenderKind::Asset;
+            override.index = static_cast<size_t>(-1);
+            override.assetPath = node->asset;
+          } else {
+            override.kind = rhi::Renderer::EditorRenderKind::Train;
+          }
+          editorOverrides.push_back(std::move(override));
         } else if (node->type == "Station") {
           std::string stationName = node->name;
           constexpr std::string_view suffix = " Station";
@@ -543,11 +549,16 @@ int Application::run() {
               continue;
 
             rhi::Renderer::EditorRenderOverride override{};
-            override.kind = rhi::Renderer::EditorRenderKind::Station;
             override.index = stationIndex;
             override.transform = mEditorScene.worldTransform(entity);
             override.visible = node->visible;
-            editorOverrides.push_back(override);
+            if (!node->asset.empty() && node->asset.rfind("Station/", 0) != 0) {
+              override.kind = rhi::Renderer::EditorRenderKind::Asset;
+              override.assetPath = node->asset;
+            } else {
+              override.kind = rhi::Renderer::EditorRenderKind::Station;
+            }
+            editorOverrides.push_back(std::move(override));
             break;
           }
         }
