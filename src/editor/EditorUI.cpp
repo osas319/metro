@@ -696,15 +696,8 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
         camera.getFront() * (io.MouseWheel * 2.0f);
   }
 
-  // Editor viewport kamera kontrolleri:
-  // RMB = orbit, MMB = pan, Shift+MMB = daha hassas/alternatif pan.
-  // Böylece sağ tuş artık editörde gerçekten kamera döndürür.
-  if (hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Right)) {
-    camera.yaw += io.MouseDelta.x * 0.25f;
-    camera.pitch -= io.MouseDelta.y * 0.25f;
-    camera.pitch = std::clamp(camera.pitch, -89.0f, 89.0f);
-  }
-
+  // MMB viewport pan. RMB orbit, SDL tarafindan ham mouse hareketiyle
+  // islenir; ImGui panelinin mouse capture davranisindan etkilenmez.
   if (hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
     const float panSpeed = io.KeyShift ? 0.035f : 0.020f;
     camera.position -= camera.getRight() * io.MouseDelta.x * panSpeed;
