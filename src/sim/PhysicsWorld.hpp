@@ -30,7 +30,7 @@ public:
 
   void reset(float trainPosition = 0.0f);
   void step(float frameDelta, Train& train, bool throttle, bool brake,
-            bool signalClear, float routeLength);
+            bool signalClear, float routeLength, bool emergencyBrake = false);
   float interpolationAlpha() const;
   float interpolatedPosition(const Train& train) const;
   float fixedStep() const { return mSettings.fixedStep; }
