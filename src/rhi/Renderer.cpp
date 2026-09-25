@@ -336,7 +336,6 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   }
 
     }
-  }
 
   // Yürüyen yolcular.
   for (const glm::vec2& p : passengerPositions) {
@@ -497,8 +496,7 @@ void Renderer::beginEditorFrame() {
 
 void Renderer::finishEditorFrame() {
   if (!mEditorUIInitialized)
-    return;
-  ImGui::Render();
+    return;  ImGui::Render();
 }
 
 void Renderer::renderEditorUI(VkCommandBuffer cmd) {
@@ -997,8 +995,7 @@ void Renderer::createPostRenderPass() {
   mSwapFormat = mSwapchain.format();
 
   VkAttachmentDescription color{};
-  color.format = mSwapFormat;
-  color.samples = VK_SAMPLE_COUNT_1_BIT;
+  color.format = mSwapFormat;  color.samples = VK_SAMPLE_COUNT_1_BIT;
   // Tam ekran üçgen her pikseli baştan yazar; önceki içerik önemsiz.
   color.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
   color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -1598,43 +1595,3 @@ void Renderer::shutdown() {
 
   shutdownEditorUI();
   destroySwapchainDependent();
-
-  if (mCommandPool) vkDestroyCommandPool(mCtx->device(), mCommandPool, nullptr);
-  mCommandPool = VK_NULL_HANDLE;
-
-  for (auto& [path, model] : mEditorModels) {
-    if (model) model->destroy(*mCtx);
-  }
-  mEditorModels.clear();
-  mFailedEditorAssets.clear();
-
-  mModel.destroy(*mCtx);
-  mTrainCarModel.destroy(*mCtx);
-  mStationModuleModel.destroy(*mCtx);
-  mTunnelModuleModel.destroy(*mCtx);
-
-  if (mPipeline) vkDestroyPipeline(mCtx->device(), mPipeline, nullptr);
-  mPipeline = VK_NULL_HANDLE;
-  if (mPipelineLayout) vkDestroyPipelineLayout(mCtx->device(), mPipelineLayout, nullptr);
-  mPipelineLayout = VK_NULL_HANDLE;
-  if (mDescSetLayout) vkDestroyDescriptorSetLayout(mCtx->device(), mDescSetLayout, nullptr);
-  mDescSetLayout = VK_NULL_HANDLE;
-  if (mRenderPass) vkDestroyRenderPass(mCtx->device(), mRenderPass, nullptr);
-  mRenderPass = VK_NULL_HANDLE;
-
-  // Post-process (tonemap) pipeline ömürlü kaynakları.
-  if (mHdrSampler) vkDestroySampler(mCtx->device(), mHdrSampler, nullptr);
-  mHdrSampler = VK_NULL_HANDLE;
-  if (mPostPipeline) vkDestroyPipeline(mCtx->device(), mPostPipeline, nullptr);
-  mPostPipeline = VK_NULL_HANDLE;
-  if (mPostPipelineLayout) vkDestroyPipelineLayout(mCtx->device(), mPostPipelineLayout, nullptr);
-  mPostPipelineLayout = VK_NULL_HANDLE;
-  if (mPostDescSetLayout) vkDestroyDescriptorSetLayout(mCtx->device(), mPostDescSetLayout, nullptr);
-  mPostDescSetLayout = VK_NULL_HANDLE;
-  if (mPostRenderPass) vkDestroyRenderPass(mCtx->device(), mPostRenderPass, nullptr);
-  mPostRenderPass = VK_NULL_HANDLE;
-
-  mSwapchain.destroy(*mCtx);
-}
-
-} // namespace metro::rhi
