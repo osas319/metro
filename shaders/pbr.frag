@@ -155,6 +155,28 @@ void main() {
     Lo += (hDiffuse + hSpec) * frame.headlightColor.rgb * HNdL *
           falloff * headlightFacing * 3.0;
 
+    // Tavan armatürü: nearest 18 m modular luminaire gerçekten ışık verir.
+    // Bu, emissive panelin yalnızca bloom ile parlaması yerine zemine ve
+    // tren govdesine lokal isik dusurmesini saglar.
+    float lampZ = round(vWorldPos.z / 18.0) * 18.0;
+    vec3 toLamp = vec3(0.0, 4.05, lampZ) - vWorldPos;
+    float lampDistance = length(toLamp);
+    vec3 LL = normalize(toLamp);
+    vec3 LH = normalize(V + LL);
+    float LNdotL = max(dot(N, LL), 0.0);
+    float LHdotV = max(dot(LH, V), 0.0);
+    float LNdotH = max(dot(N, LH), 0.0);
+    vec3 LF = F0 + (1.0 - F0) *
+              pow(clamp(1.0 - LHdotV, 0.0, 1.0), 5.0);
+    float LD = distributionGGX(LNdotH, alpha);
+    float LG = geometrySmith(NdotV, max(LNdotL, 1e-4), k);
+    vec3 Lspec = (LD * LG * LF) /
+                 max(4.0 * NdotV * max(LNdotL, 1e-4), 1e-4);
+    vec3 Ldiff = (1.0 - LF) * (1.0 - metallic) * albedo / PI;
+    float lampAttenuation = 1.0 - smoothstep(2.0, 8.5, lampDistance);
+    Lo += (Ldiff + Lspec) * vec3(1.0, 0.82, 0.62) *
+          LNdotL * lampAttenuation * 1.6;
+
     // Hafif hemisfer ambient — tünelde gökyüzü yok, zemin yansıması hissi
     vec3 ambient = albedo * 0.10 * (0.5 + 0.5 * N.y);
 
