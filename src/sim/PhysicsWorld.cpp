@@ -267,7 +267,8 @@ void PhysicsWorld::reset(float trainPosition) {
 }
 
 void PhysicsWorld::step(float frameDelta, Train& train, bool throttle,
-                        bool brake, bool signalClear, float routeLength) {
+                        bool brake, bool signalClear, float routeLength,
+                        bool emergencyBrake) {
   if (!std::isfinite(frameDelta) || frameDelta <= 0.0f) return;
   mAccumulator = std::min(mAccumulator + frameDelta,
                           mSettings.fixedStep *
@@ -277,7 +278,7 @@ void PhysicsWorld::step(float frameDelta, Train& train, bool throttle,
          substeps++ < mSettings.maxSubsteps) {
     mPreviousTrainPosition = train.position();
     train.update(mSettings.fixedStep, throttle, brake, signalClear,
-                 routeLength);
+                 routeLength, emergencyBrake);
     mJolt->syncTrain(train.position(), mSettings.fixedStep);
     mJolt->physicsSystem.Update(mSettings.fixedStep, 1, &mJolt->tempAllocator,
                                 &mJolt->jobSystem);
