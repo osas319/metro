@@ -201,6 +201,10 @@ int main() {
   assert(audioEvents.tryPop(audioEvent));
   assert(audioEvent.type == metro::audio::EventType::Horn);
   assert(std::string(metro::audio::eventName(audioEvent.type)) == "horn");
+  audioEvents.push({metro::audio::EventType::EmergencyBrake, 0});
+  assert(audioEvents.tryPop(audioEvent));
+  assert(audioEvent.type == metro::audio::EventType::EmergencyBrake);
+  assert(std::string(metro::audio::eventName(audioEvent.type)) == "emergency_brake");
 
   metro::sim::Route route;
   route.buildBlockStops(3, 900.0f);
