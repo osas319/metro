@@ -380,7 +380,7 @@ VkShaderModule Renderer::loadShader(const char* filename) {
   return module;
 }
 
-Model* Renderer::getEditorModel(const std::string& path) {
+Model* Renderer::getEditorModel(const std::string& path) const {
   if (path.empty()) return nullptr;
   const auto cached = mEditorModels.find(path);
   if (cached != mEditorModels.end()) return cached->second.get();
