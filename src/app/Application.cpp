@@ -162,20 +162,18 @@ void Application::handleEvent(const SDL_Event& e) {
       } else if ((e.button.button == SDL_BUTTON_RIGHT ||
                   e.button.button == SDL_BUTTON_MIDDLE) &&
                  !mRenderer.editorWantsMouse()) {
-        mMouseCaptured = true;
-        mCameraViewMode = CameraViewMode::Free;
-        SDL_SetWindowRelativeMouseMode(mWindow, true);
+        // Fare ile serbest kameraya geçişte de trenin yanından başlayan
+        // aynı başlangıç noktasını kullan.
+        enterFreeCamera();
       }
       break;
     case SDL_EVENT_MOUSE_BUTTON_UP:
       if (mEditorMode) {
         if (e.button.button == SDL_BUTTON_RIGHT)
           mEditorOrbitHeld = false;
-      } else if (e.button.button == SDL_BUTTON_RIGHT ||
-                 e.button.button == SDL_BUTTON_MIDDLE) {
-        mMouseCaptured = false;
-        SDL_SetWindowRelativeMouseMode(mWindow, false);
       }
+      // Gameplay freecam'de mouse bırakmak kamerayı kapatmaz. Relative mouse
+      // ESC/F1/F2/F4 ile açıkça bırakılır; böylece F3 sonrası bakış kesilmez.
       break;
     case SDL_EVENT_KEY_DOWN:
       if (e.key.key == SDLK_F4) {
