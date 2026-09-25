@@ -40,6 +40,7 @@ public:
             const GameplayHUDData& gameplay);
 
   const std::string& scenePath() const { return mScenePath; }
+  bool viewportHovered() const { return mViewportHovered; }
 
 private:
   void drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode);
