@@ -44,6 +44,15 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     instances.push_back(s);
   };
 
+  auto addModelInstance = [&](SceneModel model, glm::vec3 pos,
+                              glm::vec3 scale = glm::vec3(1.0f)) {
+    SceneInstance s{};
+    s.transform = glm::scale(glm::translate(glm::mat4(1.0f), o + pos), scale);
+    s.model = model;
+    s.useModelMaterial = true;
+    instances.push_back(s);
+  };
+
   // Ana tünel gövdesi: zemin, iki platform ve koyu tavan.
   addBox({0.0f, -1.5f, -halfRoute},
           {mPlatformWidth * 2.0f + 3.0f, 0.15f, halfRoute},
@@ -72,16 +81,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
            {0.26f, 0.28f, 0.30f, 1.0f}, 0.85f);
   }
 
-  // Kolonlar ve üst kirişler: gerçek asset gelene kadar istasyonun ritmini verir.
-  for (float z = -mColumnSpacing; z > -mRouteLength; z -= mColumnSpacing) {
-    if (z < visibleMinZ || z > visibleMaxZ) continue;
-    for (float x : {-mPlatformWidth - 3.0f, mPlatformWidth + 3.0f})
-      addBox({x, 1.2f, z}, {0.35f, 2.8f, 0.35f},
-             {0.34f, 0.36f, 0.40f, 1.0f}, 0.72f);
-    addBox({0.0f, 3.55f, z}, {mPlatformWidth + 3.5f, 0.18f, 0.30f},
-           {0.27f, 0.29f, 0.34f, 1.0f}, 0.82f);
-  }
-
+  // İstasyon kolonları dedicated StationModule modelinde bulunur.
   // Tünel duvarları ve kablo kanalları.
   addBox({-8.6f, 1.25f, -halfRoute}, {0.18f, 2.75f, halfRoute},
          {0.16f, 0.18f, 0.22f, 1.0f}, 0.96f);
@@ -97,7 +97,6 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
          {0.58f, 0.60f, 0.62f, 1.0f}, 0.22f);
   for (float z = -12.0f; z > -mRouteLength; z -= 24.0f) {
     if (z < visibleMinZ || z > visibleMaxZ) continue;
-    if (z < visibleMinZ || z > visibleMaxZ) continue;
     addBox({0.0f, 3.02f, z},
            {mPlatformWidth + 3.3f, 0.035f, 0.035f},
            {0.42f, 0.44f, 0.48f, 1.0f}, 0.35f);
@@ -107,102 +106,26 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     }
   }
 
-  // İstasyon hacmi: tek hat görünümünde tek yan peron, sürekli arka duvar,
-  // asma tavan ve zemine bağlı kolonlar. Gerçek M4 fotoğraflarındaki sade,
-  // açık renkli fayans + sarı taktil şerit + uzun aydınlatma düzenini izler.
+
+  // Her istasyon 180 m uzunluğunda: altı adet 30 m'lik aynı mimari modül.
+  // Modül; iki yan peron, fayans duvar, kolon, tavan, ışık ve tabela içerir.
+  constexpr float stationModuleLength = 30.0f;
+  constexpr int stationModuleCount = 6;
   constexpr float stationHalfLength = 90.0f;
-  for (size_t i = 0; i < mStopPositions.size(); ++i) {
-    const float p = mStopPositions[i];
+  for (float p : mStopPositions) {
     if (p < 0.0f || p > mRouteLength) continue;
     if (p + stationHalfLength < visibleStart || p - stationHalfLength > visibleEnd) continue;
-
-    const float z = -p;
-    const float trackHalf = mTrackGauge * 0.5f;
-    const float platformInner = trackHalf + 0.22f;
-    const float platformOuter = mPlatformWidth;
-    const float platformCenter = (platformInner + platformOuter) * 0.5f;
-    const float platformHalfWidth = (platformOuter - platformInner) * 0.5f;
-
-    // Sağ tarafta tek, sürekli peron.
-    addBox({platformCenter, -0.92f, z},
-           {platformHalfWidth, 0.37f, stationHalfLength},
-           {0.44f, 0.45f, 0.47f, 1.0f}, 0.90f, 2.0f);
-
-    // Ray tarafı sarı güvenlik bandı ve taktil yüzey.
-    addBox({platformInner + 0.10f, -0.49f, z},
-           {0.055f, 0.022f, stationHalfLength - 1.0f},
-           {0.98f, 0.70f, 0.06f, 1.0f}, 0.42f, 6.0f);
-    addBox({platformInner + 0.30f, -0.47f, z},
-           {0.075f, 0.025f, stationHalfLength - 1.0f},
-           {0.76f, 0.76f, 0.72f, 1.0f}, 0.72f, 2.0f);
-
-    // Sürekli arka duvar; platformu ve istasyon tavanını birleştirir.
-    addBox({platformOuter + 0.10f, 1.42f, z},
-           {0.14f, 1.82f, stationHalfLength},
-           {0.74f, 0.71f, 0.65f, 1.0f}, 0.78f, 2.0f);
-
-    // Duvarın altındaki koyu süpürgelik.
-    addBox({platformOuter - 0.05f, -0.02f, z},
-           {0.09f, 0.48f, stationHalfLength},
-           {0.22f, 0.24f, 0.29f, 1.0f}, 0.88f, 1.0f);
-
-    // M4 fotoğraflarındaki düzenli mavi vurgu panelleri.
-    for (float panelP = p - 72.0f; panelP <= p + 72.0f; panelP += 18.0f) {
-      addBox({platformOuter - 0.06f, 1.65f, -panelP},
-             {0.025f, 1.10f, 0.48f},
-             {0.035f, 0.14f, 0.22f, 1.0f}, 0.48f, 4.0f);
-    }
-
-    // Kolonlar duvardan tavana kadar gerçekten temas eder.
-    for (float columnP = p - 72.0f; columnP <= p + 72.0f; columnP += 18.0f) {
-      addBox({platformOuter - 0.42f, 1.72f, -columnP},
-             {0.16f, 1.78f, 0.16f},
-             {0.55f, 0.53f, 0.49f, 1.0f}, 0.72f, 3.0f);
-    }
-
-    // Platform tarafındaki asma tavanın taşıyıcı kısmı; duvardan tavana bağlı.
-    addBox({2.65f, 3.42f, z},
-           {2.40f, 0.075f, stationHalfLength},
-           {0.83f, 0.81f, 0.75f, 1.0f}, 0.84f, 2.0f);
-
-    // Uzun tavan armatürleri tavana oturur.
-    for (float lightP = p - 78.0f; lightP <= p + 78.0f; lightP += 12.0f) {
-      addBox({2.65f, 3.28f, -lightP},
-             {0.42f, 0.025f, 1.80f},
-             {0.95f, 0.93f, 0.84f, 1.0f}, 0.15f, 5.0f);
-    }
-
-    // İstasyonun ray üzerinde kalan orta kısmı için de tek parça asma tavan.
-    addBox({0.0f, 3.42f, z},
-           {2.55f, 0.075f, stationHalfLength},
-           {0.83f, 0.81f, 0.75f, 1.0f}, 0.84f, 2.0f);
-
-    // Duvara bağlı reklam/tabela panelleri.
-    for (float panelP = p - 60.0f; panelP <= p + 60.0f; panelP += 24.0f) {
-      addBox({platformOuter - 0.10f, 2.35f, -panelP},
-             {0.035f, 0.58f, 1.45f},
-             {0.94f, 0.94f, 0.92f, 1.0f}, 0.55f);
-    }
-
-    // İstasyon tabelası daha sonra gerçek doku/GLB tabelasıyla eklenecek.
-  }
-
-  // Kadıköy'de banklar doğrudan peron döşemesine oturur.
-  if (visibleStart < 120.0f) {
-    for (float z : {-18.0f, -42.0f, -66.0f}) {
-      addBox({mPlatformWidth - 1.25f, -0.46f, z},
-             {0.85f, 0.08f, 0.28f},
-             {0.24f, 0.25f, 0.27f, 1.0f}, 0.68f);
-      addBox({mPlatformWidth - 1.25f, -0.08f, z},
-             {0.85f, 0.30f, 0.08f},
-             {0.34f, 0.35f, 0.37f, 1.0f}, 0.62f);
+    const float firstCenter = p - stationHalfLength + stationModuleLength * 0.5f;
+    for (int module = 0; module < stationModuleCount; ++module) {
+      const float moduleCenter = firstCenter + static_cast<float>(module) * stationModuleLength;
+      addModelInstance(SceneModel::StationModule, {0.0f, 0.0f, -moduleCenter});
     }
   }
 
   // Blok sinyalleri simülasyonda aktif; görsel mastlar ayrı signal asset'iyle eklenecek.
 
-  // 4 vagonlu CAF M4 seti. Fizik noktası setin referans noktasıdır;
-  // görsel olarak araçlar birbirine bağlı tek bir kompozisyon oluşturur.
+
+  // Dört vagonlu M4 seti: her vagon artık ayrı, detaylı procedural model.
   constexpr float carLength = 19.5f;
   constexpr float carGap = 0.25f;
   constexpr size_t carCount = 4;
@@ -213,66 +136,35 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   for (size_t car = 0; car < carCount; ++car) {
     const float carZ =
         setCenter + (static_cast<float>(car) - 1.5f) * (carLength + carGap);
+    addModelInstance(SceneModel::TrainCar, {0.0f, 0.0f, carZ});
 
-    addBox({0.0f, 0.05f, carZ},
-           {mTrainWidth * 0.52f, mTrainHeight * 0.52f, carLength * 0.48f},
-           {0.055f, 0.28f, 0.56f, 1.0f}, 0.50f, 7.0f);
-    addBox({0.0f, 0.88f, carZ},
-           {mTrainWidth * 0.53f, 0.40f, carLength * 0.47f},
-           {0.78f, 0.80f, 0.77f, 1.0f}, 0.30f);
-    addBox({0.0f, 1.48f, carZ},
-           {mTrainWidth * 0.48f, 0.18f, carLength * 0.45f},
-           {0.70f, 0.73f, 0.77f, 1.0f}, 0.25f);
-
-    // Koyu cam bandı.
-    addBox({-mTrainWidth * 0.535f, 0.82f, carZ},
-           {0.035f, 0.34f, carLength * 0.38f},
-           {0.02f, 0.065f, 0.10f, 1.0f}, 0.10f, 4.0f);
-    addBox({mTrainWidth * 0.535f, 0.82f, carZ},
-           {0.035f, 0.34f, carLength * 0.38f},
-           {0.02f, 0.065f, 0.10f, 1.0f}, 0.10f, 4.0f);
-
-    // Dört vagonun her birinde iki kapı bölgesi.
+    // Hareketli kapılar: model gövdesinden ayrı oldukları için açılıp kapanabilirler.
     for (float doorZ : {-carLength * 0.28f, carLength * 0.28f}) {
       const float slide = 0.42f * doorOpenFraction;
-      addBox({-mTrainWidth * 0.54f - slide, 0.76f, carZ + doorZ},
-             {0.028f, 0.56f, 0.43f},
-             {0.62f, 0.66f, 0.71f, 1.0f}, 0.20f);
-      addBox({mTrainWidth * 0.54f + slide, 0.76f, carZ + doorZ},
-             {0.028f, 0.56f, 0.43f},
-             {0.62f, 0.66f, 0.71f, 1.0f}, 0.20f);
+      addBox({-mTrainWidth * 0.51f - slide, 0.70f, carZ + doorZ},
+             {0.025f, 0.62f, 0.42f},
+             {0.68f, 0.70f, 0.73f, 1.0f}, 0.18f);
+      addBox({mTrainWidth * 0.51f + slide, 0.70f, carZ + doorZ},
+             {0.025f, 0.62f, 0.42f},
+             {0.68f, 0.70f, 0.73f, 1.0f}, 0.18f);
     }
-
-    // Boji bölgeleri.
-    for (float bogieZ : {-carLength * 0.33f, carLength * 0.33f}) {
-      addBox({0.0f, -0.76f, carZ + bogieZ},
-             {mTrainWidth * 0.38f, 0.16f, 0.45f},
-             {0.10f, 0.11f, 0.13f, 1.0f}, 0.70f, 3.0f);
-    }
-
-    // Tavan üzerindeki ana ekipman.
-    addBox({0.0f, 1.78f, carZ},
-           {0.22f, 0.10f, carLength * 0.20f},
-           {0.26f, 0.28f, 0.30f, 1.0f}, 0.72f, 3.0f);
   }
 
-  // Körük/bağlantı noktaları.
+  // Vagonlar arası körükler.
   for (size_t car = 0; car + 1 < carCount; ++car) {
     const float z =
         setCenter + (static_cast<float>(car) - 1.0f) * (carLength + carGap);
-    addBox({0.0f, 0.22f, z},
-           {mTrainWidth * 0.22f, 0.46f, carGap * 0.45f},
-           {0.08f, 0.09f, 0.11f, 1.0f}, 0.75f);
+    addBox({0.0f, 0.34f, z},
+           {0.62f, 0.72f, carGap * 0.48f},
+           {0.08f, 0.09f, 0.11f, 1.0f}, 0.75f, 3.0f);
   }
 
-  // Ön kabin burnu ve aydınlatma.
-  addBox({0.0f, 0.60f, setCenter - setLength * 0.50f},
-         {mTrainWidth * 0.45f, 0.30f, 0.08f},
-         {0.52f, 0.62f, 0.72f, 1.0f}, 0.18f);
-  for (float x : {-0.68f, 0.68f}) {
-    addBox({x, 0.70f, setCenter - setLength * 0.50f - 0.10f},
-           {0.11f, 0.11f, 0.05f},
-           {1.0f, 0.95f, 0.72f, 1.0f}, 0.16f, 5.0f);
+  // Ön kabin farları; modelin burun geometrisine oturur.
+  const float frontZ = setCenter - setLength * 0.50f;
+  for (float x : {-0.72f, 0.72f}) {
+    addBox({x, 0.72f, frontZ - 0.08f},
+           {0.12f, 0.12f, 0.06f},
+           {1.0f, 0.94f, 0.72f, 1.0f}, 0.14f, 5.0f);
   }
 
   // Kabin ön camı ve sürücü konsolu: kamera kabin içinde olduğunda sürüş hissini artırır.
