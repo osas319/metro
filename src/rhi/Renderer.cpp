@@ -34,6 +34,13 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   const float visibleMinZ = -visibleEnd;
   const float visibleMaxZ = -visibleStart;
 
+  auto isInsideStation = [&](float position) {
+    for (float stop : mStopPositions) {
+      if (std::abs(position - stop) <= 90.0f) return true;
+    }
+    return false;
+  };
+
   auto addBox = [&](glm::vec3 pos, glm::vec3 scale, glm::vec4 color,
                     float roughness = 0.7f, float materialId = 0.0f) {
     SceneInstance s{};
@@ -57,14 +64,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   addBox({0.0f, -1.5f, -halfRoute},
           {mPlatformWidth * 2.0f + 3.0f, 0.15f, halfRoute},
           {0.22f, 0.25f, 0.30f, 1.0f}, 0.92f, 1.0f);
-  // İstasyon dışındaki dar servis/yürüyüş yolu.
-  const float walkwayX = mTrackGauge * 0.5f + 0.60f;
-  addBox({-walkwayX, -0.30f, -halfRoute},
-          {0.95f, 0.22f, halfRoute},
-          {0.26f, 0.28f, 0.31f, 1.0f}, 0.90f, 2.0f);
-  addBox({walkwayX, -0.30f, -halfRoute},
-          {0.95f, 0.22f, halfRoute},
-          {0.26f, 0.28f, 0.31f, 1.0f}, 0.90f, 2.0f);
+  // Tünel zemini sürekli; istasyon modülü kendi platformunu sağlar.
   addBox({0.0f, 4.0f, -halfRoute},
           {9.0f, 0.15f, halfRoute},
           {0.13f, 0.16f, 0.20f, 1.0f}, 0.96f);
@@ -97,6 +97,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
          {0.58f, 0.60f, 0.62f, 1.0f}, 0.22f);
   for (float z = -12.0f; z > -mRouteLength; z -= 24.0f) {
     if (z < visibleMinZ || z > visibleMaxZ) continue;
+    if (isInsideStation(-z)) continue;
     addBox({0.0f, 3.02f, z},
            {mPlatformWidth + 3.3f, 0.035f, 0.035f},
            {0.42f, 0.44f, 0.48f, 1.0f}, 0.35f);
