@@ -696,15 +696,19 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
         camera.getFront() * (io.MouseWheel * 2.0f);
   }
 
+  // Editor viewport kamera kontrolleri:
+  // RMB = orbit, MMB = pan, Shift+MMB = daha hassas/alternatif pan.
+  // Böylece sağ tuş artık editörde gerçekten kamera döndürür.
+  if (hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Right)) {
+    camera.yaw += io.MouseDelta.x * 0.25f;
+    camera.pitch -= io.MouseDelta.y * 0.25f;
+    camera.pitch = std::clamp(camera.pitch, -89.0f, 89.0f);
+  }
+
   if (hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
-    if (io.KeyShift) {
-      camera.position -= camera.getRight() * io.MouseDelta.x * 0.02f;
-      camera.position += camera.getUp() * io.MouseDelta.y * 0.02f;
-    } else {
-      camera.yaw += io.MouseDelta.x * 0.25f;
-      camera.pitch -= io.MouseDelta.y * 0.25f;
-      camera.pitch = std::clamp(camera.pitch, -89.0f, 89.0f);
-    }
+    const float panSpeed = io.KeyShift ? 0.035f : 0.020f;
+    camera.position -= camera.getRight() * io.MouseDelta.x * panSpeed;
+    camera.position += camera.getUp() * io.MouseDelta.y * panSpeed;
   }
 
   if (scene.selected() != entt::null) {
@@ -748,13 +752,13 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
   ImGui::Text("Scene: M4 World");
   ImGui::Text("Camera | FPS %.1f | %.1f km/h | %.0f / %.0f m",
               fps, trainSpeedMps * 3.6f, trainPosition, routeLength);
-  ImGui::TextDisabled("MMB drag orbit | Shift+MMB pan | Wheel zoom | Click entity");
+  ImGui::TextDisabled("RMB drag orbit | MMB pan | Wheel zoom | Click entity");
   ImGui::EndGroup();
 
   ImGui::SetCursorPos({16.0f, ImGui::GetWindowHeight() - 46.0f});
   ImGui::BeginGroup();
   ImGui::Text("GPU: %s", gpuName != nullptr ? gpuName : "Unknown");
-  ImGui::TextDisabled("W Move | E Rotate | R Scale | Drag gizmo | Arrow keys");
+  ImGui::TextDisabled("W Move | E Rotate | R Scale | Drag gizmo | Arrow keys | RMB orbit");
   ImGui::EndGroup();
 
   ImGui::End();
