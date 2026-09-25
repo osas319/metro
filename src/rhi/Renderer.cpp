@@ -24,6 +24,14 @@
 
 namespace metro::rhi {
 
+namespace {
+
+std::string materialTexturePath(const char* name) {
+  return (std::filesystem::path("assets/shared/textures") / name).string();
+}
+
+} // namespace
+
 std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     float trainPosition, float trainSpeed, float doorOpenFraction, bool trainBraking,
     const std::vector<bool>& occupiedBlocks,
@@ -588,6 +596,8 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
     createRenderPass();      // sahne (PBR) — HDR offscreen hedefe
     createDepthResources();
     createHdrResources();    // HDR renk hedefleri + sampler
+    createCommandObjects();  // texture upload için command pool hazır
+    createMaterialTextures();
     createFrameUniforms();
     createPipeline();
     createFramebuffers();    // sahne framebuffer'ları (HDR+depth)
@@ -598,7 +608,6 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
     if (!initEditorUI()) {
       throw std::runtime_error("Editor UI baslatilamadi");
     }
-    createCommandObjects();
     const std::string selectedModel =
         environmentModel != nullptr
             ? environmentModel
@@ -743,6 +752,192 @@ void Renderer::createDepthResources() {
   }
 }
 
+void Renderer::createMaterialTextures() {
+  if (mMaterialTextureImage != VK_NULL_HANDLE) return;
+
+  constexpr std::array<const char*, kMaterialTextureLayers> files = {
+      "concrete.bmp", "station_tile.bmp", "ballast.bmp",
+      "rail_steel.bmp", "train_paint.bmp", "glass.bmp"
+  };
+
+  const size_t layerBytes =
+      static_cast<size_t>(kMaterialTextureSize) *
+      static_cast<size_t>(kMaterialTextureSize) * 4u;
+  std::vector<uint8_t> pixels(layerBytes * kMaterialTextureLayers);
+
+  for (uint32_t layer = 0; layer < kMaterialTextureLayers; ++layer) {
+    SDL_Surface* source = SDL_LoadBMP(materialTexturePath(files[layer]).c_str());
+    if (source == nullptr)
+      throw std::runtime_error(std::string("Texture BMP yuklenemedi: ") +
+                               materialTexturePath(files[layer]));
+
+    SDL_Surface* rgba = SDL_ConvertSurface(source, SDL_PIXELFORMAT_RGBA32);
+    SDL_DestroySurface(source);
+    if (rgba == nullptr)
+      throw std::runtime_error("Texture RGBA donusumu basarisiz");
+
+    if (rgba->w != static_cast<int>(kMaterialTextureSize) ||
+        rgba->h != static_cast<int>(kMaterialTextureSize)) {
+      SDL_DestroySurface(rgba);
+      throw std::runtime_error("Texture boyutu 128x128 olmali");
+    }
+
+    SDL_LockSurface(rgba);
+    uint8_t* dst = pixels.data() + layerBytes * layer;
+    for (uint32_t y = 0; y < kMaterialTextureSize; ++y) {
+      const uint8_t* src =
+          static_cast<const uint8_t*>(rgba->pixels) +
+          static_cast<size_t>(y) * static_cast<size_t>(rgba->pitch);
+      std::memcpy(dst + static_cast<size_t>(y) * kMaterialTextureSize * 4u,
+                  src, static_cast<size_t>(kMaterialTextureSize) * 4u);
+    }
+    SDL_UnlockSurface(rgba);
+    SDL_DestroySurface(rgba);
+  }
+
+  VkBuffer staging = VK_NULL_HANDLE;
+  VmaAllocation stagingAlloc = VK_NULL_HANDLE;
+  VkBufferCreateInfo buf{};
+  buf.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  buf.size = pixels.size();
+  buf.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+  VmaAllocationCreateInfo alloc{};
+  alloc.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+  alloc.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+  if (vmaCreateBuffer(mCtx->allocator(), &buf, &alloc, &staging, &stagingAlloc, nullptr) != VK_SUCCESS)
+    throw std::runtime_error("Texture staging buffer olusturulamadi");
+
+  void* mapped = nullptr;
+  vmaMapMemory(mCtx->allocator(), stagingAlloc, &mapped);
+  std::memcpy(mapped, pixels.data(), pixels.size());
+  vmaUnmapMemory(mCtx->allocator(), stagingAlloc);
+
+  VkImageCreateInfo image{};
+  image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+  image.imageType = VK_IMAGE_TYPE_2D;
+  image.format = VK_FORMAT_R8G8B8A8_SRGB;
+  image.extent = {kMaterialTextureSize, kMaterialTextureSize, 1};
+  image.mipLevels = 1;
+  image.arrayLayers = kMaterialTextureLayers;
+  image.samples = VK_SAMPLE_COUNT_1_BIT;
+  image.tiling = VK_IMAGE_TILING_OPTIMAL;
+  image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+  VmaAllocationCreateInfo imageAlloc{};
+  imageAlloc.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+
+  if (vmaCreateImage(mCtx->allocator(), &image, &imageAlloc,
+                     &mMaterialTextureImage, &mMaterialTextureAlloc, nullptr) != VK_SUCCESS) {
+    vmaDestroyBuffer(mCtx->allocator(), staging, stagingAlloc);
+    throw std::runtime_error("Material texture image olusturulamadi");
+  }
+
+  VkImageViewCreateInfo view{};
+  view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  view.image = mMaterialTextureImage;
+  view.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+  view.format = VK_FORMAT_R8G8B8A8_SRGB;
+  view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  view.subresourceRange.levelCount = 1;
+  view.subresourceRange.layerCount = kMaterialTextureLayers;
+  if (vkCreateImageView(mCtx->device(), &view, nullptr, &mMaterialTextureView) != VK_SUCCESS) {
+    vmaDestroyImage(mCtx->allocator(), mMaterialTextureImage, mMaterialTextureAlloc);
+    mMaterialTextureImage = VK_NULL_HANDLE;
+    vmaDestroyBuffer(mCtx->allocator(), staging, stagingAlloc);
+    throw std::runtime_error("Material texture image view olusturulamadi");
+  }
+
+  VkSamplerCreateInfo sampler{};
+  sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+  sampler.magFilter = VK_FILTER_LINEAR;
+  sampler.minFilter = VK_FILTER_LINEAR;
+  sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+  sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  sampler.maxLod = 1.0f;
+  if (vkCreateSampler(mCtx->device(), &sampler, nullptr, &mMaterialTextureSampler) != VK_SUCCESS)
+    throw std::runtime_error("Material texture sampler olusturulamadi");
+
+  VkCommandBufferAllocateInfo allocInfo{};
+  allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  allocInfo.commandPool = mCommandPool;
+  allocInfo.commandBufferCount = 1;
+  VkCommandBuffer cmd = VK_NULL_HANDLE;
+  if (vkAllocateCommandBuffers(mCtx->device(), &allocInfo, &cmd) != VK_SUCCESS)
+    throw std::runtime_error("Texture command buffer ayrilamadi");
+
+  VkCommandBufferBeginInfo begin{};
+  begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  vkBeginCommandBuffer(cmd, &begin);
+
+  VkImageMemoryBarrier toTransfer{};
+  toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+  toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+  toTransfer.srcAccessMask = 0;
+  toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+  toTransfer.image = mMaterialTextureImage;
+  toTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  toTransfer.subresourceRange.levelCount = 1;
+  toTransfer.subresourceRange.layerCount = kMaterialTextureLayers;
+  vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                       VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr,
+                       1, &toTransfer);
+
+  std::array<VkBufferImageCopy, kMaterialTextureLayers> copies{};
+  for (uint32_t layer = 0; layer < kMaterialTextureLayers; ++layer) {
+    copies[layer].bufferOffset = static_cast<VkDeviceSize>(layerBytes * layer);
+    copies[layer].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copies[layer].imageSubresource.mipLevel = 0;
+    copies[layer].imageSubresource.baseArrayLayer = layer;
+    copies[layer].imageSubresource.layerCount = 1;
+    copies[layer].imageExtent = {kMaterialTextureSize, kMaterialTextureSize, 1};
+  }
+  vkCmdCopyBufferToImage(cmd, staging, mMaterialTextureImage,
+                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                         static_cast<uint32_t>(copies.size()), copies.data());
+
+  VkImageMemoryBarrier toShader{};
+  toShader.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+  toShader.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+  toShader.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  toShader.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+  toShader.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+  toShader.image = mMaterialTextureImage;
+  toShader.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  toShader.subresourceRange.levelCount = 1;
+  toShader.subresourceRange.layerCount = kMaterialTextureLayers;
+  vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                       VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr,
+                       1, &toShader);
+
+  vkEndCommandBuffer(cmd);
+  VkSubmitInfo submit{};
+  submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submit.commandBufferCount = 1;
+  submit.pCommandBuffers = &cmd;
+  if (vkQueueSubmit(mCtx->graphicsQueue(), 1, &submit, VK_NULL_HANDLE) != VK_SUCCESS)
+    throw std::runtime_error("Texture upload submit basarisiz");
+  vkQueueWaitIdle(mCtx->graphicsQueue());
+  vkFreeCommandBuffers(mCtx->device(), mCommandPool, 1, &cmd);
+  vmaDestroyBuffer(mCtx->allocator(), staging, stagingAlloc);
+}
+
+void Renderer::destroyMaterialTextures() {
+  if (mMaterialTextureSampler)
+    vkDestroySampler(mCtx->device(), mMaterialTextureSampler, nullptr);
+  mMaterialTextureSampler = VK_NULL_HANDLE;
+  if (mMaterialTextureView)
+    vkDestroyImageView(mCtx->device(), mMaterialTextureView, nullptr);
+  mMaterialTextureView = VK_NULL_HANDLE;
+  if (mMaterialTextureImage)
+    vmaDestroyImage(mCtx->allocator(), mMaterialTextureImage, mMaterialTextureAlloc);
+  mMaterialTextureImage = VK_NULL_HANDLE;
+  mMaterialTextureAlloc = VK_NULL_HANDLE;
+}
+
 void Renderer::createHdrResources() {
   // Sampler pipeline ömründe yaşar (extent'ten bağımsız); yalnız ilk
   // kurulumda yaratılır — mDescSetLayout ile aynı desen.
@@ -809,30 +1004,36 @@ void Renderer::createFrameUniforms() {
 
   // Set layout pipeline ömründe yaşar; yalnız ilk kurulumda yaratılır.
   if (mDescSetLayout == VK_NULL_HANDLE) {
-    VkDescriptorSetLayoutBinding binding{};
-    binding.binding = 0;
-    binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    binding.descriptorCount = 1;
-    binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings{};
+    bindings[0].binding = 0;
+    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    bindings[0].descriptorCount = 1;
+    bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings[1].binding = 1;
+    bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[1].descriptorCount = 1;
+    bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutCreateInfo layoutCi{};
     layoutCi.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutCi.bindingCount = 1;
-    layoutCi.pBindings = &binding;
+    layoutCi.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutCi.pBindings = bindings.data();
     if (vkCreateDescriptorSetLayout(mCtx->device(), &layoutCi, nullptr, &mDescSetLayout) != VK_SUCCESS) {
       throw std::runtime_error("vkCreateDescriptorSetLayout");
     }
   }
 
-  VkDescriptorPoolSize poolSize{};
-  poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  poolSize.descriptorCount = count;
+  std::array<VkDescriptorPoolSize, 2> poolSizes{};
+  poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  poolSizes[0].descriptorCount = count;
+  poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  poolSizes[1].descriptorCount = count;
 
   VkDescriptorPoolCreateInfo poolCi{};
   poolCi.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
   poolCi.maxSets = count;
-  poolCi.poolSizeCount = 1;
-  poolCi.pPoolSizes = &poolSize;
+  poolCi.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+  poolCi.pPoolSizes = poolSizes.data();
   if (vkCreateDescriptorPool(mCtx->device(), &poolCi, nullptr, &mDescriptorPool) != VK_SUCCESS) {
     throw std::runtime_error("vkCreateDescriptorPool");
   }
@@ -876,14 +1077,26 @@ void Renderer::createFrameUniforms() {
     bufferInfo.offset = 0;
     bufferInfo.range = sizeof(FrameUniforms);
 
-    VkWriteDescriptorSet write{};
-    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.dstSet = mDescriptorSets[i];
-    write.dstBinding = 0;
-    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    write.descriptorCount = 1;
-    write.pBufferInfo = &bufferInfo;
-    vkUpdateDescriptorSets(mCtx->device(), 1, &write, 0, nullptr);
+    VkDescriptorImageInfo textureInfo{};
+    textureInfo.sampler = mMaterialTextureSampler;
+    textureInfo.imageView = mMaterialTextureView;
+    textureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    std::array<VkWriteDescriptorSet, 2> writes{};
+    writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes[0].dstSet = mDescriptorSets[i];
+    writes[0].dstBinding = 0;
+    writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    writes[0].descriptorCount = 1;
+    writes[0].pBufferInfo = &bufferInfo;
+    writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes[1].dstSet = mDescriptorSets[i];
+    writes[1].dstBinding = 1;
+    writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    writes[1].descriptorCount = 1;
+    writes[1].pImageInfo = &textureInfo;
+    vkUpdateDescriptorSets(mCtx->device(),
+                            static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
   }
 }
 
@@ -1654,6 +1867,8 @@ void Renderer::shutdown() {
 
   shutdownEditorUI();
   destroySwapchainDependent();
+
+  destroyMaterialTextures();
 
   if (mCommandPool) vkDestroyCommandPool(mCtx->device(), mCommandPool, nullptr);
   mCommandPool = VK_NULL_HANDLE;
