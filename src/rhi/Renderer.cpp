@@ -23,7 +23,8 @@ namespace metro::rhi {
 
 std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     float trainPosition, float trainSpeed, float doorOpenFraction, const std::vector<bool>& occupiedBlocks,
-    const std::vector<glm::vec2>& passengerPositions) const {
+    const std::vector<glm::vec2>& passengerPositions,
+    const std::vector<EditorRenderOverride>& editorOverrides) const {
   std::vector<SceneInstance> instances;
   instances.reserve(1024);
 
@@ -63,6 +64,41 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     s.useModelMaterial = true;
     instances.push_back(s);
   };
+
+  auto addParentedBox = [&](const glm::mat4& parent, glm::vec3 pos, glm::vec3 scale,
+                            glm::vec4 color, float roughness = 0.7f,
+                            float materialId = 0.0f) {
+    addBox(pos, scale, color, roughness, materialId);
+    instances.back().transform = parent * instances.back().transform;
+  };
+
+  auto addParentedModelInstance = [&](const glm::mat4& parent, SceneModel model,
+                                      glm::vec3 pos,
+                                      glm::vec3 scale = glm::vec3(1.0f)) {
+    addModelInstance(model, pos, scale);
+    instances.back().transform = parent * instances.back().transform;
+  };
+
+  glm::mat4 editorTrainTransform(1.0f);
+  bool editorTrainOverride = false;
+  bool editorTrainVisible = true;
+
+  std::vector<glm::mat4> stationEditorTransforms(mStopPositions.size(), glm::mat4(1.0f));
+  std::vector<bool> stationEditorOverride(mStopPositions.size(), false);
+  std::vector<bool> stationEditorVisible(mStopPositions.size(), true);
+
+  for (const EditorRenderOverride& override : editorOverrides) {
+    if (override.kind == EditorRenderKind::Train) {
+      editorTrainTransform = override.transform;
+      editorTrainOverride = true;
+      editorTrainVisible = override.visible;
+    } else if (override.kind == EditorRenderKind::Station &&
+               override.index < stationEditorTransforms.size()) {
+      stationEditorTransforms[override.index] = override.transform;
+      stationEditorOverride[override.index] = true;
+      stationEditorVisible[override.index] = override.visible;
+    }
+  }
 
   // Tünel dış kabuğu artık 30 m'lik modüllerden oluşur. İstasyon bölgesinde
   // bu modüller atlanır; istasyonun kendi tavan/duvar modülü devreye girer.
@@ -119,13 +155,24 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   constexpr float stationModuleLength = 30.0f;
   constexpr int stationModuleCount = 6;
   constexpr float stationHalfLength = 90.0f;
-  for (float p : mStopPositions) {
+  for (size_t stationIndex = 0; stationIndex < mStopPositions.size(); ++stationIndex) {
+    const float p = mStopPositions[stationIndex];
     if (p < 0.0f || p > mRouteLength) continue;
     if (p + stationHalfLength < visibleStart || p - stationHalfLength > visibleEnd) continue;
+    if (stationEditorOverride[stationIndex] && !stationEditorVisible[stationIndex])
+      continue;
+
     const float firstCenter = p - stationHalfLength + stationModuleLength * 0.5f;
     for (int module = 0; module < stationModuleCount; ++module) {
       const float moduleCenter = firstCenter + static_cast<float>(module) * stationModuleLength;
-      addModelInstance(SceneModel::StationModule, {0.0f, 0.0f, -moduleCenter});
+      const float localZ = -(moduleCenter - p);
+      if (stationEditorOverride[stationIndex]) {
+        addParentedModelInstance(stationEditorTransforms[stationIndex],
+                                 SceneModel::StationModule,
+                                 {0.0f, 0.0f, localZ});
+      } else {
+        addModelInstance(SceneModel::StationModule, {0.0f, 0.0f, -moduleCenter});
+      }
     }
   }
 
@@ -140,27 +187,33 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
       carCount * carLength + static_cast<float>(carCount - 1) * carGap;
   const float setCenter = -trainPosition;
 
-  for (size_t car = 0; car < carCount; ++car) {
-    const float carZ =
-        setCenter + (static_cast<float>(car) - 1.5f) * (carLength + carGap);
-    addModelInstance(SceneModel::TrainCar, {0.0f, 0.0f, carZ});
+  if (editorTrainVisible) {
+    for (size_t car = 0; car < carCount; ++car) {
+      const float carZ =
+          setCenter + (static_cast<float>(car) - 1.5f) * (carLength + carGap);
+      if (editorTrainOverride) {
+        addParentedModelInstance(editorTrainTransform, SceneModel::TrainCar,
+                                 {0.0f, 0.0f, carZ});
+      } else {
+        addModelInstance(SceneModel::TrainCar, {0.0f, 0.0f, carZ});
+      }
 
     // Hareketli kapılar iki kanatlıdır; her kanat ters yöne kayar.
     for (float doorZ : {-carLength * 0.28f, carLength * 0.28f}) {
       const float slide = 0.42f * doorOpenFraction;
       for (float wing : {-0.21f, 0.21f}) {
-        addBox({-mTrainWidth * 0.51f - slide, 0.70f, carZ + doorZ + wing},
+        addParentedBox(editorTrainTransform, {-mTrainWidth * 0.51f - slide, 0.70f, carZ + doorZ + wing},
                {0.025f, 0.62f, 0.18f},
                {0.66f, 0.68f, 0.71f, 1.0f}, 0.18f);
-        addBox({mTrainWidth * 0.51f + slide, 0.70f, carZ + doorZ + wing},
+        addParentedBox(editorTrainTransform, {mTrainWidth * 0.51f + slide, 0.70f, carZ + doorZ + wing},
                {0.025f, 0.62f, 0.18f},
                {0.66f, 0.68f, 0.71f, 1.0f}, 0.18f);
       }
       // Kapı açıklığında koyu kauçuk fitil.
-      addBox({-mTrainWidth * 0.515f - slide, 0.70f, carZ + doorZ},
+      addParentedBox(editorTrainTransform, {-mTrainWidth * 0.515f - slide, 0.70f, carZ + doorZ},
              {0.030f, 0.64f, 0.025f},
              {0.035f, 0.045f, 0.060f, 1.0f}, 0.42f);
-      addBox({mTrainWidth * 0.515f + slide, 0.70f, carZ + doorZ},
+      addParentedBox(editorTrainTransform, {mTrainWidth * 0.515f + slide, 0.70f, carZ + doorZ},
              {0.030f, 0.64f, 0.025f},
              {0.035f, 0.045f, 0.060f, 1.0f}, 0.42f);
     }
@@ -170,7 +223,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   for (size_t car = 0; car + 1 < carCount; ++car) {
     const float z =
         setCenter + (static_cast<float>(car) - 1.0f) * (carLength + carGap);
-    addBox({0.0f, 0.34f, z},
+    addParentedBox(editorTrainTransform, {0.0f, 0.34f, z},
            {0.62f, 0.72f, carGap * 0.48f},
            {0.08f, 0.09f, 0.11f, 1.0f}, 0.75f, 3.0f);
   }
@@ -178,37 +231,37 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   // Ön kabin farları; modelin burun geometrisine oturur.
   const float frontZ = setCenter - setLength * 0.50f;
   for (float x : {-0.72f, 0.72f}) {
-    addBox({x, 0.72f, frontZ - 0.08f},
+    addParentedBox(editorTrainTransform, {x, 0.72f, frontZ - 0.08f},
            {0.12f, 0.12f, 0.06f},
            {1.0f, 0.94f, 0.72f, 1.0f}, 0.14f, 5.0f);
   }
 
   // Kabin ön camı ve sürücü konsolu: kamera kabin içinde olduğunda sürüş hissini artırır.
-  addBox({0.0f, 1.15f, -trainPosition - 38.0f},
+  addParentedBox(editorTrainTransform, {0.0f, 1.15f, -trainPosition - 38.0f},
          {mTrainWidth * 0.46f, 0.50f, 0.05f},
          {0.025f, 0.055f, 0.075f, 1.0f}, 0.10f);
-  addBox({0.0f, 0.72f, -trainPosition - 37.5f},
+  addParentedBox(editorTrainTransform, {0.0f, 0.72f, -trainPosition - 37.5f},
          {mTrainWidth * 0.30f, 0.18f, 0.70f},
          {0.08f, 0.10f, 0.12f, 1.0f}, 0.65f);
-  addBox({0.0f, 0.88f, -trainPosition - 37.0f},
+  addParentedBox(editorTrainTransform, {0.0f, 0.88f, -trainPosition - 37.0f},
          {mTrainWidth * 0.18f, 0.08f, 0.12f},
          {0.18f, 0.65f, 0.78f, 1.0f}, 0.25f, 5.0f);
 
   // Kabin gösterge paneli: hız çubuğu, fren lambası ve kapı durumu.
   const float speedKmh = std::clamp(trainSpeed * 3.6f, 0.0f, 80.0f);
   const float speedFraction = speedKmh / 80.0f;
-  addBox({-0.65f, 0.92f, -trainPosition - 37.0f},
+  addParentedBox(editorTrainTransform, {-0.65f, 0.92f, -trainPosition - 37.0f},
          {1.55f, 0.035f, 0.08f},
          {0.05f, 0.07f, 0.09f, 1.0f}, 0.40f);
-  addBox({-0.65f + speedFraction * 1.55f, 0.98f, -trainPosition - 37.0f},
+  addParentedBox(editorTrainTransform, {-0.65f + speedFraction * 1.55f, 0.98f, -trainPosition - 37.0f},
          {0.035f, 0.08f, 0.10f},
          {1.0f, 0.72f, 0.16f, 1.0f}, 0.18f);
-  addBox({0.90f, 0.92f, -trainPosition - 37.0f},
+  addParentedBox(editorTrainTransform, {0.90f, 0.92f, -trainPosition - 37.0f},
          {0.16f, 0.10f, 0.10f},
          {doorOpenFraction > 0.05f ? 0.10f : 0.70f,
           doorOpenFraction > 0.05f ? 0.85f : 0.72f,
           doorOpenFraction > 0.05f ? 0.22f : 0.12f, 1.0f}, 0.25f);
-  addBox({1.25f, 0.92f, -trainPosition - 37.0f},
+  addParentedBox(editorTrainTransform, {1.25f, 0.92f, -trainPosition - 37.0f},
          {0.16f, 0.10f, 0.10f},
          {speedKmh < 0.1f ? 0.10f : 0.75f,
           speedKmh < 0.1f ? 0.85f : 0.12f,
@@ -1116,7 +1169,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                                    const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
                                    const std::vector<bool>& occupiedBlocks,
                                    const std::vector<glm::vec2>& passengerPositions,
-                                   const std::vector<EditorMarker>& editorMarkers) {
+                                   const std::vector<EditorMarker>& editorMarkers,
+                                   const std::vector<EditorRenderOverride>& editorOverrides) {
   VkCommandBufferBeginInfo begin{};
   begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   if (vkBeginCommandBuffer(cmd, &begin) != VK_SUCCESS) throw std::runtime_error("vkBeginCommandBuffer");
@@ -1162,7 +1216,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                           &mDescriptorSets[imageIndex], 0, nullptr);
 
   const std::vector<SceneInstance> instances =
-      buildKadikoyScene(trainPosition, trainSpeed, doorOpenFraction, occupiedBlocks, passengerPositions);
+      buildKadikoyScene(trainPosition, trainSpeed, doorOpenFraction, occupiedBlocks,
+                        passengerPositions, editorOverrides);
 
   const Model* boundModel = nullptr;
   for (const SceneInstance& instance : instances) {
@@ -1247,7 +1302,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
 void Renderer::drawFrame(const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
                          const std::vector<bool>& occupiedBlocks,
                          const std::vector<glm::vec2>& passengerPositions,
-                         const std::vector<EditorMarker>& editorMarkers) {
+                         const std::vector<EditorMarker>& editorMarkers,
+                         const std::vector<EditorRenderOverride>& editorOverrides) {
   const VkDevice dev = mCtx->device();
   const uint32_t syncCount = static_cast<uint32_t>(mInFlight.size());
 
@@ -1273,7 +1329,7 @@ void Renderer::drawFrame(const app::Camera& camera, float trainPosition, float t
   vkResetCommandBuffer(mCommands[mFrame], 0);
   recordCommandBuffer(mCommands[mFrame], imageIndex, camera, trainPosition,
                       trainSpeed, doorOpenFraction, occupiedBlocks,
-                      passengerPositions, editorMarkers);
+                      passengerPositions, editorMarkers, editorOverrides);
 
   // 3) Submit: renk çıktısı aşamasına kadar bekle.
   VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
