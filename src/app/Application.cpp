@@ -555,11 +555,12 @@ int Application::run() {
       const float targetFov = 45.0f + speed01 * 3.5f;
       mCabFov += (targetFov - mCabFov) * std::min(dt * 5.0f, 1.0f);
 
-      // Sürücü noktası ön kabindeki konsol/ön cam hizasına alınır.
-      // Böylece kamera gövdenin ortasında/ön kaportanın içinde kalmaz.
+      // Sürücü kamerası 4'lü setin en öndeki vagonunun gerçek kabin
+      // bölgesine yerleşir. Vagon başı: center - 34.47 m, sürücü noktası
+      // burundan yaklaşık 0.55 m geride ve ray seviyesinden ~1.35 m yukarıda.
       renderCamera.position =
-          glm::vec3(mCabSway, 1.56f + mCabBounce,
-                    -renderTrainPosition - 37.25f);
+          glm::vec3(mCabSway, 1.35f + mCabBounce,
+                    -renderTrainPosition - 45.10f);
       renderCamera.yaw = -90.0f;
       renderCamera.pitch = -2.0f - mCabSway * 23.0f;
       renderCamera.fovDegrees = mCabFov;
