@@ -151,12 +151,12 @@ void Application::handleEvent(const SDL_Event& e) {
           mMouseCaptured = false;
           SDL_SetWindowRelativeMouseMode(mWindow, false);
         }
-      } else if (mEditorMode && !mRenderer.editorWantsKeyboard() &&
+      } else if (mEditorMode && (!mRenderer.editorWantsKeyboard() || mEditorUI.viewportHovered()) &&
                  (e.key.key == SDLK_W || e.key.key == SDLK_E || e.key.key == SDLK_R)) {
         if (e.key.key == SDLK_W) mEditorGizmoMode = editor::GizmoMode::Translate;
         if (e.key.key == SDLK_E) mEditorGizmoMode = editor::GizmoMode::Rotate;
         if (e.key.key == SDLK_R) mEditorGizmoMode = editor::GizmoMode::Scale;
-      } else if (mEditorMode && !mRenderer.editorWantsKeyboard() &&
+      } else if (mEditorMode && (!mRenderer.editorWantsKeyboard() || mEditorUI.viewportHovered()) &&
                  (e.key.key == SDLK_LEFT || e.key.key == SDLK_RIGHT ||
                   e.key.key == SDLK_UP || e.key.key == SDLK_DOWN ||
                   e.key.key == SDLK_PAGEUP || e.key.key == SDLK_PAGEDOWN)) {
@@ -194,7 +194,7 @@ void Application::handleEvent(const SDL_Event& e) {
             node->transform.scale = glm::max(node->transform.scale, glm::vec3(0.05f));
           }
         }
-      } else if (mEditorMode && !mRenderer.editorWantsKeyboard() && e.key.key == SDLK_F) {
+      } else if (mEditorMode && (!mRenderer.editorWantsKeyboard() || mEditorUI.viewportHovered()) && e.key.key == SDLK_F) {
         const auto* node = mEditorScene.get(mEditorScene.selected());
         if (node != nullptr) {
           const glm::vec3 target = mEditorScene.worldPosition(node->id);
@@ -205,7 +205,7 @@ void Application::handleEvent(const SDL_Event& e) {
           mMouseCaptured = false;
           SDL_SetWindowRelativeMouseMode(mWindow, false);
         }
-      } else if (mEditorMode && !mRenderer.editorWantsKeyboard() &&
+      } else if (mEditorMode && (!mRenderer.editorWantsKeyboard() || mEditorUI.viewportHovered()) &&
                  e.key.key == SDLK_L) {
         if (auto* node = mEditorScene.get(mEditorScene.selected()))
           node->locked = !node->locked;
@@ -366,7 +366,7 @@ void Application::update(float dt) {
   }
 
   const bool editorCameraMove =
-      mEditorMode && !mRenderer.editorWantsKeyboard();
+      mEditorMode && mEditorUI.viewportHovered();
   if (!mMouseCaptured && !editorCameraMove)
     return;
 
