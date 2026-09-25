@@ -398,8 +398,38 @@ int Application::run() {
       const float z = -12.0f - static_cast<float>(row) * 3.4f;
       passengerPositions.emplace_back(x, z);
     }
+    std::vector<rhi::Renderer::EditorMarker> editorMarkers;
+    if (mEditorMode) {
+      editorMarkers.reserve(mEditorScene.visibleCount());
+      for (const auto entity : mEditorScene.order()) {
+        const auto* node = mEditorScene.get(entity);
+        if (node == nullptr || !node->visible ||
+            node->type == "Folder" || node->type == "Scene" ||
+            node->type == "Simulation")
+          continue;
+
+        rhi::Renderer::EditorMarker marker{};
+        marker.position = node->transform.position + glm::vec3(0.0f, 0.55f, 0.0f);
+        const bool selected = entity == mEditorScene.selected();
+        marker.scale = selected ? glm::vec3(0.42f) : glm::vec3(0.22f);
+
+        if (node->type == "Train")
+          marker.color = selected ? glm::vec4(1.0f, 0.72f, 0.12f, 1.0f)
+                                   : glm::vec4(0.16f, 0.52f, 0.95f, 1.0f);
+        else if (node->type == "Station")
+          marker.color = selected ? glm::vec4(0.96f, 0.82f, 0.20f, 1.0f)
+                                   : glm::vec4(0.22f, 0.82f, 0.48f, 1.0f);
+        else if (node->type == "Rail")
+          marker.color = {0.78f, 0.80f, 0.84f, 1.0f};
+        else
+          marker.color = {0.72f, 0.38f, 0.92f, 1.0f};
+
+        editorMarkers.push_back(marker);
+      }
+    }
+
     mRenderer.drawFrame(renderCamera, renderTrainPosition, mTrain.speed(), mTrain.doorOpenFraction(),
-                        mSignal.occupiedBlocks(), passengerPositions);
+                        mSignal.occupiedBlocks(), passengerPositions, editorMarkers);
     ++frameCount;
     if (dt > 0.0001f)
       mDisplayFps = 0.9f * mDisplayFps + 0.1f / dt;
