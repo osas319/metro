@@ -742,6 +742,18 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
     }
   }
 
+  // Kompakt viewport kamera paneli: editorde hareket/nispet kontrolu.
+  ImGui::SetCursorPos({std::max(16.0f, ImGui::GetWindowWidth() - 196.0f), 12.0f});
+  ImGui::BeginGroup();
+  ImGui::TextDisabled("VIEW");
+  ImGui::PushItemWidth(150.0f);
+  ImGui::DragFloat("Move##Camera", &camera.moveSpeed, 0.1f, 0.5f, 80.0f,
+                   "%.1f m/s");
+  ImGui::DragFloat("Look##Camera", &camera.mouseSensitivity, 0.005f, 0.02f, 1.0f,
+                   "%.3f");
+  ImGui::PopItemWidth();
+  ImGui::EndGroup();
+
   ImGui::SetCursorPos({16.0f, 12.0f});
   ImGui::BeginGroup();
   ImGui::Text("Scene: M4 World");
@@ -841,6 +853,14 @@ void UI::drawGameplayHUD(float trainSpeedMps, float trainPosition,
   else
     ImGui::TextDisabled("COAST");
   ImGui::Text("ACCEL  %+0.2f m/s²", gameplay.accelerationMps2);
+  const float tractionLevel =
+      std::clamp(gameplay.accelerationMps2 / 1.2f, 0.0f, 1.0f);
+  const float brakeLevel =
+      std::clamp(-gameplay.accelerationMps2 / 3.6f, 0.0f, 1.0f);
+  ImGui::ProgressBar(tractionLevel, {220.0f, 9.0f},
+                     gameplay.tractionActive ? "TRACTION" : "COAST");
+  ImGui::ProgressBar(brakeLevel, {220.0f, 9.0f},
+                     gameplay.emergencyBrakeActive ? "EMERGENCY" : "BRAKE");
   ImGui::Text("PASSENGERS  %zu / %zu", gameplay.onboardPassengers,
               gameplay.onboardPassengers + gameplay.waitingPassengers);
   if (gameplay.dwellLimitSeconds > 0.0f) {
