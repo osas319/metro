@@ -107,66 +107,6 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     }
   }
 
-  // Aydınlatmalar istasyon geometrisinin içinde, tavana bağlı olarak üretilir.
-  // Kadıköy başlangıç bölümünde banklar, çöp kutuları ve turnike adaları.
-  for (float z : {-18.0f, -42.0f, -66.0f, -90.0f}) {
-    for (float x : {-mPlatformWidth + 1.1f, mPlatformWidth - 1.1f}) {
-      addBox({x, 0.32f, z}, {0.75f, 0.10f, 0.28f},
-             {0.20f, 0.23f, 0.27f, 1.0f}, 0.68f);
-      addBox({x, 0.55f, z}, {0.75f, 0.42f, 0.08f},
-             {0.30f, 0.33f, 0.38f, 1.0f}, 0.62f);
-    }
-  }
-
-  // Basit 5x5 bitmap font: kritik istasyon tabelalarını gerçek geometri olarak çizer.
-  auto glyph = [](char ch) -> std::array<std::string_view, 5> {
-    switch (ch) {
-      case 'A': return {"01110","10001","11111","10001","10001"};
-      case 'D': return {"11110","10001","10001","10001","11110"};
-      case 'E': return {"11111","10000","11110","10000","11111"};
-      case 'I': return {"11111","00100","00100","00100","11111"};
-      case 'K': return {"10001","10010","11100","10010","10001"};
-      case 'M': return {"10001","11011","10101","10001","10001"};
-      case 'O': return {"01110","10001","10001","10001","01110"};
-      case 'T': return {"11111","00100","00100","00100","00100"};
-      case 'Y': return {"10001","01010","00100","00100","00100"};
-      case '4': return {"10010","10010","11111","00010","00010"};
-      default: return {"00000","00000","00000","00000","00000"};
-    }
-  };
-  auto addText = [&](std::string_view text, glm::vec3 origin,
-                     float pixel = 0.065f, float gap = 0.018f) {
-    float cursorX = origin.x;
-    for (char raw : text) {
-      const char ch = static_cast<char>(std::toupper(
-          static_cast<unsigned char>(raw)));
-      if (ch == ' ') {
-        cursorX += pixel * 3.0f;
-        continue;
-      }
-      const auto rows = glyph(ch);
-      for (size_t row = 0; row < rows.size(); ++row) {
-        for (size_t col = 0; col < rows[row].size(); ++col) {
-          if (rows[row][col] != '1') continue;
-          addBox({cursorX + static_cast<float>(col) * (pixel + gap),
-                  origin.y - static_cast<float>(row) * (pixel + gap),
-                  origin.z},
-                 {pixel * 0.45f, pixel * 0.45f, 0.035f},
-                 {0.90f, 0.94f, 0.82f, 1.0f}, 0.20f, 5.0f);
-        }
-      }
-      cursorX += 5.0f * (pixel + gap) + pixel;
-    }
-  };
-
-  addBox({0.0f, 3.38f, -24.0f}, {3.25f, 0.52f, 0.08f},
-         {0.025f, 0.14f, 0.22f, 1.0f}, 0.35f, 8.0f);
-  addText("KADIKOY", {-2.55f, 3.62f, -24.10f});
-
-  addBox({0.0f, 3.12f, -44.0f}, {1.25f, 0.42f, 0.06f},
-         {0.025f, 0.14f, 0.22f, 1.0f}, 0.35f, 8.0f);
-  addText("M4", {-0.36f, 3.28f, -44.10f}, 0.055f, 0.014f);
-
   // İstasyon hacmi: tek hat görünümünde tek yan peron, sürekli arka duvar,
   // asma tavan ve zemine bağlı kolonlar. Gerçek M4 fotoğraflarındaki sade,
   // açık renkli fayans + sarı taktil şerit + uzun aydınlatma düzenini izler.
@@ -220,17 +160,22 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
              {0.55f, 0.53f, 0.49f, 1.0f}, 0.72f, 3.0f);
     }
 
-    // Platform üzerindeki tavana bağlı asma tavan.
-    addBox({platformCenter, 3.35f, z},
-           {platformHalfWidth + 0.20f, 0.08f, stationHalfLength},
+    // Platform tarafındaki asma tavanın taşıyıcı kısmı; duvardan tavana bağlı.
+    addBox({side * 2.65f, 3.42f, z},
+           {2.40f, 0.075f, stationHalfLength},
            {0.83f, 0.81f, 0.75f, 1.0f}, 0.84f, 2.0f);
 
-    // Uzun, tavana bitişik LED/floresan armatür çizgileri.
+    // Uzun tavan armatürleri tavana oturur.
     for (float lightP = p - 78.0f; lightP <= p + 78.0f; lightP += 12.0f) {
-      addBox({platformCenter, 3.22f, -lightP},
-             {0.58f, 0.025f, 2.10f},
+      addBox({side * 2.65f, 3.28f, -lightP},
+             {0.42f, 0.025f, 1.80f},
              {0.95f, 0.93f, 0.84f, 1.0f}, 0.15f, 5.0f);
     }
+
+    // İstasyonun ray üzerinde kalan orta kısmı için de tek parça asma tavan.
+    addBox({0.0f, 3.42f, z},
+           {2.55f, 0.075f, stationHalfLength},
+           {0.83f, 0.81f, 0.75f, 1.0f}, 0.84f, 2.0f);
 
     // Duvara bağlı reklam/tabela panelleri.
     for (float panelP = p - 60.0f; panelP <= p + 60.0f; panelP += 24.0f) {
@@ -239,16 +184,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
              {0.94f, 0.94f, 0.92f, 1.0f}, 0.55f);
     }
 
-    // Merkezden asılan istasyon levhası; tavana iki askıyla bağlı.
-    addBox({platformCenter, 2.92f, z},
-           {1.85f, 0.34f, 0.055f},
-           {0.96f, 0.95f, 0.92f, 1.0f}, 0.42f, 8.0f);
-    addBox({platformCenter - 1.35f, 3.16f, z},
-           {0.035f, 0.18f, 0.035f},
-           {0.22f, 0.22f, 0.25f, 1.0f}, 0.70f, 3.0f);
-    addBox({platformCenter + 1.35f, 3.16f, z},
-           {0.035f, 0.18f, 0.035f},
-           {0.22f, 0.22f, 0.25f, 1.0f}, 0.70f, 3.0f);
+    // İstasyon tabelası daha sonra gerçek doku/GLB tabelasıyla eklenecek.
   }
 
   // Kadıköy'de banklar doğrudan peron döşemesine oturur.
@@ -261,25 +197,6 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
              {0.85f, 0.30f, 0.08f},
              {0.34f, 0.35f, 0.37f, 1.0f}, 0.62f);
     }
-  }
-
-  // Her gerçek stop için sinyal direği + durak işareti.
-  for (size_t i = 0; i < mStopPositions.size(); ++i) {
-    const float p = mStopPositions[i];
-    if (p < 0.0f || p > mRouteLength) continue;
-    const bool terminal = i + 1 == mStopPositions.size();
-    const bool nextStop = p > trainPosition + 0.5f &&
-                          (i == 0 || mStopPositions[i - 1] <= trainPosition + 0.5f);
-    const glm::vec4 signalColor =
-        terminal ? glm::vec4(0.90f, 0.18f, 0.10f, 1.0f)
-        : nextStop ? glm::vec4(0.10f, 0.85f, 0.95f, 1.0f)
-                   : glm::vec4(0.90f, 0.65f, 0.08f, 1.0f);
-    addBox({mPlatformWidth + 1.0f, 0.9f, -p},
-           {0.10f, 0.9f, 0.10f}, signalColor, 0.35f);
-    addBox({mPlatformWidth + 1.0f, 1.85f, -p},
-           {0.25f, 0.18f, 0.08f}, signalColor, 0.25f);
-    addBox({-mPlatformWidth - 0.9f, 2.4f, -p},
-           {0.9f, 0.55f, 0.06f}, {0.04f, 0.30f, 0.48f, 1.0f}, 0.45f);
   }
 
   // Blok sinyalleri simülasyonda aktif; görsel mastlar ayrı signal asset'iyle eklenecek.
