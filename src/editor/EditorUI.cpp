@@ -187,7 +187,7 @@ void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMo
 void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode) {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
   ImGui::SetNextWindowPos(viewport->WorkPos);
-  ImGui::SetNextWindowSize({viewport->WorkSize.x, 54.0f});
+  ImGui::SetNextWindowSize({viewport->WorkSize.x, 58.0f});
 
   const ImGuiWindowFlags flags =
       ImGuiWindowFlags_NoDecoration |
@@ -282,7 +282,7 @@ void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& 
 
 void UI::drawHierarchy(Scene& scene) {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
-  ImGui::SetNextWindowPos({viewport->WorkPos.x, viewport->WorkPos.y + 54.0f},
+  ImGui::SetNextWindowPos({viewport->WorkPos.x, viewport->WorkPos.y + 58.0f},
                           ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowSize({285.0f, viewport->WorkSize.y * 0.62f},
                            ImGuiCond_FirstUseEver);
@@ -588,7 +588,7 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
   ImGuiViewport* viewport = ImGui::GetMainViewport();
   const float left = 285.0f;
   const float right = 340.0f;
-  const float top = 54.0f;
+  const float top = 58.0f;
   const float bottom = 205.0f;
 
   ImGui::SetNextWindowPos({viewport->WorkPos.x + left, viewport->WorkPos.y + top});
