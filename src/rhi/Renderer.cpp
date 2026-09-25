@@ -204,7 +204,39 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     }
   }
 
-  // Blok sinyalleri simülasyonda aktif; görsel mastlar ayrı signal asset'iyle eklenecek.
+  // Blok sinyalleri: oyuncuya yaklaşan blokların gerçek simülasyon
+  // durumunu 3B olarak göster. Her mast bir blok girişinde bulunur.
+  if (!occupiedBlocks.empty()) {
+    const float blockLength =
+        mRouteLength / static_cast<float>(occupiedBlocks.size());
+    const int firstBlock = std::max(0, static_cast<int>(std::floor(visibleStart / blockLength)) - 1);
+    const int lastBlock = std::min(static_cast<int>(occupiedBlocks.size()) - 1,
+                                   static_cast<int>(std::ceil(visibleEnd / blockLength)) + 1);
+    for (int block = firstBlock; block <= lastBlock; ++block) {
+      const float signalPosition = static_cast<float>(block) * blockLength;
+      if (block == 0 || signalPosition < visibleStart - 20.0f ||
+          signalPosition > visibleEnd + 20.0f || isInsideStation(signalPosition))
+        continue;
+
+      const bool occupied = occupiedBlocks[static_cast<size_t>(block)];
+      const bool nextOccupied = block + 1 < static_cast<int>(occupiedBlocks.size())
+                                    ? occupiedBlocks[static_cast<size_t>(block + 1)]
+                                    : false;
+      const glm::vec4 lampColor = occupied
+                                      ? glm::vec4(0.95f, 0.08f, 0.05f, 1.0f)
+                                      : (nextOccupied
+                                             ? glm::vec4(0.98f, 0.68f, 0.08f, 1.0f)
+                                             : glm::vec4(0.10f, 0.92f, 0.28f, 1.0f));
+      const float z = -signalPosition;
+      addBox({-4.95f, 0.70f, z}, {0.12f, 1.90f, 0.12f},
+             {0.13f, 0.15f, 0.17f, 1.0f}, 0.70f);
+      addBox({-4.95f, 1.68f, z}, {0.34f, 0.44f, 0.22f},
+             {0.025f, 0.03f, 0.04f, 1.0f}, 0.30f);
+      addBox({-4.95f, 1.76f, z - 0.13f}, {0.11f, 0.11f, 0.025f},
+             lampColor, 0.18f, 5.0f);
+    }
+  }
+
 
 
   // Dört vagonlu M4 seti: her vagon artık ayrı, detaylı procedural model.
