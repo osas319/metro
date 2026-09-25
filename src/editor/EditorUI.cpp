@@ -68,16 +68,66 @@ std::string parentLabel(const Scene& scene, entt::entity parent) {
   return node != nullptr ? node->name : "None";
 }
 
+
+struct ProjectedPoint {
+  bool visible = false;
+  ImVec2 screen{};
+};
+
+ProjectedPoint projectWorldPoint(const app::Camera& camera,
+                                 const ImVec2& windowPos,
+                                 const ImVec2& windowSize,
+                                 const glm::vec3& world) {
+  if (windowSize.x <= 1.0f || windowSize.y <= 1.0f)
+    return {};
+
+  const glm::mat4 view = camera.getViewMatrix();
+  const glm::mat4 projection =
+      camera.getProjectionMatrix(windowSize.x / windowSize.y);
+  const glm::vec4 clip = projection * view * glm::vec4(world, 1.0f);
+  if (!std::isfinite(clip.w) || clip.w <= 0.001f)
+    return {};
+
+  const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+  if (!std::isfinite(ndc.x) || !std::isfinite(ndc.y))
+    return {};
+
+  ProjectedPoint result;
+  result.visible = true;
+  result.screen = {
+      windowPos.x + (ndc.x * 0.5f + 0.5f) * windowSize.x,
+      windowPos.y + (ndc.y * 0.5f + 0.5f) * windowSize.y};
+  return result;
+}
+
+float distanceToSegment(const ImVec2& point, const ImVec2& a, const ImVec2& b,
+                        float* outT = nullptr) {
+  const ImVec2 ab = b - a;
+  const float ab2 = ab.x * ab.x + ab.y * ab.y;
+  if (ab2 <= 0.001f) {
+    if (outT) *outT = 0.0f;
+    const ImVec2 d = point - a;
+    return std::sqrt(d.x * d.x + d.y * d.y);
+  }
+
+  const ImVec2 ap = point - a;
+  const float t = std::clamp((ap.x * ab.x + ap.y * ab.y) / ab2, 0.0f, 1.0f);
+  if (outT) *outT = t;
+  const ImVec2 closest = a + ab * t;
+  const ImVec2 d = point - closest;
+  return std::sqrt(d.x * d.x + d.y * d.y);
+}
+
 } // namespace
 
 void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode,
-              float trainSpeedMps, float trainPosition, float routeLength,
-              const char* gpuName, float fps) {
-  if (!editorMode)
+              app::Camera& camera, float trainSpeedMps, float trainPosition,
+              float routeLength, const char* gpuName, float fps,
+              const GameplayHUDData& gameplay) {
+  if (!editorMode) {
+    drawGameplayHUD(trainSpeedMps, trainPosition, routeLength, gameplay);
     return;
-
-  ImGuiIO& io = ImGui::GetIO();
-  (void)io;
+  }
 
   ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),
                                ImGuiDockNodeFlags_PassthruCentralNode);
@@ -86,7 +136,8 @@ void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMo
   drawHierarchy(scene);
   drawInspector(scene);
   drawContentBrowser(scene);
-  drawViewport(trainSpeedMps, trainPosition, routeLength, gpuName, fps);
+  drawViewport(scene, camera, gizmoMode, trainSpeedMps, trainPosition,
+               routeLength, gpuName, fps);
 }
 
 void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode) {
@@ -246,6 +297,17 @@ void UI::drawEntityTree(Scene& scene, entt::entity entity) {
   if (ImGui::IsItemClicked())
     scene.select(entity);
 
+  if (ImGui::BeginDragDropTarget()) {
+    if (const ImGuiPayload* payload =
+            ImGui::AcceptDragDropPayload("METRO_ASSET")) {
+      if (payload->Data != nullptr && payload->DataSize > 0) {
+        node->asset.assign(static_cast<const char*>(payload->Data));
+        mStatus = "Asset assigned";
+      }
+    }
+    ImGui::EndDragDropTarget();
+  }
+
   if (open) {
     for (auto child : scene.order()) {
       const auto* childNode = scene.get(child);
@@ -363,8 +425,7 @@ void UI::drawContentBrowser(Scene& scene) {
   const float height = 205.0f;
   ImGui::SetNextWindowPos(
       {viewport->WorkPos.x, viewport->WorkPos.y + viewport->WorkSize.y - height});
-  ImGui::SetNextWindowSize(
-      {viewport->WorkSize.x, height});
+  ImGui::SetNextWindowSize({viewport->WorkSize.x, height});
 
   if (!ImGui::Begin("Content Browser", nullptr,
                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
@@ -372,36 +433,90 @@ void UI::drawContentBrowser(Scene& scene) {
     return;
   }
 
-  ImGui::TextUnformatted("Assets");
-  ImGui::SameLine();
-  ImGui::TextDisabled("> stations > kadikoy");
+  if (!std::filesystem::exists(mContentPath)) {
+    mContentPath = "assets";
+  }
 
+  if (ImGui::Button("<-")) {
+    if (mContentPath != "assets" && mContentPath.has_parent_path())
+      mContentPath = mContentPath.parent_path();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("HOME"))
+    mContentPath = "assets";
+
+  ImGui::SameLine();
+  ImGui::TextDisabled("%s", mContentPath.generic_string().c_str());
   ImGui::Separator();
 
-  const std::filesystem::path root("assets");
-  if (!std::filesystem::exists(root)) {
-    ImGui::TextDisabled("assets/ not found");
-    ImGui::End();
-    return;
+  std::vector<std::filesystem::directory_entry> entries;
+  std::error_code ec;
+  for (const auto& entry : std::filesystem::directory_iterator(mContentPath, ec)) {
+    if (ec)
+      break;
+    entries.push_back(entry);
+  }
+  std::sort(entries.begin(), entries.end(),
+            [](const auto& a, const auto& b) {
+              const std::error_code ea{}, eb{};
+              const bool ad = a.is_directory(ea);
+              const bool bd = b.is_directory(eb);
+              if (ad != bd) return ad > bd;
+              return a.path().filename().string() < b.path().filename().string();
+            });
+
+  int columns = std::max(1, static_cast<int>(ImGui::GetContentRegionAvail().x / 150.0f));
+  if (columns > 8) columns = 8;
+
+  int visibleIndex = 0;
+  for (const auto& entry : entries) {
+    std::error_code entryEc;
+    const bool isDirectory = entry.is_directory(entryEc);
+    if (entryEc)
+      continue;
+
+    const std::string label = entry.path().filename().string();
+    if (!isDirectory) {
+      const std::string ext = entry.path().extension().string();
+      if (!ext.empty() &&
+          ext != ".glb" && ext != ".gltf" && ext != ".scene" &&
+          ext != ".json" && ext != ".nav") {
+        continue;
+      }
+    }
+
+    if ((visibleIndex % columns) != 0)
+      ImGui::SameLine();
+    const std::string buttonLabel =
+        isDirectory ? "[DIR] " + label : label;
+    if (ImGui::Selectable(buttonLabel.c_str(), false,
+                          ImGuiSelectableFlags_AllowDoubleClick,
+                          {140.0f, 28.0f})) {
+      if (isDirectory && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        mContentPath /= label;
+      } else if (!isDirectory) {
+        mStatus = "Asset selected: " + entry.path().generic_string();
+      }
+    }
+
+    if (!isDirectory && ImGui::BeginDragDropSource()) {
+      const std::string assetPath = entry.path().generic_string();
+      ImGui::SetDragDropPayload("METRO_ASSET", assetPath.c_str(),
+                                assetPath.size() + 1);
+      ImGui::TextUnformatted(label.c_str());
+      ImGui::EndDragDropSource();
+    }
+    ++visibleIndex;
   }
 
-  int shown = 0;
-  std::error_code ec;
-  for (const auto& entry : std::filesystem::directory_iterator(root, ec)) {
-    if (ec || shown >= 14)
-      break;
-    const std::string label = entry.path().filename().string();
-    if (entry.is_directory(ec))
-      ImGui::Selectable(("[DIR] " + label).c_str());
-    else
-      ImGui::Selectable(label.c_str());
-    ++shown;
-  }
+  if (visibleIndex == 0)
+    ImGui::TextDisabled("No supported assets in this folder");
 
   ImGui::End();
 }
 
-void UI::drawViewport(float trainSpeedMps, float trainPosition,
+void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
+                      float trainSpeedMps, float trainPosition,
                       float routeLength, const char* gpuName, float fps) {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
   const float left = 285.0f;
@@ -417,12 +532,203 @@ void UI::drawViewport(float trainSpeedMps, float trainPosition,
   const ImGuiWindowFlags flags =
       ImGuiWindowFlags_NoDecoration |
       ImGuiWindowFlags_NoBackground |
-      ImGuiWindowFlags_NoInputs |
-      ImGuiWindowFlags_NoSavedSettings;
+      ImGuiWindowFlags_NoSavedSettings |
+      ImGuiWindowFlags_NoBringToFrontOnFocus;
 
   if (!ImGui::Begin("Scene Viewport", nullptr, flags)) {
     ImGui::End();
     return;
+  }
+
+  const ImVec2 windowPos = ImGui::GetWindowPos();
+  const ImVec2 windowSize = ImGui::GetWindowSize();
+  ImGuiIO& io = ImGui::GetIO();
+
+  ImGui::SetCursorPos({0.0f, 0.0f});
+  const ImVec2 inputSize = ImGui::GetContentRegionAvail();
+  ImGui::InvisibleButton("##ViewportInput", inputSize,
+                         ImGuiButtonFlags_MouseButtonLeft);
+  const bool hovered = ImGui::IsItemHovered();
+
+  if (hovered && ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+    ImGui::SetWindowFocus();
+    const ImVec2 mouse = io.MousePos;
+
+    const entt::entity selected = scene.selected();
+    const SceneEntity* selectedNode = scene.get(selected);
+    int hitAxis = -1;
+
+    if (selectedNode != nullptr && selectedNode->visible &&
+        !selectedNode->locked) {
+      const glm::vec3 originWorld = scene.worldPosition(selected);
+      const ProjectedPoint origin =
+          projectWorldPoint(camera, windowPos, windowSize, originWorld);
+      constexpr float axisLength = 2.0f;
+      const glm::vec3 axisWorld[] = {
+          {axisLength, 0.0f, 0.0f},
+          {0.0f, axisLength, 0.0f},
+          {0.0f, 0.0f, axisLength}};
+      if (origin.visible) {
+        float bestDistance = 15.0f;
+        for (int axis = 0; axis < 3; ++axis) {
+          const ProjectedPoint endpoint =
+              projectWorldPoint(camera, windowPos, windowSize,
+                                originWorld + axisWorld[axis]);
+          if (!endpoint.visible)
+            continue;
+          const float distance =
+              distanceToSegment(mouse, origin.screen, endpoint.screen);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            hitAxis = axis;
+          }
+        }
+      }
+    }
+
+    if (hitAxis >= 0) {
+      mGizmoEntity = selected;
+      mGizmoAxis = hitAxis;
+    } else {
+      float nearest = 18.0f;
+      entt::entity hitEntity = entt::null;
+      for (const auto entity : scene.order()) {
+        const SceneEntity* node = scene.get(entity);
+        if (node == nullptr || !node->visible ||
+            node->type == "Folder" || node->type == "Scene" ||
+            node->type == "Simulation")
+          continue;
+        const ProjectedPoint point =
+            projectWorldPoint(camera, windowPos, windowSize,
+                              scene.worldPosition(entity));
+        if (!point.visible)
+          continue;
+        const ImVec2 d = mouse - point.screen;
+        const float distance = std::sqrt(d.x * d.x + d.y * d.y);
+        if (distance < nearest) {
+          nearest = distance;
+          hitEntity = entity;
+        }
+      }
+      if (hitEntity != entt::null)
+        scene.select(hitEntity);
+    }
+  }
+
+  if (mGizmoEntity != entt::null && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+    SceneEntity* node = scene.get(mGizmoEntity);
+    if (node == nullptr || node->locked) {
+      mGizmoEntity = entt::null;
+      mGizmoAxis = -1;
+    } else if (std::abs(io.MouseDelta.x) > 0.0f ||
+               std::abs(io.MouseDelta.y) > 0.0f) {
+      const glm::vec3 originWorld = scene.worldPosition(mGizmoEntity);
+      const glm::vec3 axes[] = {
+          {1.0f, 0.0f, 0.0f},
+          {0.0f, 1.0f, 0.0f},
+          {0.0f, 0.0f, 1.0f}};
+      const glm::vec3 axis = axes[std::clamp(mGizmoAxis, 0, 2)];
+
+      if (gizmoMode == GizmoMode::Translate) {
+        const ProjectedPoint origin =
+            projectWorldPoint(camera, windowPos, windowSize, originWorld);
+        const ProjectedPoint endpoint =
+            projectWorldPoint(camera, windowPos, windowSize,
+                              originWorld + axis * 2.0f);
+        if (origin.visible && endpoint.visible) {
+          const ImVec2 screenAxis = endpoint.screen - origin.screen;
+          const float pixelsPerUnit =
+              std::sqrt(screenAxis.x * screenAxis.x +
+                        screenAxis.y * screenAxis.y) / 2.0f;
+          if (pixelsPerUnit > 0.25f) {
+            const ImVec2 delta = io.MouseDelta;
+            const float projectedPixels =
+                delta.x * screenAxis.x + delta.y * screenAxis.y;
+            const float axisScreenLengthSq =
+                screenAxis.x * screenAxis.x + screenAxis.y * screenAxis.y;
+            const float signedUnits =
+                axisScreenLengthSq > 0.001f
+                    ? projectedPixels / axisScreenLengthSq * 2.0f
+                    : 0.0f;
+            scene.translateWorld(mGizmoEntity, axis * signedUnits);
+          }
+        }
+      } else if (gizmoMode == GizmoMode::Rotate) {
+        const float sensitivity = 0.45f;
+        if (mGizmoAxis == 0)
+          node->transform.rotation.x += io.MouseDelta.y * sensitivity;
+        else if (mGizmoAxis == 1)
+          node->transform.rotation.y += io.MouseDelta.x * sensitivity;
+        else
+          node->transform.rotation.z += io.MouseDelta.y * sensitivity;
+      } else {
+        const float amount = (-io.MouseDelta.y + io.MouseDelta.x) * 0.004f;
+        const float factor = std::max(0.01f, 1.0f + amount);
+        if (mGizmoAxis == 0)
+          node->transform.scale.x = std::max(0.05f, node->transform.scale.x * factor);
+        else if (mGizmoAxis == 1)
+          node->transform.scale.y = std::max(0.05f, node->transform.scale.y * factor);
+        else
+          node->transform.scale.z = std::max(0.05f, node->transform.scale.z * factor);
+      }
+    }
+  }
+
+  if (mGizmoEntity != entt::null &&
+      ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+    mGizmoEntity = entt::null;
+    mGizmoAxis = -1;
+  }
+
+  if (hovered && io.MouseWheel != 0.0f && mGizmoEntity == entt::null) {
+    camera.position +=
+        camera.getFront() * (io.MouseWheel * 2.0f);
+  }
+
+  if (hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
+    if (io.KeyShift) {
+      camera.position -= camera.getRight() * io.MouseDelta.x * 0.02f;
+      camera.position += camera.getUp() * io.MouseDelta.y * 0.02f;
+    } else {
+      camera.yaw += io.MouseDelta.x * 0.25f;
+      camera.pitch -= io.MouseDelta.y * 0.25f;
+      camera.pitch = std::clamp(camera.pitch, -89.0f, 89.0f);
+    }
+  }
+
+  if (scene.selected() != entt::null) {
+    const auto* selectedNode = scene.get(scene.selected());
+    if (selectedNode != nullptr) {
+      const glm::vec3 originWorld = scene.worldPosition(selectedNode->id);
+      const glm::vec3 axes[] = {
+          {1.0f, 0.0f, 0.0f},
+          {0.0f, 1.0f, 0.0f},
+          {0.0f, 0.0f, 1.0f}};
+      const ImU32 colors[] = {
+          IM_COL32(235, 55, 50, 255),
+          IM_COL32(65, 225, 95, 255),
+          IM_COL32(65, 120, 245, 255)};
+      const char* labels[] = {"X", "Y", "Z"};
+      const float drawLength = 2.0f;
+      const auto origin = projectWorldPoint(
+          camera, windowPos, windowSize, originWorld);
+      if (origin.visible) {
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        drawList->AddCircleFilled(origin.screen, 5.0f,
+                                  IM_COL32(255, 225, 80, 255));
+        for (int axis = 0; axis < 3; ++axis) {
+          const auto endpoint = projectWorldPoint(
+              camera, windowPos, windowSize, originWorld + axes[axis] * drawLength);
+          if (!endpoint.visible)
+            continue;
+          drawList->AddLine(origin.screen, endpoint.screen, colors[axis],
+                             axis == mGizmoAxis ? 5.0f : 3.0f);
+          drawList->AddCircleFilled(endpoint.screen, 6.0f, colors[axis]);
+          drawList->AddText(endpoint.screen + ImVec2(7.0f, -7.0f),
+                            colors[axis], labels[axis]);
+        }
+      }
+    }
   }
 
   ImGui::SetCursorPos({16.0f, 12.0f});
@@ -430,16 +736,96 @@ void UI::drawViewport(float trainSpeedMps, float trainPosition,
   ImGui::Text("Scene: M4 World");
   ImGui::Text("Camera | FPS %.1f | %.1f km/h | %.0f / %.0f m",
               fps, trainSpeedMps * 3.6f, trainPosition, routeLength);
-  ImGui::TextDisabled("WASD camera | Mouse orbit | F1 Cab  F2 Chase  F3 Free");
+  ImGui::TextDisabled("MMB orbit | Shift+MMB pan | Wheel zoom | Click entity");
   ImGui::EndGroup();
 
   ImGui::SetCursorPos({16.0f, ImGui::GetWindowHeight() - 46.0f});
   ImGui::BeginGroup();
   ImGui::Text("GPU: %s", gpuName != nullptr ? gpuName : "Unknown");
-  ImGui::TextDisabled("W Move | E Rotate | R Scale | Arrow keys edit selected entity");
+  ImGui::TextDisabled("W Move | E Rotate | R Scale | Drag gizmo | Arrow keys");
   ImGui::EndGroup();
 
   ImGui::End();
 }
+
+void UI::drawGameplayHUD(float trainSpeedMps, float trainPosition,
+                         float routeLength, const GameplayHUDData& gameplay) {
+  ImGuiViewport* viewport = ImGui::GetMainViewport();
+  ImGui::SetNextWindowPos(viewport->WorkPos);
+  ImGui::SetNextWindowSize(viewport->WorkSize);
+
+  const ImGuiWindowFlags flags =
+      ImGuiWindowFlags_NoDecoration |
+      ImGuiWindowFlags_NoBackground |
+      ImGuiWindowFlags_NoInputs |
+      ImGuiWindowFlags_NoSavedSettings;
+
+  if (!ImGui::Begin("##GameplayHUD", nullptr, flags)) {
+    ImGui::End();
+    return;
+  }
+
+  const ImVec2 size = ImGui::GetWindowSize();
+  const float speedKmh = trainSpeedMps * 3.6f;
+  const float recommendedKmh = gameplay.recommendedSpeedMps * 3.6f;
+  const float progress =
+      routeLength > 0.0f ? std::clamp(trainPosition / routeLength, 0.0f, 1.0f)
+                         : 0.0f;
+  const float doorPercent =
+      std::clamp(gameplay.doorOpenFraction, 0.0f, 1.0f) * 100.0f;
+
+  ImGui::SetCursorPos({24.0f, 24.0f});
+  ImGui::BeginGroup();
+  ImGui::TextColored({0.95f, 0.95f, 1.0f, 1.0f}, "M4  /  DRIVER");
+  ImGui::Text("NEXT  %s", gameplay.nextStation);
+  ImGui::TextDisabled("%.0f m  |  advisory %.0f km/h",
+                      gameplay.distanceToNextStation, recommendedKmh);
+  ImGui::EndGroup();
+
+  ImGui::SetCursorPos({size.x - 250.0f, 24.0f});
+  ImGui::BeginGroup();
+  ImGui::Text("SIGNAL");
+  ImGui::TextColored(
+      std::string(gameplay.signalAspect) == "STOP"
+          ? ImVec4(0.95f, 0.2f, 0.2f, 1.0f)
+          : (std::string(gameplay.signalAspect) == "CAUTION"
+                 ? ImVec4(1.0f, 0.78f, 0.18f, 1.0f)
+                 : ImVec4(0.25f, 0.95f, 0.4f, 1.0f)),
+      "%s", gameplay.signalAspect);
+  ImGui::Text("DOOR  %s  %3.0f%%",
+              gameplay.doorsOpen ? "OPEN" : "CLOSED", doorPercent);
+  ImGui::EndGroup();
+
+  ImGui::SetCursorPos({24.0f, size.y - 142.0f});
+  ImGui::BeginGroup();
+  ImGui::Text("ACCEL  %+0.2f m/s²", gameplay.accelerationMps2);
+  ImGui::Text("PASSENGERS  %zu / %zu", gameplay.onboardPassengers,
+              gameplay.onboardPassengers + gameplay.waitingPassengers);
+  if (gameplay.dwellLimitSeconds > 0.0f) {
+    const float dwell =
+        std::clamp(gameplay.dwellSeconds / gameplay.dwellLimitSeconds, 0.0f, 1.0f);
+    ImGui::ProgressBar(dwell, {220.0f, 12.0f}, "DWELL");
+  }
+  ImGui::TextDisabled("UP throttle | DOWN brake | SPACE emergency | O/C doors | H horn");
+  ImGui::EndGroup();
+
+  ImGui::SetCursorPos({size.x - 290.0f, size.y - 174.0f});
+  ImGui::BeginGroup();
+  ImGui::TextDisabled("SPEED");
+  ImGui::Text("%.0f", speedKmh);
+  ImGui::SameLine();
+  ImGui::TextDisabled("km/h");
+  ImGui::ProgressBar(progress, {260.0f, 16.0f}, "M4  %3.0f%%");
+  ImGui::EndGroup();
+
+  ImGui::SetCursorPos({size.x * 0.5f - 150.0f, 18.0f});
+  ImGui::BeginGroup();
+  ImGui::Text("KADIKÖY  →  SABİHA GÖKÇEN");
+  ImGui::TextDisabled("F1 CAB   F2 CHASE   F3 FREE   F4 EDITOR   F5 PLAY");
+  ImGui::EndGroup();
+
+  ImGui::End();
+}
+
 
 } // namespace metro::editor
