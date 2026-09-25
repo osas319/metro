@@ -5,7 +5,7 @@
 
 namespace metro::sim {
 
-enum class SignalAspect { Stop, Proceed };
+enum class SignalAspect { Stop, Caution, Proceed };
 
 class BlockSignal {
 public:
