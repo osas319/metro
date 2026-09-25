@@ -13,6 +13,9 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <memory>
+#include <unordered_map>
+#include <unordered_set>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
@@ -76,7 +79,8 @@ public:
 
   enum class EditorRenderKind : uint8_t {
     Train,
-    Station
+    Station,
+    Asset
   };
 
   struct EditorRenderOverride {
@@ -128,12 +132,14 @@ private:
                            const std::vector<EditorRenderOverride>& editorOverrides);
   VkShaderModule loadShader(const char* filename);
   VkFormat pickDepthFormat() const;
+  Model* getEditorModel(const std::string& path);
 
   enum class SceneModel : uint8_t {
     Box,
     TrainCar,
     StationModule,
-    TunnelModule
+    TunnelModule,
+    External
   };
 
   struct SceneInstance {
@@ -143,6 +149,7 @@ private:
     float materialId = 0.0f;
     SceneModel model = SceneModel::Box;
     bool useModelMaterial = false;
+    std::string externalAsset;
   };
 
   // Kadıköy sahnesini veri tabanlı placeholder geometriyle kurar.
@@ -198,6 +205,8 @@ private:
   Model mTrainCarModel;
   Model mStationModuleModel;
   Model mTunnelModuleModel;
+  std::unordered_map<std::string, std::unique_ptr<Model>> mEditorModels;
+  std::unordered_set<std::string> mFailedEditorAssets;
   float mRouteLength = 2000.0f;
   float mPlatformWidth = 4.0f;
   float mTrackGauge = 2.4f;
