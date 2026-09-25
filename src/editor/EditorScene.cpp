@@ -9,7 +9,7 @@
 #include <utility>
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/matrix_decompose.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace metro::editor {
 
@@ -184,14 +184,19 @@ bool Scene::setParent(entt::entity entity, entt::entity parent, bool keepWorldTr
       parent == entt::null ? glm::mat4(1.0f) : worldTransform(parent);
   const glm::mat4 local = glm::inverse(parentWorld) * previousWorld;
 
-  glm::vec3 translation(0.0f);
-  glm::vec3 scale(1.0f);
-  glm::vec3 skew(0.0f);
-  glm::vec4 perspective(0.0f);
-  glm::quat orientation(1.0f, 0.0f, 0.0f, 0.0f);
-
-  if (!glm::decompose(local, scale, orientation, translation, skew, perspective))
+  const glm::vec3 translation = glm::vec3(local[3]);
+  glm::vec3 scale(
+      glm::length(glm::vec3(local[0])),
+      glm::length(glm::vec3(local[1])),
+      glm::length(glm::vec3(local[2])));
+  if (scale.x <= 0.00001f || scale.y <= 0.00001f || scale.z <= 0.00001f)
     return false;
+
+  glm::mat3 rotationMatrix(
+      glm::vec3(local[0]) / scale.x,
+      glm::vec3(local[1]) / scale.y,
+      glm::vec3(local[2]) / scale.z);
+  const glm::quat orientation = glm::normalize(glm::quat_cast(rotationMatrix));
 
   node->transform.position = translation;
   node->transform.scale = scale;
