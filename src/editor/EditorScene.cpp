@@ -5,7 +5,10 @@
 #include <iomanip>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
+
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace metro::editor {
 
@@ -77,6 +80,51 @@ const SceneEntity* Scene::get(entt::entity entity) const {
   if (!mRegistry.valid(entity))
     return nullptr;
   return mRegistry.try_get<SceneEntity>(entity);
+}
+
+glm::mat4 Scene::localTransform(const SceneEntity& node) const {
+  glm::mat4 transform(1.0f);
+  transform = glm::translate(transform, node.transform.position);
+  transform = glm::rotate(transform, glm::radians(node.transform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+  transform = glm::rotate(transform, glm::radians(node.transform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+  transform = glm::rotate(transform, glm::radians(node.transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+  transform = glm::scale(transform, node.transform.scale);
+  return transform;
+}
+
+glm::mat4 Scene::worldTransform(entt::entity entity) const {
+  if (get(entity) == nullptr)
+    return glm::mat4(1.0f);
+
+  std::vector<entt::entity> chain;
+  std::unordered_set<uint32_t> visited;
+
+  entt::entity current = entity;
+  while (current != entt::null) {
+    const auto* node = get(current);
+    if (node == nullptr)
+      break;
+
+    const uint32_t id = entt::to_integral(current);
+    if (!visited.insert(id).second)
+      break; // Hatalı parent döngüsü varsa sonsuza gitme.
+
+    chain.push_back(current);
+    current = node->parent;
+  }
+
+  glm::mat4 result(1.0f);
+  for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
+    const auto* node = get(*it);
+    if (node != nullptr)
+      result *= localTransform(*node);
+  }
+  return result;
+}
+
+glm::vec3 Scene::worldPosition(entt::entity entity) const {
+  const glm::vec4 position = worldTransform(entity) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+  return glm::vec3(position);
 }
 
 size_t Scene::visibleCount() const {
