@@ -167,9 +167,10 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
          {0.025f, 0.14f, 0.22f, 1.0f}, 0.35f, 8.0f);
   addText("M4", {-0.36f, 3.28f, -44.10f}, 0.055f, 0.014f);
 
-  // İstasyon geometrisi: yalnızca gerçek durak noktalarında iki yan peron.
-  // Peron kotu rayın yaklaşık 1 m üstündedir; parçalar tek bir hacme bağlanır.
-  constexpr float stationHalfLength = 58.0f;
+  // İstasyon hacmi: tek hat görünümünde tek yan peron, sürekli arka duvar,
+  // asma tavan ve zemine bağlı kolonlar. Gerçek M4 fotoğraflarındaki sade,
+  // açık renkli fayans + sarı taktil şerit + uzun aydınlatma düzenini izler.
+  constexpr float stationHalfLength = 90.0f;
   for (size_t i = 0; i < mStopPositions.size(); ++i) {
     const float p = mStopPositions[i];
     if (p < 0.0f || p > mRouteLength) continue;
@@ -177,66 +178,88 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
 
     const float z = -p;
     const float trackHalf = mTrackGauge * 0.5f;
-    const float platformInner = trackHalf + 0.14f;
+    const float platformInner = trackHalf + 0.22f;
     const float platformOuter = mPlatformWidth;
     const float platformCenter = (platformInner + platformOuter) * 0.5f;
     const float platformHalfWidth = (platformOuter - platformInner) * 0.5f;
 
-    for (float side : {-1.0f, 1.0f}) {
-      // Ana peron döşemesi.
-      addBox({side * platformCenter, -0.50f, z},
-             {platformHalfWidth, 0.50f, stationHalfLength},
-             {0.40f, 0.42f, 0.45f, 1.0f}, 0.88f, 2.0f);
+    // Sağ tarafta tek, sürekli peron.
+    addBox({platformCenter, -0.92f, z},
+           {platformHalfWidth, 0.37f, stationHalfLength},
+           {0.44f, 0.45f, 0.47f, 1.0f}, 0.90f, 2.0f);
 
-      // Peron arka tarafında düşük süpürgelik/duvar tabanı.
-      addBox({side * (platformOuter - 0.12f), 0.45f, z},
-             {0.12f, 0.95f, stationHalfLength},
-             {0.25f, 0.27f, 0.31f, 1.0f}, 0.90f, 1.0f);
+    // Ray tarafı sarı güvenlik bandı ve taktil yüzey.
+    addBox({platformInner + 0.10f, -0.49f, z},
+           {0.055f, 0.022f, stationHalfLength - 1.0f},
+           {0.98f, 0.70f, 0.06f, 1.0f}, 0.42f, 6.0f);
+    addBox({platformInner + 0.30f, -0.47f, z},
+           {0.075f, 0.025f, stationHalfLength - 1.0f},
+           {0.76f, 0.76f, 0.72f, 1.0f}, 0.72f, 2.0f);
 
-      // Ray tarafında sarı güvenlik + ince taktil şerit.
-      addBox({side * (platformInner + 0.10f), 0.03f, z},
-             {0.045f, 0.025f, stationHalfLength - 0.8f},
-             {0.96f, 0.70f, 0.08f, 1.0f}, 0.42f, 6.0f);
-      addBox({side * (platformInner + 0.28f), 0.05f, z},
-             {0.07f, 0.035f, stationHalfLength - 0.8f},
-             {0.76f, 0.76f, 0.72f, 1.0f}, 0.72f, 2.0f);
+    // Sürekli arka duvar; platformu ve istasyon tavanını birleştirir.
+    addBox({platformOuter + 0.10f, 1.42f, z},
+           {0.14f, 1.82f, stationHalfLength},
+           {0.74f, 0.71f, 0.65f, 1.0f}, 0.78f, 2.0f);
 
-      // Tavana bağlı istasyon aydınlatmaları; artık havada duran taşıyıcı yok.
-      for (float lightP = p - 45.0f; lightP <= p + 45.0f; lightP += 15.0f) {
-        addBox({side * (platformOuter - 1.0f), 3.28f, -lightP},
-               {0.75f, 0.045f, 0.12f},
-               {0.95f, 0.92f, 0.82f, 1.0f}, 0.18f, 5.0f);
-      }
+    // Duvarın altındaki koyu süpürgelik.
+    addBox({platformOuter - 0.05f, -0.02f, z},
+           {0.09f, 0.48f, stationHalfLength},
+           {0.22f, 0.24f, 0.29f, 1.0f}, 0.88f, 1.0f);
+
+    // M4 fotoğraflarındaki düzenli mavi vurgu panelleri.
+    for (float panelP = p - 72.0f; panelP <= p + 72.0f; panelP += 18.0f) {
+      addBox({platformOuter - 0.06f, 1.65f, -panelP},
+             {0.025f, 1.10f, 0.48f},
+             {0.035f, 0.14f, 0.22f, 1.0f}, 0.48f, 4.0f);
     }
 
-    // İstasyonun adı/hat tabelası merkezi eksende, tavana bağlı.
-    addBox({0.0f, 3.38f, z},
-           {2.15f, 0.38f, 0.06f},
-           {0.025f, 0.14f, 0.22f, 1.0f}, 0.35f, 8.0f);
-
-    // Yan duvarlarda tabelayı gerçekten duvara bağlayan kısa kollar.
-    for (float side : {-1.0f, 1.0f}) {
-      addBox({side * 8.18f, 2.55f, z},
-             {0.12f, 0.75f, 0.08f},
-             {0.20f, 0.22f, 0.25f, 1.0f}, 0.60f, 3.0f);
-      addBox({side * 8.02f, 2.55f, z},
-             {0.85f, 0.45f, 0.035f},
-             {0.04f, 0.20f, 0.32f, 1.0f}, 0.40f, 8.0f);
+    // Kolonlar duvardan tavana kadar gerçekten temas eder.
+    for (float columnP = p - 72.0f; columnP <= p + 72.0f; columnP += 18.0f) {
+      addBox({platformOuter - 0.42f, 1.72f, -columnP},
+             {0.16f, 1.78f, 0.16f},
+             {0.55f, 0.53f, 0.49f, 1.0f}, 0.72f, 3.0f);
     }
+
+    // Platform üzerindeki tavana bağlı asma tavan.
+    addBox({platformCenter, 3.35f, z},
+           {platformHalfWidth + 0.20f, 0.08f, stationHalfLength},
+           {0.83f, 0.81f, 0.75f, 1.0f}, 0.84f, 2.0f);
+
+    // Uzun, tavana bitişik LED/floresan armatür çizgileri.
+    for (float lightP = p - 78.0f; lightP <= p + 78.0f; lightP += 12.0f) {
+      addBox({platformCenter, 3.22f, -lightP},
+             {0.58f, 0.025f, 2.10f},
+             {0.95f, 0.93f, 0.84f, 1.0f}, 0.15f, 5.0f);
+    }
+
+    // Duvara bağlı reklam/tabela panelleri.
+    for (float panelP = p - 60.0f; panelP <= p + 60.0f; panelP += 24.0f) {
+      addBox({platformOuter - 0.10f, 2.35f, -panelP},
+             {0.035f, 0.58f, 1.45f},
+             {0.94f, 0.94f, 0.92f, 1.0f}, 0.55f);
+    }
+
+    // Merkezden asılan istasyon levhası; tavana iki askıyla bağlı.
+    addBox({platformCenter, 2.92f, z},
+           {1.85f, 0.34f, 0.055f},
+           {0.96f, 0.95f, 0.92f, 1.0f}, 0.42f, 8.0f);
+    addBox({platformCenter - 1.35f, 3.16f, z},
+           {0.035f, 0.18f, 0.035f},
+           {0.22f, 0.22f, 0.25f, 1.0f}, 0.70f, 3.0f);
+    addBox({platformCenter + 1.35f, 3.16f, z},
+           {0.035f, 0.18f, 0.035f},
+           {0.22f, 0.22f, 0.25f, 1.0f}, 0.70f, 3.0f);
   }
 
-  // Kadıköy peronundaki temel mobilya; yalnız ilk 120 m içinde.
+  // Kadıköy'de banklar doğrudan peron döşemesine oturur.
   if (visibleStart < 120.0f) {
     for (float z : {-18.0f, -42.0f, -66.0f}) {
-      for (float side : {-1.0f, 1.0f}) {
-        const float x = side * 2.9f;
-        addBox({x, 0.05f, z},
-               {0.80f, 0.08f, 0.28f},
-               {0.20f, 0.23f, 0.27f, 1.0f}, 0.68f);
-        addBox({x, 0.30f, z},
-               {0.80f, 0.28f, 0.08f},
-               {0.30f, 0.33f, 0.38f, 1.0f}, 0.62f);
-      }
+      addBox({platformOuter - 1.25f, -0.46f, z},
+             {0.85f, 0.08f, 0.28f},
+             {0.24f, 0.25f, 0.27f, 1.0f}, 0.68f);
+      addBox({platformOuter - 1.25f, -0.08f, z},
+             {0.85f, 0.30f, 0.08f},
+             {0.34f, 0.35f, 0.37f, 1.0f}, 0.62f);
     }
   }
 
@@ -259,25 +282,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
            {0.9f, 0.55f, 0.06f}, {0.04f, 0.30f, 0.48f, 1.0f}, 0.45f);
   }
 
-  // Blok sinyalleri.
-  const float blockLength = mRouteLength / static_cast<float>(std::max<size_t>(mBlockCount, 1));
-  const size_t occupiedBlock = std::min(
-      static_cast<size_t>(std::max(trainPosition, 0.0f) / blockLength),
-      mBlockCount > 0 ? mBlockCount - 1 : 0);
-  for (size_t block = 0; block < mBlockCount; ++block) {
-    const float p = blockLength * static_cast<float>(block);
-    const bool occupied =
-        block < occupiedBlocks.size() && occupiedBlocks[block];
-    const bool nextBlock = block == occupiedBlock + 1;
-    const glm::vec4 aspectColor =
-        occupied ? glm::vec4(0.88f, 0.08f, 0.06f, 1.0f)
-        : nextBlock ? glm::vec4(0.95f, 0.72f, 0.08f, 1.0f)
-                    : glm::vec4(0.08f, 0.80f, 0.25f, 1.0f);
-    addBox({-mPlatformWidth - 1.25f, 1.0f, -p},
-           {0.12f, 1.0f, 0.12f}, aspectColor, 0.30f);
-    addBox({-mPlatformWidth - 1.25f, 2.05f, -p},
-           {0.24f, 0.08f, 0.08f}, aspectColor, 0.20f);
-  }
+  // Blok sinyalleri simülasyonda aktif; görsel mastlar ayrı signal asset'iyle eklenecek.
 
   // 4 vagonlu CAF M4 seti. Fizik noktası setin referans noktasıdır;
   // görsel olarak araçlar birbirine bağlı tek bir kompozisyon oluşturur.
