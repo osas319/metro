@@ -240,6 +240,7 @@ int main() {
   assert(station.physicsMaxSubsteps == 4);
   assert(station.trainParameters.serviceBrake >=
          station.trainParameters.acceleration);
+  assert(station.trainParameters.maxJerk > 0.0f);
   assert(station.spawnPosition.y == 1.7f);
   assert(station.spawnYaw == -90.0f);
   assert(station.spawnPitch == 0.0f);
