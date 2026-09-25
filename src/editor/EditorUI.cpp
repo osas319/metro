@@ -161,12 +161,22 @@ void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& 
     return;
   }
 
-  if (ImGui::Button(playMode ? "||  PAUSE" : ">  PLAY", {92.0f, 32.0f}))
+  if (ImGui::Button(playMode ? "||  PAUSE" : ">  PLAY", {92.0f, 32.0f})) {
     playMode = !playMode;
+    if (playMode) {
+      // Play gerçekten oyun görünümüne geçsin; editör kamerası ve input
+      // simülasyonu bloke etmesin.
+      editorMode = false;
+    } else {
+      editorMode = true;
+    }
+  }
 
   ImGui::SameLine();
-  if (ImGui::Button("STOP", {72.0f, 32.0f}))
+  if (ImGui::Button("STOP", {72.0f, 32.0f})) {
     playMode = false;
+    editorMode = true;
+  }
 
   ImGui::SameLine();
   const bool moveMode = gizmoMode == GizmoMode::Translate;
