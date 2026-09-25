@@ -7,6 +7,7 @@
   "track_gauge": 1.435,
   "train_width": 2.8,
   "train_height": 3.2,
+  "train_length": 22.43,
   "column_spacing": 24.0,
   "passenger_capacity": 320,
   "initial_waiting_passengers": 24,
