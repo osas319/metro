@@ -98,6 +98,7 @@ private:
     glm::mat4 transform{1.0f};
     glm::vec4 color{1.0f};
     float roughness = 0.7f;
+    float materialId = 0.0f;
   };
 
   // Kadıköy sahnesini veri tabanlı placeholder geometriyle kurar.
