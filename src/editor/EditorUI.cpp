@@ -786,6 +786,8 @@ void UI::drawGameplayHUD(float trainSpeedMps, float trainPosition,
   ImGui::BeginGroup();
   ImGui::TextColored({0.95f, 0.95f, 1.0f, 1.0f}, "M4  /  DRIVER");
   ImGui::Text("NEXT  %s", gameplay.nextStation);
+  if (gameplay.overspeed)
+    ImGui::TextColored({1.0f, 0.18f, 0.16f, 1.0f}, "OVERSPEED  %.0f km/h", speedKmh);
   ImGui::TextDisabled("%.0f m  |  advisory %.0f km/h",
                       gameplay.distanceToNextStation, recommendedKmh);
 
@@ -843,7 +845,7 @@ void UI::drawGameplayHUD(float trainSpeedMps, float trainPosition,
         std::clamp(gameplay.dwellSeconds / gameplay.dwellLimitSeconds, 0.0f, 1.0f);
     ImGui::ProgressBar(dwell, {220.0f, 12.0f}, "DWELL");
   }
-  ImGui::TextDisabled("UP throttle | DOWN brake | SPACE emergency | O/C doors | H horn");
+  ImGui::TextDisabled("UP throttle | DOWN brake | SPACE emergency | O/C doors | H horn | F6 restart");
   ImGui::EndGroup();
 
   ImGui::SetCursorPos({size.x - 290.0f, size.y - 174.0f});
