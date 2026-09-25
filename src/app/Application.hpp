@@ -65,6 +65,7 @@ private:
   bool mEditorMode = true;
   bool mPlayMode = false;
   bool mHornHeld = false;
+  bool mEmergencyBrakeHeld = false;
   CameraViewMode mCameraViewMode = CameraViewMode::Free;
   editor::Scene mEditorScene;
   editor::UI mEditorUI;
