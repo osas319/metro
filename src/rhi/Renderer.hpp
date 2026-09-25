@@ -100,7 +100,7 @@ private:
   // Kadıköy sahnesini veri tabanlı placeholder geometriyle kurar.
   // İleride gerçek GLB asset'leri aynı instance listesinin yerini alabilir.
   std::vector<SceneInstance> buildKadikoyScene(
-      float trainPosition, const std::vector<bool>& occupiedBlocks,
+      float trainPosition, float doorOpenFraction, const std::vector<bool>& occupiedBlocks,
       const std::vector<glm::vec2>& passengerPositions) const;
 
   VulkanContext* mCtx = nullptr;
