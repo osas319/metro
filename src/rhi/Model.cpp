@@ -182,8 +182,8 @@ void addTunnelCeiling(BuiltinPart& part, float innerRadius,
   }
 }
 
-void addFrustum(BuiltinPart& part, float z0, float z1,
-                float xHalf0, float xHalf1, float yBottom, float yTop) {
+void addFrustumOpenStart(BuiltinPart& part, float z0, float z1,
+                       float xHalf0, float xHalf1, float yBottom, float yTop) {
   const glm::vec3 p000{-xHalf0, yBottom, z0};
   const glm::vec3 p100{ xHalf0, yBottom, z0};
   const glm::vec3 p110{ xHalf0, yTop, z0};
@@ -197,10 +197,9 @@ void addFrustum(BuiltinPart& part, float z0, float z1,
   addFace(part, p101, p100, p110, p111);
   addFace(part, p010, p011, p111, p110);
   addFace(part, p001, p000, p100, p101);
-  addFace(part, p000, p010, p110, p100);
+  // z0 ön yüzü bilinçli olarak yok: sürücü kabini/ön cam açıklığı.
   addFace(part, p101, p111, p011, p001);
 }
-
 std::vector<BuiltinPart> makeTrainCarParts() {
   std::vector<BuiltinPart> parts;
 
@@ -233,7 +232,9 @@ std::vector<BuiltinPart> makeTrainCarParts() {
   upper.roughness = 0.28f;
   upper.materialId = 11.0f;
   addBox(upper, {0.0f, 0.84f, 0.0f}, {2.98f, 1.12f, 20.15f});
-  addFrustum(upper, -11.18f, -9.35f, 1.02f, 1.48f, 0.18f, 1.92f);
+  // Ön kabin camının olduğu burun bölgesini açık bırak: sürücü
+  // kamerası gövdenin içinde kalmadan gerçek ön camdan tünele bakabilsin.
+  addFrustumOpenStart(upper, -11.18f, -9.35f, 1.02f, 1.48f, 0.18f, 1.92f);
   addFrustum(upper, 9.35f, 11.18f, 1.48f, 1.02f, 0.18f, 1.92f);
   parts.push_back(std::move(upper));
 
@@ -257,9 +258,17 @@ std::vector<BuiltinPart> makeTrainCarParts() {
       addBox(windows, {side * (halfWidth - 0.065f), 1.02f, z},
              {0.055f, 0.61f, 0.055f});
   }
-  for (float z : {-10.95f, 10.95f})
-    addBox(windows, {0.0f, 1.18f, z},
-           {1.18f, 0.62f, 0.05f});
+  // Arka cam korunur; öndeki cam yüzeyi artık açık kabin boşluğunun
+  // sınırında ayrı çerçeve geometrisiyle oluşturuluyor.
+  addBox(windows, {0.0f, 1.18f, 10.95f},
+         {1.18f, 0.62f, 0.05f});
+  // Ön cam çerçevesi: orta panel boş bırakılır.
+  addBox(windows, {-0.88f, 1.18f, -11.03f},
+         {0.10f, 0.62f, 0.06f});
+  addBox(windows, { 0.88f, 1.18f, -11.03f},
+         {0.10f, 0.62f, 0.06f});
+  addBox(windows, {0.0f, 1.74f, -11.03f},
+         {0.98f, 0.08f, 0.06f});
   parts.push_back(std::move(windows));
 
   BuiltinPart doors;
@@ -284,10 +293,14 @@ std::vector<BuiltinPart> makeTrainCarParts() {
   endCap.metallic = 0.07f;
   endCap.roughness = 0.22f;
   endCap.materialId = 7.0f;
-  for (float z : {-11.18f, 11.18f}) {
-    addBox(endCap, {0.0f, 0.46f, z}, {2.10f, 0.72f, 0.11f});
-    addBox(endCap, {0.0f, 1.05f, z}, {1.48f, 0.46f, 0.07f});
-  }
+  // Ön burunda sürücü görüşünü kapatan tam kapak yok; alt tampon/nose
+  // çerçevesi kabin açıklığının altında ve yanlarında kalır.
+  addBox(endCap, {-1.38f, 0.46f, -11.18f}, {0.22f, 0.72f, 0.11f});
+  addBox(endCap, { 1.38f, 0.46f, -11.18f}, {0.22f, 0.72f, 0.11f});
+  addBox(endCap, {0.0f, 0.18f, -11.18f}, {1.18f, 0.22f, 0.11f});
+  // Arka kapak tamamen kapalı kalabilir.
+  addBox(endCap, {0.0f, 0.46f, 11.18f}, {2.10f, 0.72f, 0.11f});
+  addBox(endCap, {0.0f, 1.05f, 11.18f}, {1.48f, 0.46f, 0.07f});
   parts.push_back(std::move(endCap));
 
   BuiltinPart roof;
