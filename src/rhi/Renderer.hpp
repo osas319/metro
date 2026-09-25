@@ -46,6 +46,7 @@ struct ModelPush {
   glm::vec4 baseColor;
   float metallic;
   float roughness;
+  float materialId;
 };
 
 class Renderer {
