@@ -29,6 +29,7 @@ void Train::setParameters(Parameters parameters) {
 bool Train::requestDoorsOpen(bool open, bool platformAligned) {
   if (!open) {
     mDoorsOpen = false;
+    mDoorOpenFraction = 0.0f;
     return true;
   }
   if (mSpeed > 0.05f || !platformAligned) return false;
@@ -58,6 +59,12 @@ void Train::update(float dt, bool throttle, bool brake, bool signalClear,
   if (brake || !signalClear) accelerationValue = -mParameters.serviceBrake;
   mSpeed = std::clamp(mSpeed + accelerationValue * dt, 0.0f,
                       mParameters.maxSpeed);
+  const float targetDoorFraction = mDoorsOpen ? 1.0f : 0.0f;
+  const float doorRate = 2.5f;
+  if (mDoorOpenFraction < targetDoorFraction)
+    mDoorOpenFraction = std::min(targetDoorFraction, mDoorOpenFraction + doorRate * dt);
+  else if (mDoorOpenFraction > targetDoorFraction)
+    mDoorOpenFraction = std::max(targetDoorFraction, mDoorOpenFraction - doorRate * dt);
   const float nextPosition = mPosition + mSpeed * dt;
   const bool settledAtTarget =
       routeLength > mPosition && routeLength - mPosition <= 0.05f &&
