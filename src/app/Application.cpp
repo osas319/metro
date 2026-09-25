@@ -108,7 +108,7 @@ bool Application::init() {
   mPlayMode = false;
 
   METRO_INFO("Pencere acildi; dongu basliyor (kapatmak icin pencereyi kapat)");
-  METRO_INFO("Kontroller: Yukari=cekis Asagi=fren Space=acil-fren O/C=kapi F1=kabin F2=takip F3=serbest W/A/S/D");
+  METRO_INFO("Kontroller: W/Yukari=cekis S/Asagi=fren Space=acil-fren O/C=kapi F1=kabin F2=takip F3=serbest");
   return true;
 }
 
