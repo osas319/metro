@@ -346,7 +346,10 @@ void Application::update(float dt) {
     mAudioBackend.updateTrainSound(mTrain.speed(), mTrain.acceleration());
   }
 
-  if (!mMouseCaptured) return;
+  const bool editorCameraMove =
+      mEditorMode && !mRenderer.editorWantsKeyboard();
+  if (!mMouseCaptured && !editorCameraMove)
+    return;
 
   float velocity = mCamera.moveSpeed * dt;
   if (mKeyboardState[SDL_SCANCODE_LSHIFT] ||
