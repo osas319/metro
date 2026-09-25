@@ -23,6 +23,9 @@ void Scene::clear() {
 }
 
 entt::entity Scene::create(std::string name, std::string type, entt::entity parent) {
+  if (parent != entt::null && get(parent) == nullptr)
+    parent = entt::null;
+
   const entt::entity entity = mRegistry.create();
   auto& node = mRegistry.emplace<SceneEntity>(entity);
   node.id = entity;
@@ -125,6 +128,41 @@ glm::mat4 Scene::worldTransform(entt::entity entity) const {
 glm::vec3 Scene::worldPosition(entt::entity entity) const {
   const glm::vec4 position = worldTransform(entity) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
   return glm::vec3(position);
+}
+
+bool Scene::isDescendant(entt::entity entity, entt::entity possibleParent) const {
+  if (entity == entt::null || possibleParent == entt::null)
+    return false;
+
+  std::unordered_set<uint32_t> visited;
+  entt::entity current = possibleParent;
+  while (current != entt::null) {
+    const auto* node = get(current);
+    if (node == nullptr)
+      return false;
+
+    if (current == entity)
+      return true;
+
+    if (!visited.insert(entt::to_integral(current)).second)
+      return true;
+    current = node->parent;
+  }
+  return false;
+}
+
+bool Scene::setParent(entt::entity entity, entt::entity parent) {
+  SceneEntity* node = get(entity);
+  if (node == nullptr)
+    return false;
+
+  if (parent != entt::null && get(parent) == nullptr)
+    return false;
+  if (parent == entity || isDescendant(entity, parent))
+    return false;
+
+  node->parent = parent;
+  return true;
 }
 
 size_t Scene::visibleCount() const {
@@ -255,7 +293,7 @@ bool Scene::load(const std::string& path) {
     if (p.oldParent != 0) {
       const auto parentIt = remap.find(p.oldParent);
       if (parentIt != remap.end())
-        node->parent = parentIt->second;
+        setParent(entityIt->second, parentIt->second);
     }
   }
 
