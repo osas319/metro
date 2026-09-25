@@ -38,6 +38,9 @@ int main() {
   doorAnimationTrain.requestDoorsOpen(false, false);
   doorAnimationTrain.update(0.1f, false, false);
   assert(doorAnimationTrain.doorOpenFraction() > 0.0f);
+  const float speedBeforeDoorClose = doorAnimationTrain.speed();
+  doorAnimationTrain.update(0.1f, true, false);
+  assert(doorAnimationTrain.speed() == speedBeforeDoorClose);
   assert(doorAnimationTrain.doorOpenFraction() < 1.0f);
   doorAnimationTrain.update(0.5f, false, false);
   assert(doorAnimationTrain.doorOpenFraction() == 0.0f);
