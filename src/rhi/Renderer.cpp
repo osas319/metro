@@ -234,13 +234,13 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   }
 
   // Kabin ön camı ve sürücü konsolu: kamera kabin içinde olduğunda sürüş hissini artırır.
-  addBox({0.0f, 1.15f, -trainPosition - 3.35f},
+  addBox({0.0f, 1.15f, -trainPosition - 38.0f},
          {mTrainWidth * 0.46f, 0.50f, 0.05f},
          {0.025f, 0.055f, 0.075f, 1.0f}, 0.10f);
-  addBox({0.0f, 0.72f, -trainPosition - 2.85f},
+  addBox({0.0f, 0.72f, -trainPosition - 37.5f},
          {mTrainWidth * 0.30f, 0.18f, 0.70f},
          {0.08f, 0.10f, 0.12f, 1.0f}, 0.65f);
-  addBox({0.0f, 0.88f, -trainPosition - 2.35f},
+  addBox({0.0f, 0.88f, -trainPosition - 37.0f},
          {mTrainWidth * 0.18f, 0.08f, 0.12f},
          {0.18f, 0.65f, 0.78f, 1.0f}, 0.25f);
 
@@ -1041,7 +1041,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
   fu.lightDir = glm::vec4(glm::normalize(glm::vec3(0.25f, -1.0f, -0.35f)), 0.0f);
   fu.cameraPos = glm::vec4(camera.position, 1.0f);
   // Far, trenin hareketiyle birlikte ilerler; tüneldeki yakın yüzeyleri aydınlatır.
-  fu.headlightPos = glm::vec4(0.0f, 1.05f, -trainPosition - 3.55f, 1.0f);
+  fu.headlightPos = glm::vec4(0.0f, 1.05f, -trainPosition - 41.5f, 1.0f);
   fu.headlightColor = glm::vec4(1.0f, 0.92f, 0.78f, 18.0f);
   std::memcpy(mFrameUboMapped[imageIndex], &fu, sizeof(fu));
 
