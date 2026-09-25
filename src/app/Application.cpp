@@ -149,6 +149,49 @@ void Application::handleEvent(const SDL_Event& e) {
           mMouseCaptured = false;
           SDL_SetWindowRelativeMouseMode(mWindow, false);
         }
+      } else if (mEditorMode && !mRenderer.editorWantsKeyboard() &&
+                 (e.key.key == SDLK_W || e.key.key == SDLK_E || e.key.key == SDLK_R)) {
+        if (e.key.key == SDLK_W) mEditorGizmoMode = editor::GizmoMode::Translate;
+        if (e.key.key == SDLK_E) mEditorGizmoMode = editor::GizmoMode::Rotate;
+        if (e.key.key == SDLK_R) mEditorGizmoMode = editor::GizmoMode::Scale;
+      } else if (mEditorMode && !mRenderer.editorWantsKeyboard() &&
+                 (e.key.key == SDLK_LEFT || e.key.key == SDLK_RIGHT ||
+                  e.key.key == SDLK_UP || e.key.key == SDLK_DOWN ||
+                  e.key.key == SDLK_PAGEUP || e.key.key == SDLK_PAGEDOWN)) {
+        auto* node = mEditorScene.get(mEditorScene.selected());
+        if (node != nullptr && !node->locked) {
+          const bool largeStep =
+              (mKeyboardState != nullptr &&
+               (mKeyboardState[SDL_SCANCODE_LSHIFT] ||
+                mKeyboardState[SDL_SCANCODE_RSHIFT]));
+          const float moveStep = largeStep ? 1.0f : 0.25f;
+          const float angleStep = largeStep ? 15.0f : 5.0f;
+          const float scaleStep = largeStep ? 0.20f : 0.05f;
+
+          if (mEditorGizmoMode == editor::GizmoMode::Translate) {
+            if (e.key.key == SDLK_LEFT) node->transform.position.x -= moveStep;
+            if (e.key.key == SDLK_RIGHT) node->transform.position.x += moveStep;
+            if (e.key.key == SDLK_UP) node->transform.position.z -= moveStep;
+            if (e.key.key == SDLK_DOWN) node->transform.position.z += moveStep;
+            if (e.key.key == SDLK_PAGEUP) node->transform.position.y += moveStep;
+            if (e.key.key == SDLK_PAGEDOWN) node->transform.position.y -= moveStep;
+          } else if (mEditorGizmoMode == editor::GizmoMode::Rotate) {
+            if (e.key.key == SDLK_LEFT) node->transform.rotation.y -= angleStep;
+            if (e.key.key == SDLK_RIGHT) node->transform.rotation.y += angleStep;
+            if (e.key.key == SDLK_UP) node->transform.rotation.x -= angleStep;
+            if (e.key.key == SDLK_DOWN) node->transform.rotation.x += angleStep;
+            if (e.key.key == SDLK_PAGEUP) node->transform.rotation.z += angleStep;
+            if (e.key.key == SDLK_PAGEDOWN) node->transform.rotation.z -= angleStep;
+          } else {
+            const float delta = scaleStep * (e.key.key == SDLK_LEFT || e.key.key == SDLK_DOWN ? -1.0f : 1.0f);
+            if (e.key.key == SDLK_PAGEUP || e.key.key == SDLK_PAGEDOWN)
+              node->transform.scale += glm::vec3(
+                  e.key.key == SDLK_PAGEUP ? scaleStep : -scaleStep);
+            else
+              node->transform.scale += glm::vec3(delta);
+            node->transform.scale = glm::max(node->transform.scale, glm::vec3(0.05f));
+          }
+        }
       } else if (!mRenderer.editorWantsKeyboard() && e.key.key == SDLK_F1) {
         mCameraViewMode = CameraViewMode::Cab;
         mMouseCaptured = false;
@@ -340,7 +383,7 @@ int Application::run() {
     update(dt);
 
     mRenderer.beginEditorFrame();
-    mEditorUI.draw(mEditorScene, mEditorMode, mPlayMode,
+    mEditorUI.draw(mEditorScene, mEditorMode, mPlayMode, mEditorGizmoMode,
                    mTrain.speed(), mTrain.position(), mRouteLength,
                    mContext.deviceName(), mDisplayFps);
     mRenderer.finishEditorFrame();
@@ -446,6 +489,31 @@ int Application::run() {
           marker.color = {0.72f, 0.38f, 0.92f, 1.0f};
 
         editorMarkers.push_back(marker);
+
+        if (selected) {
+          const glm::vec3 gizmoOrigin =
+              mEditorScene.worldPosition(entity) + glm::vec3(0.0f, 0.55f, 0.0f);
+          constexpr float axisLength = 1.6f;
+          constexpr float axisThickness = 0.055f;
+
+          rhi::Renderer::EditorMarker xAxis{};
+          xAxis.position = gizmoOrigin + glm::vec3(axisLength * 0.5f, 0.0f, 0.0f);
+          xAxis.scale = glm::vec3(axisLength, axisThickness, axisThickness);
+          xAxis.color = {0.92f, 0.20f, 0.18f, 1.0f};
+          editorMarkers.push_back(xAxis);
+
+          rhi::Renderer::EditorMarker yAxis{};
+          yAxis.position = gizmoOrigin + glm::vec3(0.0f, axisLength * 0.5f, 0.0f);
+          yAxis.scale = glm::vec3(axisThickness, axisLength, axisThickness);
+          yAxis.color = {0.22f, 0.88f, 0.30f, 1.0f};
+          editorMarkers.push_back(yAxis);
+
+          rhi::Renderer::EditorMarker zAxis{};
+          zAxis.position = gizmoOrigin + glm::vec3(0.0f, 0.0f, axisLength * 0.5f);
+          zAxis.scale = glm::vec3(axisThickness, axisThickness, axisLength);
+          zAxis.color = {0.20f, 0.48f, 0.95f, 1.0f};
+          editorMarkers.push_back(zAxis);
+        }
       }
     }
 
