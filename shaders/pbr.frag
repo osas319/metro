@@ -154,7 +154,7 @@ void main() {
     // metalde difüz yok; enerji korunumu (1-F) ile
     vec3 diffuse = (1.0 - F) * (1.0 - metallic) * albedo / PI;
 
-    vec3 radiance = vec3(2.6); // tek yönlü ışık şiddeti (sonra: ışık listesi + intensity)
+    vec3 radiance = vec3(1.75); // tek yönlü ışık şiddeti (sonra: ışık listesi + intensity)
     vec3 Lo = (diffuse + specular) * radiance * NdotL;
 
     // Tren farı: menzili yumuşak düşen lokal ışık.
@@ -200,7 +200,7 @@ void main() {
           LNdotL * lampAttenuation * 1.6;
 
     // Hafif hemisfer ambient — tünelde gökyüzü yok, zemin yansıması hissi
-    vec3 ambient = albedo * 0.10 * (0.5 + 0.5 * N.y);
+    vec3 ambient = albedo * 0.055 * (0.5 + 0.5 * N.y);
 
     vec3 color = ambient + Lo;
     if (materialId == 5.0) {
@@ -250,9 +250,11 @@ void main() {
     }
 
     // Tünel atmosferi: uzak geometriyi yumuşatıp sahne derinliği sağlar.
-    const vec3 tunnelFogColor = vec3(0.028, 0.035, 0.050);
+    const vec3 tunnelFogColor = vec3(0.004, 0.006, 0.010);
     float cameraDistance = distance(frame.cameraPos.xyz, vWorldPos);
-    float fogFactor = exp(-cameraDistance * 0.0045);
+    // Uzak tünel kademeli olarak siyaha/sise karışır; yakındaki tren ve raylar
+    // okunaklı kalırken 120 m+ ileri görüş belirgin şekilde kapanır.
+    float fogFactor = exp(-cameraDistance * 0.0070);
     fogFactor = clamp(fogFactor, 0.0, 1.0);
     color = mix(tunnelFogColor, color, fogFactor);
 
