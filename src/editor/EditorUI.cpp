@@ -135,21 +135,23 @@ void UI::drawGlassBackground(ImTextureID editorBlurTexture, float tintAlpha) {
     const ImVec2 uv1{
         std::clamp((max.x - viewport->Pos.x) / viewport->Size.x, 0.0f, 1.0f),
         std::clamp((max.y - viewport->Pos.y) / viewport->Size.y, 0.0f, 1.0f)};
+
+    // Draw before the panel's controls so the glass acts as a backdrop only.
     drawList->AddImageRounded(editorBlurTexture, pos, max, uv0, uv1,
-                              IM_COL32(255, 255, 255, 228), rounding);
+                              IM_COL32(255, 255, 255, 210), rounding);
   }
 
   const int alpha = static_cast<int>(std::clamp(tintAlpha, 0.0f, 1.0f) * 255.0f);
-  drawList->AddRectFilled(pos, max, IM_COL32(11, 16, 27, alpha), rounding);
-  drawList->AddRect(pos, max, IM_COL32(165, 205, 255, 62), rounding, 0, 1.0f);
+  drawList->AddRectFilled(pos, max, IM_COL32(10, 17, 29, alpha), rounding);
+  drawList->AddRect(pos, max, IM_COL32(190, 220, 255, 74), rounding, 0, 1.0f);
   drawList->AddLine(ImVec2(pos.x + 18.0f, pos.y + 1.0f),
                     ImVec2(max.x - 18.0f, pos.y + 1.0f),
-                    IM_COL32(220, 238, 255, 48), 1.0f);
+                    IM_COL32(230, 245, 255, 70), 1.0f);
 }
-
 void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode,
               app::Camera& camera, float trainSpeedMps, float trainPosition,
               float routeLength, const char* gpuName, float fps,
+              ImTextureID editorBlurTexture,
               const GameplayHUDData& gameplay) {
   if (!editorMode) {
     mViewportHovered = false;
@@ -174,8 +176,8 @@ void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMo
   style.ItemSpacing = {8.0f, 7.0f};
   style.ItemInnerSpacing = {6.0f, 5.0f};
 
-  style.Colors[ImGuiCol_WindowBg] = {0.025f, 0.035f, 0.055f, 0.18f};
-  style.Colors[ImGuiCol_ChildBg] = {0.020f, 0.028f, 0.045f, 0.10f};
+  style.Colors[ImGuiCol_WindowBg] = {0.015f, 0.022f, 0.038f, 0.03f};
+  style.Colors[ImGuiCol_ChildBg] = {0.012f, 0.020f, 0.034f, 0.02f};
   style.Colors[ImGuiCol_PopupBg] = {0.045f, 0.055f, 0.078f, 0.96f};
   style.Colors[ImGuiCol_Border] = {0.56f, 0.72f, 0.92f, 0.22f};
   style.Colors[ImGuiCol_FrameBg] = {0.16f, 0.21f, 0.30f, 0.34f};
@@ -228,6 +230,11 @@ void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& 
   }
 
   drawGlassBackground(editorBlurTexture, 0.48f);
+  ImDrawList* toolbarDraw = ImGui::GetWindowDrawList();
+  toolbarDraw->AddRectFilled(
+      ImVec2(viewport->WorkPos.x, viewport->WorkPos.y),
+      ImVec2(viewport->WorkPos.x + viewport->WorkSize.x, viewport->WorkPos.y + 2.0f),
+      IM_COL32(70, 170, 255, 85));
   ImGui::TextColored({0.28f, 0.72f, 1.0f, 1.0f}, "M4");
   ImGui::SameLine();
   ImGui::TextDisabled("EDITOR");
@@ -838,6 +845,8 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
 
   // Kompakt viewport kamera paneli: editorde hareket/nispet kontrolu.
   ImGui::SetCursorPos({std::max(16.0f, ImGui::GetWindowWidth() - 196.0f), 12.0f});
+  ImGui::BeginChild("##CameraGlass", {184.0f, 94.0f}, ImGuiChildFlags_None);
+  drawGlassBackground(editorBlurTexture, 0.44f);
   ImGui::BeginGroup();
   ImGui::TextDisabled("VIEW");
   ImGui::PushItemWidth(150.0f);
@@ -847,20 +856,27 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
                    "%.3f");
   ImGui::PopItemWidth();
   ImGui::EndGroup();
+  ImGui::EndChild();
 
   ImGui::SetCursorPos({16.0f, 12.0f});
+  ImGui::BeginChild("##SceneInfoGlass", {360.0f, 78.0f}, ImGuiChildFlags_None);
+  drawGlassBackground(editorBlurTexture, 0.44f);
   ImGui::BeginGroup();
   ImGui::Text("Scene: M4 World");
   ImGui::Text("Camera | FPS %.1f | %.1f km/h | %.0f / %.0f m",
               fps, trainSpeedMps * 3.6f, trainPosition, routeLength);
   ImGui::TextDisabled("RMB drag orbit | MMB pan | Wheel zoom | Click entity");
   ImGui::EndGroup();
+  ImGui::EndChild();
 
   ImGui::SetCursorPos({16.0f, ImGui::GetWindowHeight() - 46.0f});
+  ImGui::BeginChild("##GPUInfoGlass", {440.0f, 42.0f}, ImGuiChildFlags_None);
+  drawGlassBackground(editorBlurTexture, 0.40f);
   ImGui::BeginGroup();
   ImGui::Text("GPU: %s", gpuName != nullptr ? gpuName : "Unknown");
   ImGui::TextDisabled("W Move | E Rotate | R Scale | Drag gizmo | Arrow keys | RMB orbit");
   ImGui::EndGroup();
+  ImGui::EndChild();
 
   ImGui::End();
 }
