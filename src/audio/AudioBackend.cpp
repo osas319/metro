@@ -78,6 +78,12 @@ void AudioBackend::play(EventType type) {
                {330.0f, 0.18f, 0.08f}}};
       toneCount = 3;
       break;
+    case EventType::EmergencyBrake:
+      tones = {{{1046.5f, 0.09f, 0.08f},
+               {783.99f, 0.20f, 0.08f},
+               {1046.5f, 0.09f, 0.06f}}};
+      toneCount = 3;
+      break;
   }
 
   constexpr int sampleRate = 48000;
@@ -142,8 +148,13 @@ void AudioBackend::updateTrainSound(float speedMps, float accelerationMps2) {
         std::sin(twoPi * phase * 3.97f) * (0.08f + traction * 0.22f);
     const float brakeTone =
         std::sin(twoPi * phase * 0.53f) * braking * 0.12f;
+    mNoiseState = mNoiseState * 1664525u + 1013904223u;
+    const float whiteNoise =
+        (static_cast<float>(mNoiseState) / 4294967295.0f) * 2.0f - 1.0f;
+    const float rollingNoise =
+        whiteNoise * speedFraction * (0.0035f + speedFraction * 0.0065f);
     const float value =
-        (fundamental + second + tractionWhine + brakeTone) * gain;
+        (fundamental + second + tractionWhine + brakeTone) * gain + rollingNoise;
     const float fadeIn = std::min(1.0f, static_cast<float>(i) / 180.0f);
     samples[static_cast<size_t>(i)] = value * fadeIn;
   }
