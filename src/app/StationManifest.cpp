@@ -289,7 +289,8 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
            std::pair{"acceleration_mps2", &parsed.trainParameters.acceleration},
            std::pair{"service_brake_mps2", &parsed.trainParameters.serviceBrake},
            std::pair{"rolling_resistance_mps2",
-                     &parsed.trainParameters.rollingResistance}}) {
+                     &parsed.trainParameters.rollingResistance},
+           std::pair{"max_jerk_mps3", &parsed.trainParameters.maxJerk}}) {
     if (source.find("\"" + std::string(parameter.first) + "\"") !=
             std::string::npos &&
         !readPositiveNumber(source, parameter.first, *parameter.second)) {
