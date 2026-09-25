@@ -13,6 +13,8 @@
 #include "sim/PassengerNavGraph.hpp"
 #include "audio/AudioEventQueue.hpp"
 #include "audio/AudioBackend.hpp"
+#include "editor/EditorScene.hpp"
+#include "editor/EditorUI.hpp"
 #include <SDL3/SDL.h>
 
 namespace metro::app {
@@ -60,7 +62,12 @@ private:
   size_t mLastSignalBlock = static_cast<size_t>(-1);
   float mStopDwellSeconds = 0.0f;
   bool mMouseCaptured = false;
-  CameraViewMode mCameraViewMode = CameraViewMode::Cab;
+  bool mEditorMode = true;
+  bool mPlayMode = false;
+  CameraViewMode mCameraViewMode = CameraViewMode::Free;
+  editor::Scene mEditorScene;
+  editor::UI mEditorUI;
+  float mDisplayFps = 0.0f;
   Uint64 mLastTitleNs = 0;
   const bool* mKeyboardState = nullptr;
 };
