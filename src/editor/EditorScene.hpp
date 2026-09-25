@@ -1,6 +1,7 @@
 #pragma once
 
 #include <entt/entt.hpp>
+#include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
 #include <string>
@@ -40,6 +41,10 @@ public:
   SceneEntity* get(entt::entity entity);
   const SceneEntity* get(entt::entity entity) const;
 
+  // Yerel Transform'dan dünya matrisini hesaplar. Parent zinciri uygulanır.
+  glm::mat4 worldTransform(entt::entity entity) const;
+  glm::vec3 worldPosition(entt::entity entity) const;
+
   const std::vector<entt::entity>& order() const { return mOrder; }
   entt::entity selected() const { return mSelected; }
   void select(entt::entity entity) { mSelected = entity; }
@@ -51,6 +56,8 @@ public:
   size_t visibleCount() const;
 
 private:
+  glm::mat4 localTransform(const SceneEntity& node) const;
+
   entt::registry mRegistry;
   std::vector<entt::entity> mOrder;
   entt::entity mSelected{entt::null};
