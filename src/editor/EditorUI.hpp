@@ -24,6 +24,8 @@ struct GameplayHUDData {
   float doorOpenFraction = 0.0f;
   size_t onboardPassengers = 0;
   size_t waitingPassengers = 0;
+  size_t nextStationIndex = 0;
+  size_t stationCount = 0;
   bool tractionActive = false;
   bool serviceBrakeActive = false;
   bool emergencyBrakeActive = false;
