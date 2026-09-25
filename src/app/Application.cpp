@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <filesystem>
+#include <string_view>
 
 #include "core/Log.hpp"
 #include "app/StationManifest.hpp"
@@ -384,19 +385,53 @@ int Application::run() {
     }
 
     std::vector<rhi::Renderer::EditorMarker> editorMarkers;
+    std::vector<rhi::Renderer::EditorRenderOverride> editorOverrides;
+
     if (mEditorMode) {
       editorMarkers.reserve(mEditorScene.visibleCount());
+
       for (const auto entity : mEditorScene.order()) {
         const auto* node = mEditorScene.get(entity);
-        if (node == nullptr || !node->visible ||
+        if (node == nullptr ||
             node->type == "Folder" || node->type == "Scene" ||
             node->type == "Simulation")
+          continue;
+
+        const bool selected = entity == mEditorScene.selected();
+
+        if (node->type == "Train") {
+          rhi::Renderer::EditorRenderOverride override{};
+          override.kind = rhi::Renderer::EditorRenderKind::Train;
+          override.transform = mEditorScene.worldTransform(entity);
+          override.visible = node->visible;
+          editorOverrides.push_back(override);
+        } else if (node->type == "Station") {
+          std::string stationName = node->name;
+          constexpr std::string_view suffix = " Station";
+          if (stationName.size() > suffix.size() &&
+              stationName.ends_with(suffix))
+            stationName.erase(stationName.size() - suffix.size());
+
+          for (size_t stationIndex = 0; stationIndex < mRoute.stopCount(); ++stationIndex) {
+            if (mRoute.stops()[stationIndex].name != stationName)
+              continue;
+
+            rhi::Renderer::EditorRenderOverride override{};
+            override.kind = rhi::Renderer::EditorRenderKind::Station;
+            override.index = stationIndex;
+            override.transform = mEditorScene.worldTransform(entity);
+            override.visible = node->visible;
+            editorOverrides.push_back(override);
+            break;
+          }
+        }
+
+        if (!node->visible)
           continue;
 
         rhi::Renderer::EditorMarker marker{};
         marker.position = mEditorScene.worldPosition(entity) +
                           glm::vec3(0.0f, 0.55f, 0.0f);
-        const bool selected = entity == mEditorScene.selected();
         marker.scale = selected ? glm::vec3(0.42f) : glm::vec3(0.22f);
 
         if (node->type == "Train")
@@ -415,7 +450,8 @@ int Application::run() {
     }
 
     mRenderer.drawFrame(renderCamera, renderTrainPosition, mTrain.speed(), mTrain.doorOpenFraction(),
-                        mSignal.occupiedBlocks(), passengerPositions, editorMarkers);
+                        mSignal.occupiedBlocks(), passengerPositions, editorMarkers,
+                        editorOverrides);
     ++frameCount;
     if (dt > 0.0001f)
       mDisplayFps = 0.9f * mDisplayFps + 0.1f / dt;
