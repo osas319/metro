@@ -39,6 +39,25 @@ bool Train::requestDoorsOpen(bool open, bool platformAligned) {
   return true;
 }
 
+float Train::brakingDistance() const {
+  if (!std::isfinite(mSpeed) || mSpeed <= 0.0f ||
+      !std::isfinite(mParameters.serviceBrake) ||
+      mParameters.serviceBrake <= 0.0f) {
+    return 0.0f;
+  }
+  return (mSpeed * mSpeed) / (2.0f * mParameters.serviceBrake);
+}
+
+float Train::recommendedSpeed(float distanceMeters) const {
+  if (!std::isfinite(distanceMeters) || distanceMeters <= 0.0f ||
+      !std::isfinite(mParameters.serviceBrake) ||
+      mParameters.serviceBrake <= 0.0f) {
+    return 0.0f;
+  }
+  return std::min(mParameters.maxSpeed,
+                  std::sqrt(2.0f * mParameters.serviceBrake * distanceMeters));
+}
+
 void Train::update(float dt, bool throttle, bool brake, bool signalClear,
                    float routeLength) {
   if (!std::isfinite(dt) || dt <= 0.0f) return;
@@ -56,8 +75,19 @@ void Train::update(float dt, bool throttle, bool brake, bool signalClear,
       brake = true;
     }
   }
+  const float speedRatio =
+      mParameters.maxSpeed > 0.0f
+          ? std::clamp(mSpeed / mParameters.maxSpeed, 0.0f, 1.0f)
+          : 0.0f;
+  // Hafif aerodinamik direnç: düşük hızda yuvarlanma direnci baskın,
+  // yüksek hızda ise direnç kademeli olarak artar.
+  const float resistance =
+      mParameters.rollingResistance + 0.00035f * mSpeed * mSpeed;
+  const float tractionFactor =
+      1.0f - 0.28f * speedRatio * speedRatio;
   float targetAcceleration =
-      throttle ? mParameters.acceleration : -mParameters.rollingResistance;
+      throttle ? (mParameters.acceleration * tractionFactor - resistance)
+               : -resistance;
   if (brake || !signalClear)
     targetAcceleration = -mParameters.serviceBrake;
 
