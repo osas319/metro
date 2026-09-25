@@ -305,7 +305,9 @@ void Application::update(float dt) {
                           mKeyboardState[SDL_SCANCODE_UP]);
   const bool emergencyBrake = simulate && !editorInput && mKeyboardState[SDL_SCANCODE_SPACE];
   const bool brake = simulate && !editorInput &&
-                     (mKeyboardState[SDL_SCANCODE_DOWN] || emergencyBrake);
+                     (mKeyboardState[SDL_SCANCODE_S] ||
+                      mKeyboardState[SDL_SCANCODE_DOWN] ||
+                      emergencyBrake);
   bool platformAligned = false;
   for (const sim::Stop& stop : mRoute.stops()) {
     if (std::abs(mTrain.position() - stop.position) <= 0.5f) {
