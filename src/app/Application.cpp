@@ -130,9 +130,11 @@ void Application::handleEvent(const SDL_Event& e) {
       mResized = true;
       break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
-      // Free-look: orta mouse basılı tutulurken kamera başı döner.
-      // Editörde MMB, viewport orbit/pan için ImGui tarafından işlenir.
-      if (!mEditorMode && e.button.button == SDL_BUTTON_MIDDLE &&
+      // Free-look: sağ veya orta mouse basılı tutulurken kamera başı döner.
+      // Editörde MMB orbit/pan için ImGui tarafından işlenir.
+      if (!mEditorMode &&
+          (e.button.button == SDL_BUTTON_RIGHT ||
+           e.button.button == SDL_BUTTON_MIDDLE) &&
           !mRenderer.editorWantsMouse()) {
         mMouseCaptured = true;
         mCameraViewMode = CameraViewMode::Free;
@@ -140,7 +142,9 @@ void Application::handleEvent(const SDL_Event& e) {
       }
       break;
     case SDL_EVENT_MOUSE_BUTTON_UP:
-      if (!mEditorMode && e.button.button == SDL_BUTTON_MIDDLE) {
+      if (!mEditorMode &&
+          (e.button.button == SDL_BUTTON_RIGHT ||
+           e.button.button == SDL_BUTTON_MIDDLE)) {
         mMouseCaptured = false;
         SDL_SetWindowRelativeMouseMode(mWindow, false);
       }
