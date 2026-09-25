@@ -4,7 +4,6 @@ Vulkan + native Wayland + C++20 ile geliştirilen, sürüş odaklı İstanbul M4
 
 ## Hedef
 
-Subtransit Drive benzeri ayrıntılı bir sürüş deneyimi:
 
 - sürücü kabini ve serbest kamera
 - 4 vagonlu tren seti
