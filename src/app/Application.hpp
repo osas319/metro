@@ -69,6 +69,14 @@ private:
   bool mHornHeld = false;
   bool mEmergencyBrakeHeld = false;
   CameraViewMode mCameraViewMode = CameraViewMode::Free;
+
+  // Kabin kamerası için yumuşak süspansiyon/sallanma durumu.
+  float mCabSway = 0.0f;
+  float mCabSwayVelocity = 0.0f;
+  float mCabBounce = 0.0f;
+  float mCabBounceVelocity = 0.0f;
+  float mCabFov = 45.0f;
+
   editor::Scene mEditorScene;
   editor::UI mEditorUI;
   editor::GizmoMode mEditorGizmoMode = editor::GizmoMode::Translate;
