@@ -61,6 +61,7 @@ private:
   float mStopDwellSeconds = 0.0f;
   bool mMouseCaptured = false;
   CameraViewMode mCameraViewMode = CameraViewMode::Cab;
+  Uint64 mLastTitleNs = 0;
   const bool* mKeyboardState = nullptr;
 };
 
