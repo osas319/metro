@@ -1162,7 +1162,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                           &mDescriptorSets[imageIndex], 0, nullptr);
 
   const std::vector<SceneInstance> instances =
-      buildKadikoyScene(trainPosition, trainSpeed, doorOpenFraction, occupiedBlocks, passengerPositions, editorMarkers);
+      buildKadikoyScene(trainPosition, trainSpeed, doorOpenFraction, occupiedBlocks, passengerPositions);
 
   const Model* boundModel = nullptr;
   for (const SceneInstance& instance : instances) {
@@ -1272,7 +1272,8 @@ void Renderer::drawFrame(const app::Camera& camera, float trainPosition, float t
   // 2) Komut tamponunu bu image için yeniden yaz.
   vkResetCommandBuffer(mCommands[mFrame], 0);
   recordCommandBuffer(mCommands[mFrame], imageIndex, camera, trainPosition,
-                      trainSpeed, doorOpenFraction, occupiedBlocks, passengerPositions);
+                      trainSpeed, doorOpenFraction, occupiedBlocks,
+                      passengerPositions, editorMarkers);
 
   // 3) Submit: renk çıktısı aşamasına kadar bekle.
   VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
