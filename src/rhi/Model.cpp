@@ -143,6 +143,45 @@ void addCylinder(BuiltinPart& part, glm::vec3 center, float radius,
   }
 }
 
+void addTunnelCeiling(BuiltinPart& part, float innerRadius,
+                     float springY, float depth, int segments) {
+  segments = std::max(16, segments);
+  const uint32_t base = static_cast<uint32_t>(part.vertices.size());
+  const float halfDepth = depth * 0.5f;
+  constexpr float pi = 3.14159265359f;
+
+  // Gerçek tünel boşluğu için düz tavan yerine yarım daire kesitli iç kabuk.
+  // Kesit X-Y düzleminde, Z hattı boyunca ekstrüde edilir.
+  for (int i = 0; i <= segments; ++i) {
+    const float t = static_cast<float>(i) / static_cast<float>(segments);
+    const float angle = t * pi;
+    const float c = std::cos(angle);
+    const float sn = std::sin(angle);
+    const glm::vec3 inwardNormal{-c, -sn, 0.0f};
+
+    for (float z : {-halfDepth, halfDepth}) {
+      Vertex v{};
+      v.pos[0] = innerRadius * c;
+      v.pos[1] = springY + innerRadius * sn;
+      v.pos[2] = z;
+      v.normal[0] = inwardNormal.x;
+      v.normal[1] = inwardNormal.y;
+      v.normal[2] = inwardNormal.z;
+      v.texCoord[0] = t * (innerRadius * pi);
+      v.texCoord[1] = (z + halfDepth) / std::max(depth, 0.001f);
+      part.vertices.push_back(v);
+    }
+  }
+
+  for (int i = 0; i < segments; ++i) {
+    const uint32_t a = base + static_cast<uint32_t>(i * 2);
+    const uint32_t b = a + 2;
+    const uint32_t aFar = a + 1;
+    const uint32_t bFar = b + 1;
+    part.indices.insert(part.indices.end(), {a, aFar, bFar, a, bFar, b});
+  }
+}
+
 void addFrustum(BuiltinPart& part, float z0, float z1,
                 float xHalf0, float xHalf1, float yBottom, float yTop) {
   const glm::vec3 p000{-xHalf0, yBottom, z0};
@@ -322,10 +361,15 @@ std::vector<BuiltinPart> makeTunnelModuleParts() {
   BuiltinPart arch;
   arch.color = {0.13f, 0.15f, 0.18f, 1.0f};
   arch.roughness = 0.95f;
-  // Stepped arch: visually continuous from the cab without unsupported floating boxes.
-  addBox(arch, {-3.05f, 3.55f, 0.0f}, {1.90f, 0.72f, 30.0f});
-  addBox(arch, { 3.05f, 3.55f, 0.0f}, {1.90f, 0.72f, 30.0f});
-  addBox(arch, {0.0f, 4.02f, 0.0f}, {4.20f, 0.55f, 30.0f});
+  arch.materialId = 12.0f;
+
+  // Düz kutu tavan kaldırıldı: tünel kesiti artık yuvarlak/yarım silindir.
+  // Böylece oyuncu ray ekseninde ilerlerken tavanın gerçek eğrisini görür.
+  addTunnelCeiling(arch, 4.05f, -0.05f, 30.0f, 32);
+
+  // Kesitin iki yanındaki alt dikey duvarlar.
+  addBox(arch, {-4.03f, -0.30f, 0.0f}, {0.30f, 0.80f, 30.0f});
+  addBox(arch, { 4.03f, -0.30f, 0.0f}, {0.30f, 0.80f, 30.0f});
   parts.push_back(std::move(arch));
 
   BuiltinPart walkway;
