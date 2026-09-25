@@ -5,6 +5,14 @@
 
 namespace metro::sim {
 
+void Train::reset(float position) {
+  mPosition = std::isfinite(position) ? std::max(0.0f, position) : 0.0f;
+  mSpeed = 0.0f;
+  mAcceleration = 0.0f;
+  mDoorsOpen = false;
+  mDoorOpenFraction = 0.0f;
+}
+
 void Train::setParameters(Parameters parameters) {
   const Parameters defaults{};
   if (!std::isfinite(parameters.maxSpeed) || parameters.maxSpeed <= 0.0f) {
