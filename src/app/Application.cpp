@@ -209,6 +209,10 @@ void Application::handleEvent(const SDL_Event& e) {
         if (auto* node = mEditorScene.get(mEditorScene.selected()))
           node->locked = !node->locked;
       } else if (!mRenderer.editorWantsKeyboard() && !mEditorMode &&
+                 e.key.key == SDLK_SPACE && !mEmergencyBrakeHeld) {
+        mEmergencyBrakeHeld = true;
+        mAudioEvents.push({audio::EventType::EmergencyBrake, 0});
+      } else if (!mRenderer.editorWantsKeyboard() && !mEditorMode &&
                  e.key.key == SDLK_H && !mHornHeld) {
         mHornHeld = true;
         mAudioEvents.push({audio::EventType::Horn, 0});
@@ -232,6 +236,8 @@ void Application::handleEvent(const SDL_Event& e) {
     case SDL_EVENT_KEY_UP:
       if (e.key.key == SDLK_H)
         mHornHeld = false;
+      if (e.key.key == SDLK_SPACE)
+        mEmergencyBrakeHeld = false;
       break;
     case SDL_EVENT_MOUSE_MOTION:
       if (mMouseCaptured) {
