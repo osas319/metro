@@ -141,10 +141,15 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     addModelInstance(SceneModel::TunnelModule, {0.0f, 0.0f, -p});
   }
 
-  // Ray yatağı + iki gerçek çelik ray: taban, web ve parlak ray başı.
-  addBox({0.0f, -1.53f, -halfRoute},
-         {3.10f, 0.18f, halfRoute},
-         {0.095f, 0.10f, 0.11f, 1.0f}, 0.98f, 6.0f);
+  // Kesintisiz altyapı zemini: görünür aralıkların dışında da ray koridoru
+  // altında dolgu bırakır. Böylece editörde serbest kamera ile bakarken siyah
+  // boşluklar/gökyüzü yarıkları oluşmaz.
+  addBox({0.0f, -1.82f, -halfRoute},
+         {12.0f, 0.32f, halfRoute},
+         {0.035f, 0.042f, 0.055f, 1.0f}, 0.99f, 6.0f);
+  addBox({0.0f, -1.48f, -halfRoute},
+         {6.60f, 0.26f, halfRoute},
+         {0.075f, 0.082f, 0.095f, 1.0f}, 0.97f, 6.0f);
 
   for (float x : {-mTrackGauge * 0.5f, mTrackGauge * 0.5f}) {
     addBox({x, -1.34f, -halfRoute}, {0.12f, 0.10f, halfRoute},
@@ -273,9 +278,10 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
 
 
 
-  // Dört vagonlu M4 seti: her vagon artık ayrı, detaylı procedural model.
-  constexpr float carLength = 19.5f;
-  constexpr float carGap = 0.25f;
+  // Dört vagonlu M4 CAF seti: gerçek araç uzunluğunda, belirgin aralık ve
+  // ray üzerinde net görünen ayrı vagonlar.
+  constexpr float carLength = 22.43f;
+  constexpr float carGap = 0.55f;
   constexpr size_t carCount = 4;
   const float setLength =
       carCount * carLength + static_cast<float>(carCount - 1) * carGap;
