@@ -182,6 +182,25 @@ void addTunnelCeiling(BuiltinPart& part, float innerRadius,
   }
 }
 
+void addFrustum(BuiltinPart& part, float z0, float z1,
+                float xHalf0, float xHalf1, float yBottom, float yTop) {
+  const glm::vec3 p000{-xHalf0, yBottom, z0};
+  const glm::vec3 p100{ xHalf0, yBottom, z0};
+  const glm::vec3 p110{ xHalf0, yTop, z0};
+  const glm::vec3 p010{-xHalf0, yTop, z0};
+  const glm::vec3 p001{-xHalf1, yBottom, z1};
+  const glm::vec3 p101{ xHalf1, yBottom, z1};
+  const glm::vec3 p111{ xHalf1, yTop, z1};
+  const glm::vec3 p011{-xHalf1, yTop, z1};
+
+  addFace(part, p000, p001, p011, p010);
+  addFace(part, p101, p100, p110, p111);
+  addFace(part, p010, p011, p111, p110);
+  addFace(part, p001, p000, p100, p101);
+  addFace(part, p000, p010, p110, p100);
+  addFace(part, p101, p111, p011, p001);
+}
+
 void addFrustumOpenStart(BuiltinPart& part, float z0, float z1,
                        float xHalf0, float xHalf1, float yBottom, float yTop) {
   const glm::vec3 p000{-xHalf0, yBottom, z0};
