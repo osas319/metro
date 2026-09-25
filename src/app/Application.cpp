@@ -238,6 +238,7 @@ void Application::update(float dt) {
   mPassengers.update(dt, mTrain.doorsOpen(), mTrain.speed() < 0.05f,
                     !atTerminal);
   consumeAudioEvents();
+  mAudioBackend.updateTrainSound(mTrain.speed(), mTrain.acceleration());
 
   if (!mMouseCaptured) return;
 
