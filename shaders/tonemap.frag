@@ -6,6 +6,13 @@
 // tutarlı).
 layout(set = 0, binding = 0) uniform sampler2D uHdrColor;
 
+layout(push_constant) uniform PostProcessPush {
+    float trainSpeedMps;
+    float pad0;
+    float pad1;
+    float pad2;
+};
+
 layout(location = 0) in vec2 vUv;
 layout(location = 0) out vec4 outColor;
 
@@ -22,6 +29,33 @@ vec3 acesFilm(vec3 x) {
 
 void main() {
     vec3 hdr = texture(uHdrColor, vUv).rgb;
+
+    // İleri hareket bulanıklığı tren hızına göre yumuşak biçimde artar.
+    // smoothstep kullanıldığı için belirli bir hızda bir anda açılmaz.
+    float speed = abs(trainSpeedMps);
+    float speed01 = smoothstep(2.0, 20.0, speed);
+    float motionWeight = speed01 * speed01;
+    float blurRadius = 0.030 * motionWeight;
+
+    if (blurRadius > 0.0005) {
+        vec2 centered = vUv * 2.0 - 1.0;
+        float distanceFromCenter = length(centered);
+        vec2 radialDir = centered / max(distanceFromCenter, 0.0001);
+
+        // Görüş merkezine yakın bölgeyi daha az, kenarları daha çok sürükle.
+        vec2 blurStep = radialDir * blurRadius *
+                        mix(0.20, 1.0, smoothstep(0.05, 0.85, distanceFromCenter));
+
+        vec3 motion = hdr * 0.26;
+        motion += texture(uHdrColor, vUv - blurStep * 0.85).rgb * 0.14;
+        motion += texture(uHdrColor, vUv - blurStep * 0.55).rgb * 0.15;
+        motion += texture(uHdrColor, vUv - blurStep * 0.25).rgb * 0.15;
+        motion += texture(uHdrColor, vUv + blurStep * 0.25).rgb * 0.11;
+        motion += texture(uHdrColor, vUv + blurStep * 0.55).rgb * 0.09;
+        motion += texture(uHdrColor, vUv + blurStep * 0.85).rgb * 0.10;
+
+        hdr = mix(hdr, motion, 0.72 * motionWeight);
+    }
 
     // Tek geçişte ucuz HDR bloom: parlak komşu piksellerden küçük bir hale.
     ivec2 imageSize = textureSize(uHdrColor, 0);
