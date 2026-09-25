@@ -12,6 +12,10 @@
 #include <string>
 #include <string_view>
 
+#include <imgui.h>
+#include <imgui_impl_sdl3.h>
+#include <imgui_impl_vulkan.h>
+
 #include "core/Log.hpp"
 #include "rhi/VulkanContext.hpp"
 
@@ -265,6 +269,111 @@ VkFormat Renderer::pickDepthFormat() const {
   return VK_FORMAT_D16_UNORM;
 }
 
+bool Renderer::initEditorUI() {
+  if (mEditorUIInitialized)
+    return true;
+
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+
+  ImGuiIO& io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+  io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
+
+  ImGui::StyleColorsDark();
+  ImGuiStyle& style = ImGui::GetStyle();
+  style.WindowRounding = 3.0f;
+  style.ChildRounding = 3.0f;
+  style.FrameRounding = 2.0f;
+  style.PopupRounding = 3.0f;
+  style.ScrollbarRounding = 2.0f;
+  style.WindowBorderSize = 1.0f;
+  style.FrameBorderSize = 1.0f;
+  style.ItemSpacing = ImVec2(7.0f, 5.0f);
+  style.WindowPadding = ImVec2(8.0f, 8.0f);
+
+  if (!ImGui_ImplSDL3_InitForVulkan(mWindow)) {
+    ImGui::DestroyContext();
+    return false;
+  }
+
+  ImGui_ImplVulkan_InitInfo info{};
+  info.ApiVersion = VK_API_VERSION_1_3;
+  info.Instance = mCtx->instance();
+  info.PhysicalDevice = mCtx->physicalDevice();
+  info.Device = mCtx->device();
+  info.QueueFamily = mCtx->graphicsFamily();
+  info.Queue = mCtx->graphicsQueue();
+  info.DescriptorPool = VK_NULL_HANDLE;
+  info.DescriptorPoolSize = 1000;
+  info.MinImageCount = std::max(2u, mSwapchain.imageCount());
+  info.ImageCount = std::max(info.MinImageCount, mSwapchain.imageCount());
+  info.PipelineCache = VK_NULL_HANDLE;
+  info.PipelineInfoMain.RenderPass = mPostRenderPass;
+  info.PipelineInfoMain.Subpass = 0;
+  info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+  info.Allocator = nullptr;
+  info.CheckVkResultFn = [](VkResult result) {
+    if (result != VK_SUCCESS)
+      METRO_ERROR("ImGui Vulkan: VkResult=%d", static_cast<int>(result));
+  };
+
+  if (!ImGui_ImplVulkan_Init(&info)) {
+    ImGui_ImplSDL3_Shutdown();
+    ImGui::DestroyContext();
+    return false;
+  }
+
+  mEditorUIInitialized = true;
+  METRO_INFO("Editor UI hazir: Docking + SDL3 + Vulkan");
+  return true;
+}
+
+void Renderer::shutdownEditorUI() {
+  if (!mEditorUIInitialized)
+    return;
+
+  ImGui_ImplVulkan_Shutdown();
+  ImGui_ImplSDL3_Shutdown();
+  ImGui::DestroyContext();
+  mEditorUIInitialized = false;
+}
+
+void Renderer::beginEditorFrame() {
+  if (!mEditorUIInitialized)
+    return;
+  ImGui_ImplVulkan_NewFrame();
+  ImGui_ImplSDL3_NewFrame();
+  ImGui::NewFrame();
+}
+
+void Renderer::finishEditorFrame() {
+  if (!mEditorUIInitialized)
+    return;
+  ImGui::Render();
+}
+
+void Renderer::renderEditorUI(VkCommandBuffer cmd) {
+  if (!mEditorUIInitialized)
+    return;
+  ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+}
+
+void Renderer::processEditorEvent(const SDL_Event& e) {
+  if (!mEditorUIInitialized)
+    return;
+  ImGui_ImplSDL3_ProcessEvent(&e);
+}
+
+bool Renderer::editorWantsMouse() const {
+  return mEditorUIInitialized && ImGui::GetIO().WantCaptureMouse;
+}
+
+bool Renderer::editorWantsKeyboard() const {
+  return mEditorUIInitialized && ImGui::GetIO().WantCaptureKeyboard;
+}
+
 bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
                     const std::string& manifestModelPath, float routeLength,
                     float platformWidth, float trackGauge, float trainWidth,
@@ -298,6 +407,9 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
     createPostResources();   // HDR örnekleme descriptor'ları
     createPostPipeline();
     createPostFramebuffers();
+    if (!initEditorUI()) {
+      throw std::runtime_error("Editor UI baslatilamadi");
+    }
     createCommandObjects();
     const std::string selectedModel =
         environmentModel != nullptr
@@ -1105,6 +1217,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
   vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, mPostPipelineLayout, 0, 1,
                           &mPostDescriptorSets[imageIndex], 0, nullptr);
   vkCmdDraw(cmd, 3, 1, 0, 0); // tam ekran üçgen; vertex/index buffer yok
+  renderEditorUI(cmd);
 
   vkCmdEndRenderPass(cmd);
   if (vkEndCommandBuffer(cmd) != VK_SUCCESS) throw std::runtime_error("vkEndCommandBuffer");
@@ -1234,6 +1347,7 @@ void Renderer::destroySwapchainDependent() {
 
 void Renderer::recreateSwapchain() {
   vkDeviceWaitIdle(mCtx->device());
+  shutdownEditorUI();
   destroySwapchainDependent();
 
   mSwapchain.recreate(*mCtx, mWindow);
@@ -1290,12 +1404,15 @@ void Renderer::recreateSwapchain() {
   createFramebuffers();     // sahne (HDR+depth)
   createPostResources();    // HDR view'lar değişti → descriptor'ları yeniden yaz
   createPostFramebuffers(); // swapchain hedefli
+  if (!initEditorUI())
+    throw std::runtime_error("Editor UI yeniden baslatilamadi");
 }
 
 void Renderer::shutdown() {
   if (mCtx == nullptr || mCtx->device() == VK_NULL_HANDLE) return;
   vkDeviceWaitIdle(mCtx->device());
 
+  shutdownEditorUI();
   destroySwapchainDependent();
 
   if (mCommandPool) vkDestroyCommandPool(mCtx->device(), mCommandPool, nullptr);
