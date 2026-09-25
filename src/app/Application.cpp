@@ -684,7 +684,9 @@ int Application::run() {
       }
     }
 
-    mRenderer.drawFrame(renderCamera, renderTrainPosition, mTrain.speed(), mTrain.doorOpenFraction(),
+    const bool renderTrainBraking = mTrain.acceleration() < -0.20f;
+    mRenderer.drawFrame(renderCamera, renderTrainPosition, mTrain.speed(),
+                        mTrain.doorOpenFraction(), renderTrainBraking,
                         mSignal.occupiedBlocks(), passengerPositions, editorMarkers,
                         editorOverrides);
     ++frameCount;
