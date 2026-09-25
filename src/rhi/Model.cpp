@@ -464,6 +464,20 @@ std::vector<BuiltinPart> makeStationModuleParts() {
          {0.025f, 0.025f, moduleLength});
   parts.push_back(std::move(wallTiles));
 
+  // Sağ ray bölgesinin altında istasyon zemini: platform değil, düz bakım/ray alanı.
+  BuiltinPart rightFloor;
+  rightFloor.color = {0.065f, 0.073f, 0.085f, 1.0f};
+  rightFloor.roughness = 0.97f;
+  rightFloor.materialId = 6.0f;
+  addBox(rightFloor, {2.10f, -1.48f, 0.0f},
+         {4.20f, 0.34f, moduleLength});
+  // Ray yatağı çevresinde kirli ballast şeritleri.
+  for (float x : {1.10f, 3.20f}) {
+    addBox(rightFloor, {x, -1.27f, 0.0f},
+           {0.72f, 0.12f, moduleLength});
+  }
+  parts.push_back(std::move(rightFloor));
+
   // Sağ tarafta platform yok ama istasyon kabuğu devam eder:
   // sürekli duvar, servis şeridi, kablo kanalı ve dikey derzler.
   constexpr float rightSide = 1.0f;
