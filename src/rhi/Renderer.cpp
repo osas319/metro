@@ -161,13 +161,13 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     }
 
     // Platform tarafındaki asma tavanın taşıyıcı kısmı; duvardan tavana bağlı.
-    addBox({side * 2.65f, 3.42f, z},
+    addBox({2.65f, 3.42f, z},
            {2.40f, 0.075f, stationHalfLength},
            {0.83f, 0.81f, 0.75f, 1.0f}, 0.84f, 2.0f);
 
     // Uzun tavan armatürleri tavana oturur.
     for (float lightP = p - 78.0f; lightP <= p + 78.0f; lightP += 12.0f) {
-      addBox({side * 2.65f, 3.28f, -lightP},
+      addBox({2.65f, 3.28f, -lightP},
              {0.42f, 0.025f, 1.80f},
              {0.95f, 0.93f, 0.84f, 1.0f}, 0.15f, 5.0f);
     }
