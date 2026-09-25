@@ -189,6 +189,58 @@ std::vector<BuiltinPart> makeTrainCarParts() {
   return parts;
 }
 
+
+std::vector<BuiltinPart> makeTunnelModuleParts() {
+  std::vector<BuiltinPart> parts;
+
+  BuiltinPart wall;
+  wall.color = {0.17f, 0.19f, 0.22f, 1.0f};
+  wall.roughness = 0.92f;
+  addBox(wall, {-4.25f, 1.25f, 0.0f}, {0.24f, 3.10f, 30.0f});
+  addBox(wall, {4.25f, 1.25f, 0.0f}, {0.24f, 3.10f, 30.0f});
+  parts.push_back(std::move(wall));
+
+  BuiltinPart arch;
+  arch.color = {0.13f, 0.15f, 0.18f, 1.0f};
+  arch.roughness = 0.95f;
+  // Stepped arch: visually continuous from the cab without unsupported floating boxes.
+  addBox(arch, {-3.05f, 3.55f, 0.0f}, {1.90f, 0.72f, 30.0f});
+  addBox(arch, { 3.05f, 3.55f, 0.0f}, {1.90f, 0.72f, 30.0f});
+  addBox(arch, {0.0f, 4.02f, 0.0f}, {4.20f, 0.55f, 30.0f});
+  parts.push_back(std::move(arch));
+
+  BuiltinPart walkway;
+  walkway.color = {0.28f, 0.30f, 0.32f, 1.0f};
+  walkway.roughness = 0.90f;
+  addBox(walkway, {-2.15f, -0.28f, 0.0f}, {1.45f, 0.20f, 30.0f});
+  addBox(walkway, {2.15f, -0.28f, 0.0f}, {1.45f, 0.20f, 30.0f});
+  parts.push_back(std::move(walkway));
+
+  BuiltinPart cable;
+  cable.color = {0.08f, 0.09f, 0.11f, 1.0f};
+  cable.roughness = 0.66f;
+  for (float side : {-1.0f, 1.0f})
+    addBox(cable, {side * 3.75f, 2.45f, 0.0f}, {0.12f, 0.16f, 30.0f});
+  parts.push_back(std::move(cable));
+
+  BuiltinPart contact;
+  contact.color = {0.55f, 0.57f, 0.59f, 1.0f};
+  contact.metallic = 0.55f;
+  contact.roughness = 0.24f;
+  addBox(contact, {0.0f, 3.38f, 0.0f}, {0.028f, 0.028f, 30.0f});
+  parts.push_back(std::move(contact));
+
+  BuiltinPart lights;
+  lights.color = {0.72f, 0.80f, 0.92f, 1.0f};
+  lights.roughness = 0.18f;
+  lights.materialId = 5.0f;
+  for (float z = -12.0f; z <= 12.0f; z += 6.0f)
+    addBox(lights, {0.0f, 3.68f, z}, {0.22f, 0.045f, 1.80f});
+  parts.push_back(std::move(lights));
+
+  return parts;
+}
+
 std::vector<BuiltinPart> makeStationModuleParts() {
   std::vector<BuiltinPart> parts;
 
@@ -443,9 +495,14 @@ bool Model::load(VulkanContext& ctx, VkCommandPool pool, const std::string& path
 bool Model::loadBuiltin(VulkanContext& ctx, VkCommandPool pool, BuiltinModelType type) {
   destroy(ctx);
 
-  std::vector<BuiltinPart> parts =
-      type == BuiltinModelType::TrainCar ? makeTrainCarParts()
-                                         : makeStationModuleParts();
+  std::vector<BuiltinPart> parts;
+  if (type == BuiltinModelType::TrainCar) {
+    parts = makeTrainCarParts();
+  } else if (type == BuiltinModelType::StationModule) {
+    parts = makeStationModuleParts();
+  } else {
+    parts = makeTunnelModuleParts();
+  }
 
   std::vector<Vertex> vertices;
   std::vector<uint32_t> indices;
@@ -508,7 +565,9 @@ bool Model::loadBuiltin(VulkanContext& ctx, VkCommandPool pool, BuiltinModelType
   vmaDestroyBuffer(ctx.allocator(), iStaging, iAlloc);
 
   METRO_INFO("Builtin model hazir: %s (V: %u, I: %u)",
-             type == BuiltinModelType::TrainCar ? "TrainCar" : "StationModule",
+             type == BuiltinModelType::TrainCar
+                 ? "TrainCar"
+                 : (type == BuiltinModelType::StationModule ? "StationModule" : "TunnelModule"),
              mVertexCount, mIndexCount);
   return true;
 }
