@@ -4,17 +4,12 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstdio>
-#include <entt/entt.hpp>
 #include <filesystem>
 
 #include "core/Log.hpp"
 #include "app/StationManifest.hpp"
 
 namespace metro::app {
-
-struct TransformComponent {
-    float x, y, z;
-};
 
 bool Application::init() {
   const char* manifestPath = std::getenv("METRO_STATION_MANIFEST");
@@ -67,14 +62,8 @@ bool Application::init() {
   mBlockLength = station.routeLength /
                  static_cast<float>(std::max<size_t>(station.blockCount, 1));
 
-  entt::registry registry;
-  auto entity = registry.create();
-  registry.emplace<TransformComponent>(entity, 1.0f, 2.0f, 3.0f);
-  METRO_INFO("EnTT test: Entity olusturuldu (ID: %d), X: %.1f", 
-             static_cast<int>(entity), registry.get<TransformComponent>(entity).x);
-
   // SDL_VIDEODRIVER=wayland container.sh'te sabitleniyor; burada sadece
-  // hangi driver'ın seçildiğini doğrulayıp log'luyoruz (XWayland'e düşmez).
+  // hangi driver'ın seçildiğini doğrulayıp log'larız (XWayland'e düşmez).
   if (!SDL_Init(SDL_INIT_VIDEO)) {
     METRO_ERROR("SDL_Init: %s", SDL_GetError());
     return false;
@@ -180,7 +169,7 @@ void Application::handleEvent(const SDL_Event& e) {
       if (mMouseCaptured) {
         mCamera.yaw += e.motion.xrel * mCamera.mouseSensitivity;
         mCamera.pitch -= e.motion.yrel * mCamera.mouseSensitivity;
-        
+
         if (mCamera.pitch > 89.0f) mCamera.pitch = 89.0f;
         if (mCamera.pitch < -89.0f) mCamera.pitch = -89.0f;
       }
@@ -192,8 +181,8 @@ void Application::handleEvent(const SDL_Event& e) {
 
 void Application::update(float dt) {
   if (mKeyboardState == nullptr) {
-      int count = 0;
-      mKeyboardState = SDL_GetKeyboardState(&count);
+    int count = 0;
+    mKeyboardState = SDL_GetKeyboardState(&count);
   }
 
   if (mEditorMode && !mPlayMode) {
@@ -222,72 +211,71 @@ void Application::update(float dt) {
     mTrain.requestDoorsOpen(false, false);
   }
   if (simulate) {
-  const size_t currentBlock =
-      std::min(static_cast<size_t>(mTrain.position() / mBlockLength),
-               mSignal.blockCount() - 1);
-  for (size_t block = 0; block < mSignal.blockCount(); ++block) {
-    mSignal.setOccupied(block, block == currentBlock);
-  }
-  if (currentBlock != mLastSignalBlock) {
-    mAudioEvents.push({audio::EventType::SignalChanged, currentBlock});
-    mLastSignalBlock = currentBlock;
-  }
-  const size_t nextBlock = currentBlock + 1;
-  const bool signalClear = nextBlock >= mSignal.blockCount() ||
-                           mSignal.canEnter(nextBlock);
-  const sim::Stop& upcomingStop = mRoute.nextStop(mTrain.position(), mRouteLength);
-  const float stopTarget = upcomingStop.position;
-  const float stopDwellLimit = upcomingStop.dwellSeconds >= 0.0f
-                                   ? upcomingStop.dwellSeconds
-                                   : mStopDwellSecondsLimit;
-  mPhysics.step(dt, mTrain, throttle, brake, signalClear, stopTarget);
-  const bool atStop = mTrain.position() >= stopTarget - 0.5f &&
-                      mTrain.position() <= stopTarget + 0.5f &&
-                      mTrain.speed() < 0.05f;
-  const bool atTerminal = mTrain.position() >= mRouteLength &&
-                          mTrain.speed() < 0.05f;
-  if (atStop || atTerminal) {
-    size_t servicedStop = static_cast<size_t>(-1);
-    for (size_t i = 0; i < mRoute.stopCount(); ++i) {
-      if (std::abs(mTrain.position() - mRoute.stops()[i].position) <= 0.5f) {
-        servicedStop = i;
-        break;
+    const size_t currentBlock =
+        std::min(static_cast<size_t>(mTrain.position() / mBlockLength),
+                 mSignal.blockCount() - 1);
+    for (size_t block = 0; block < mSignal.blockCount(); ++block) {
+      mSignal.setOccupied(block, block == currentBlock);
+    }
+    if (currentBlock != mLastSignalBlock) {
+      mAudioEvents.push({audio::EventType::SignalChanged, currentBlock});
+      mLastSignalBlock = currentBlock;
+    }
+    const size_t nextBlock = currentBlock + 1;
+    const bool signalClear = nextBlock >= mSignal.blockCount() ||
+                             mSignal.canEnter(nextBlock);
+    const sim::Stop& upcomingStop = mRoute.nextStop(mTrain.position(), mRouteLength);
+    const float stopTarget = upcomingStop.position;
+    const float stopDwellLimit = upcomingStop.dwellSeconds >= 0.0f
+                                     ? upcomingStop.dwellSeconds
+                                     : mStopDwellSecondsLimit;
+    mPhysics.step(dt, mTrain, throttle, brake, signalClear, stopTarget);
+    const bool atStop = mTrain.position() >= stopTarget - 0.5f &&
+                        mTrain.position() <= stopTarget + 0.5f &&
+                        mTrain.speed() < 0.05f;
+    const bool atTerminal = mTrain.position() >= mRouteLength &&
+                            mTrain.speed() < 0.05f;
+    if (atStop || atTerminal) {
+      size_t servicedStop = static_cast<size_t>(-1);
+      for (size_t i = 0; i < mRoute.stopCount(); ++i) {
+        if (std::abs(mTrain.position() - mRoute.stops()[i].position) <= 0.5f) {
+          servicedStop = i;
+          break;
+        }
       }
-    }
-    const bool wasOpen = mTrain.doorsOpen();
-    mTrain.requestDoorsOpen(true, true);
-    if (!wasOpen && mTrain.doorsOpen()) {
-      mAudioEvents.push({atTerminal ? audio::EventType::TerminalServiced
-                                    : audio::EventType::StopArrived,
-                         servicedStop});
-      mAudioEvents.push({audio::EventType::DoorOpened, servicedStop});
-    }
-    if (servicedStop != static_cast<size_t>(-1) &&
-        servicedStop != mLastServicedStop) {
-      mPassengers.serviceStop(servicedStop, mRoute.stopCount(),
-                              servicedStop + 1 == mRoute.stopCount());
-      if (servicedStop + 1 < mRoute.stopCount())
-        mPassengers.setBoardingDestination(servicedStop + 1);
-      mLastServicedStop = servicedStop;
-    }
-    if (!atTerminal) {
-      mStopDwellSeconds += dt;
-      if (mStopDwellSeconds >= stopDwellLimit) {
-        mTrain.requestDoorsOpen(false, false);
-        mAudioEvents.push({audio::EventType::DoorClosed, servicedStop});
-        mAudioEvents.push({audio::EventType::TrainDeparted, servicedStop});
-        mStopDwellSeconds = 0.0f;
+      const bool wasOpen = mTrain.doorsOpen();
+      mTrain.requestDoorsOpen(true, true);
+      if (!wasOpen && mTrain.doorsOpen()) {
+        mAudioEvents.push({atTerminal ? audio::EventType::TerminalServiced
+                                      : audio::EventType::StopArrived,
+                           servicedStop});
+        mAudioEvents.push({audio::EventType::DoorOpened, servicedStop});
       }
+      if (servicedStop != static_cast<size_t>(-1) &&
+          servicedStop != mLastServicedStop) {
+        mPassengers.serviceStop(servicedStop, mRoute.stopCount(),
+                                servicedStop + 1 == mRoute.stopCount());
+        if (servicedStop + 1 < mRoute.stopCount())
+          mPassengers.setBoardingDestination(servicedStop + 1);
+        mLastServicedStop = servicedStop;
+      }
+      if (!atTerminal) {
+        mStopDwellSeconds += dt;
+        if (mStopDwellSeconds >= stopDwellLimit) {
+          mTrain.requestDoorsOpen(false, false);
+          mAudioEvents.push({audio::EventType::DoorClosed, servicedStop});
+          mAudioEvents.push({audio::EventType::TrainDeparted, servicedStop});
+          mStopDwellSeconds = 0.0f;
+        }
+      }
+    } else {
+      mStopDwellSeconds = 0.0f;
     }
-  } else {
-    mStopDwellSeconds = 0.0f;
-  }
-  if (atTerminal) mTerminalServiced = true;
-  mPassengers.update(dt, mTrain.doorsOpen(), mTrain.speed() < 0.05f,
-                    !atTerminal);
-  consumeAudioEvents();
-  mAudioBackend.updateTrainSound(mTrain.speed(), mTrain.acceleration());
-
+    if (atTerminal) mTerminalServiced = true;
+    mPassengers.update(dt, mTrain.doorsOpen(), mTrain.speed() < 0.05f,
+                      !atTerminal);
+    consumeAudioEvents();
+    mAudioBackend.updateTrainSound(mTrain.speed(), mTrain.acceleration());
   }
 
   if (!mMouseCaptured) return;
@@ -339,7 +327,7 @@ int Application::run() {
     while (SDL_PollEvent(&e)) handleEvent(e);
 
     if (mMinimized) {
-      SDL_Delay(50); // CPU boş yere yakma
+      SDL_Delay(50);
       continue;
     }
 
@@ -347,7 +335,7 @@ int Application::run() {
       mRenderer.onResize();
       mResized = false;
     }
-    
+
     update(dt);
 
     mRenderer.beginEditorFrame();
@@ -368,9 +356,6 @@ int Application::run() {
       const float roadVibration =
           std::sin(static_cast<float>(nowNs) * 0.000006f) *
           (0.004f + std::clamp(mTrain.speed() / 22.2f, 0.0f, 1.0f) * 0.009f);
-      // Kamera kabinin içinde kalmamalı: ilk vagonun ön yüzünü biraz
-      // geçerek doğrudan ön cama bakar. Eski konum gövdenin içine giriyordu
-      // ve ekranda dev bir koyu blok oluşturuyordu.
       renderCamera.position =
           glm::vec3(motionSway, 1.48f + roadVibration,
                     -renderTrainPosition - 39.25f);
@@ -382,6 +367,7 @@ int Application::run() {
       renderCamera.yaw = -96.0f;
       renderCamera.pitch = -7.0f;
     }
+
     std::vector<glm::vec2> passengerPositions;
     const size_t waitingVisualCount = std::min<size_t>(mPassengers.waiting(), 32);
     passengerPositions.reserve(mPassengers.walkingAgents().size() +
@@ -389,8 +375,6 @@ int Application::run() {
     for (const auto& passenger : mPassengers.walkingAgents())
       passengerPositions.push_back(passenger.position(mPassengerNav));
 
-    // Kadıköy başlangıç peronunda bekleyen kalabalık: görsel temsil,
-    // simülasyondaki toplam bekleyen sayısını aşmaması için sınırlıdır.
     for (size_t i = 0; i < waitingVisualCount; ++i) {
       const size_t row = i / 4;
       const size_t col = i % 4;
@@ -398,6 +382,7 @@ int Application::run() {
       const float z = -12.0f - static_cast<float>(row) * 3.4f;
       passengerPositions.emplace_back(x, z);
     }
+
     std::vector<rhi::Renderer::EditorMarker> editorMarkers;
     if (mEditorMode) {
       editorMarkers.reserve(mEditorScene.visibleCount());
@@ -409,7 +394,8 @@ int Application::run() {
           continue;
 
         rhi::Renderer::EditorMarker marker{};
-        marker.position = node->transform.position + glm::vec3(0.0f, 0.55f, 0.0f);
+        marker.position = mEditorScene.worldPosition(entity) +
+                          glm::vec3(0.0f, 0.55f, 0.0f);
         const bool selected = entity == mEditorScene.selected();
         marker.scale = selected ? glm::vec3(0.42f) : glm::vec3(0.22f);
 
@@ -473,12 +459,11 @@ int Application::run() {
       lastStatsNs = nowNs;
     }
     if (autoExitSec > 0.0 && double(nowNs - startNs) / 1e9 >= autoExitSec) {
-      METRO_INFO("METRO_AUTO_EXIT (%.1fs) — cikiliyor", autoExitSec);
+      METRO_INFO("METRO_AUTO_EXIT (%.1fs) — cikiliyor");
       mRunning = false;
     }
   }
 
-  // Swapchain'a bağlı bekleyen işler olmadan yıkım.
   vkDeviceWaitIdle(mContext.device());
   shutdown();
   return 0;
