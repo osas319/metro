@@ -119,6 +119,9 @@ int main() {
   assert(signal.canEnter(1));
 
   metro::sim::PassengerSystem passengers(2);
+  passengers.reset(3);
+  assert(passengers.waiting() == 3);
+  assert(passengers.onboard() == 0);
   passengers.update(0.5f, true, true);
   assert(passengers.onboard() == 1);
   passengers.update(0.5f, true, true);
