@@ -2176,6 +2176,7 @@ void Renderer::recreateSwapchain() {
   // (swapchain'e yazan) geçiş bundan etkilenir.
   createDepthResources();
   createHdrResources();
+  createEditorBlurResources();
   createFrameUniforms();
 
   if (mSwapchain.format() != mSwapFormat) {
