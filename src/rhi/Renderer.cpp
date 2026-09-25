@@ -13,6 +13,123 @@
 
 namespace metro::rhi {
 
+std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
+    float trainPosition, const std::vector<bool>& occupiedBlocks,
+    const std::vector<glm::vec2>& passengerPositions) const {
+  std::vector<SceneInstance> instances;
+  instances.reserve(128);
+
+  const glm::vec3 o = mPlatformEdgePosition;
+  const float halfRoute = mRouteLength * 0.5f;
+
+  auto addBox = [&](glm::vec3 pos, glm::vec3 scale, glm::vec4 color,
+                    float roughness = 0.7f) {
+    SceneInstance s{};
+    s.transform = glm::scale(glm::translate(glm::mat4(1.0f), o + pos), scale);
+    s.color = color;
+    s.roughness = roughness;
+    instances.push_back(s);
+  };
+
+  // Ana tünel gövdesi: zemin, iki platform ve koyu tavan.
+  addBox({0.0f, -1.5f, -halfRoute},
+          {mPlatformWidth * 2.0f + 3.0f, 0.15f, halfRoute},
+          {0.22f, 0.25f, 0.30f, 1.0f}, 0.92f);
+  addBox({-mPlatformWidth, -0.2f, -halfRoute},
+          {mPlatformWidth * 0.95f, 0.30f, halfRoute},
+          {0.48f, 0.50f, 0.54f, 1.0f}, 0.78f);
+  addBox({mPlatformWidth, -0.2f, -halfRoute},
+          {mPlatformWidth * 0.95f, 0.30f, halfRoute},
+          {0.48f, 0.50f, 0.54f, 1.0f}, 0.78f);
+  addBox({0.0f, 4.0f, -halfRoute},
+          {9.0f, 0.15f, halfRoute},
+          {0.13f, 0.16f, 0.20f, 1.0f}, 0.96f);
+
+  // Raylar ve traversler.
+  for (float x : {-mTrackGauge * 0.5f, mTrackGauge * 0.5f}) {
+    addBox({x, -1.24f, -halfRoute}, {0.055f, 0.055f, halfRoute},
+           {0.72f, 0.74f, 0.78f, 1.0f}, 0.28f);
+  }
+  for (float z = -2.0f; z > -mRouteLength; z -= 2.0f)
+    addBox({0.0f, -1.27f, z}, {1.0f, 0.035f, 0.10f},
+           {0.26f, 0.28f, 0.30f, 1.0f}, 0.85f);
+
+  // Kolonlar ve üst kirişler: gerçek asset gelene kadar istasyonun ritmini verir.
+  for (float z = -mColumnSpacing; z > -mRouteLength; z -= mColumnSpacing) {
+    for (float x : {-mPlatformWidth - 3.0f, mPlatformWidth + 3.0f})
+      addBox({x, 1.2f, z}, {0.35f, 2.8f, 0.35f},
+             {0.34f, 0.36f, 0.40f, 1.0f}, 0.72f);
+    addBox({0.0f, 3.55f, z}, {mPlatformWidth + 3.5f, 0.18f, 0.30f},
+           {0.27f, 0.29f, 0.34f, 1.0f}, 0.82f);
+  }
+
+  // Peron kenar güvenlik şeridi.
+  addBox({-mPlatformWidth + 0.10f, 0.14f, -halfRoute},
+         {0.08f, 0.035f, halfRoute}, {0.95f, 0.70f, 0.08f, 1.0f}, 0.45f);
+  addBox({mPlatformWidth - 0.10f, 0.14f, -halfRoute},
+         {0.08f, 0.035f, halfRoute}, {0.95f, 0.70f, 0.08f, 1.0f}, 0.45f);
+
+  // Kadıköy peronundaki tabela/aydınlatma ritmi.
+  for (float z = -12.0f; z > -mRouteLength; z -= 24.0f) {
+    for (float x : {-mPlatformWidth + 0.7f, mPlatformWidth - 0.7f}) {
+      addBox({x, 2.65f, z}, {0.08f, 0.08f, 0.08f},
+             {0.85f, 0.92f, 1.0f, 1.0f}, 0.25f);
+      addBox({x, 2.45f, z}, {0.45f, 0.025f, 0.06f},
+             {0.12f, 0.38f, 0.55f, 1.0f}, 0.35f);
+    }
+  }
+
+  // Her gerçek stop için sinyal direği + durak işareti.
+  for (size_t i = 0; i < mStopPositions.size(); ++i) {
+    const float p = mStopPositions[i];
+    if (p < 0.0f || p > mRouteLength) continue;
+    const bool terminal = i + 1 == mStopPositions.size();
+    const bool nextStop = p > trainPosition + 0.5f &&
+                          (i == 0 || mStopPositions[i - 1] <= trainPosition + 0.5f);
+    const glm::vec4 signalColor =
+        terminal ? glm::vec4(0.90f, 0.18f, 0.10f, 1.0f)
+        : nextStop ? glm::vec4(0.10f, 0.85f, 0.95f, 1.0f)
+                   : glm::vec4(0.90f, 0.65f, 0.08f, 1.0f);
+    addBox({mPlatformWidth + 1.0f, 0.9f, -p},
+           {0.10f, 0.9f, 0.10f}, signalColor, 0.35f);
+    addBox({mPlatformWidth + 1.0f, 1.85f, -p},
+           {0.25f, 0.18f, 0.08f}, signalColor, 0.25f);
+    addBox({-mPlatformWidth - 0.9f, 2.4f, -p},
+           {0.9f, 0.55f, 0.06f}, {0.04f, 0.30f, 0.48f, 1.0f}, 0.45f);
+  }
+
+  // Blok sinyalleri.
+  const float blockLength = mRouteLength / static_cast<float>(std::max<size_t>(mBlockCount, 1));
+  for (size_t block = 0; block < mBlockCount; ++block) {
+    const float p = blockLength * static_cast<float>(block);
+    const bool occupied = block < occupiedBlocks.size() && occupiedBlocks[block];
+    addBox({-mPlatformWidth - 1.25f, 1.0f, -p},
+           {0.12f, 1.0f, 0.12f},
+           occupied ? glm::vec4(0.88f, 0.08f, 0.06f, 1.0f)
+                    : glm::vec4(0.08f, 0.80f, 0.25f, 1.0f), 0.30f);
+  }
+
+  // Placeholder CAF tren gövdesi: uzun gövde + çatı + iki bojiyi temsil eder.
+  addBox({0.0f, 0.05f, -trainPosition},
+         {mTrainWidth * 0.52f, mTrainHeight * 0.52f, mTrackGauge * 1.55f},
+         {0.06f, 0.30f, 0.58f, 1.0f}, 0.52f);
+  addBox({0.0f, 1.75f, -trainPosition},
+         {mTrainWidth * 0.47f, 0.18f, mTrackGauge * 1.40f},
+         {0.74f, 0.76f, 0.80f, 1.0f}, 0.32f);
+  for (float z : {-trainPosition - 0.95f, -trainPosition + 0.95f})
+    addBox({0.0f, -0.75f, z}, {mTrainWidth * 0.38f, 0.16f, 0.28f},
+           {0.12f, 0.13f, 0.15f, 1.0f}, 0.70f);
+
+  // Yürüyen yolcular.
+  for (const glm::vec2& p : passengerPositions) {
+    addBox({p.x, 0.25f, p.y}, {0.16f, 0.50f, 0.16f},
+           {0.16f, 0.62f, 0.80f, 1.0f}, 0.82f);
+  }
+
+  return instances;
+}
+
+
 // SPIR-V dizini: ortam değişkeniyle ezilebilir; varsayılan CMake tanımı.
 static std::string shaderDir() {
   if (const char* env = std::getenv("METRO_SHADER_DIR")) return env;
@@ -829,107 +946,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
   vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1,
                           &mDescriptorSets[imageIndex], 0, nullptr);
 
-  // Geçici istasyon: gerçek asset'ler gelene kadar aynı glTF mesh'i zemin,
-  // peron ve tavan placeholder'larına dönüştürülür.
-  struct SceneInstance {
-    glm::mat4 transform;
-    glm::vec4 color;
-    float roughness;
-  };
-  const glm::vec3 sceneOffset = mPlatformEdgePosition;
-  std::vector<SceneInstance> instances = {
-      {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(0.0f, -1.5f, -mRouteLength * 0.5f)),
-                  glm::vec3(mPlatformWidth * 2.0f + 2.0f, 0.15f,
-                            mRouteLength * 0.5f)),
-       glm::vec4(0.32f, 0.36f, 0.42f, 1.0f), 0.9f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(-mPlatformWidth, -0.2f, -mRouteLength * 0.5f)),
-                  glm::vec3(0.8f, 0.3f, mRouteLength * 0.5f)),
-       glm::vec4(0.55f, 0.58f, 0.62f, 1.0f), 0.75f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(mPlatformWidth, -0.2f, -mRouteLength * 0.5f)),
-                  glm::vec3(0.8f, 0.3f, mRouteLength * 0.5f)),
-       glm::vec4(0.55f, 0.58f, 0.62f, 1.0f), 0.75f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(0.0f, 4.0f, -mRouteLength * 0.5f)),
-                  glm::vec3(10.0f, 0.15f, mRouteLength * 0.5f)),
-       glm::vec4(0.20f, 0.24f, 0.30f, 1.0f), 0.95f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(-mTrackGauge * 0.5f, -1.25f, -mRouteLength * 0.5f)),
-                  glm::vec3(0.08f, 0.08f, mRouteLength * 0.5f)),
-       glm::vec4(0.72f, 0.74f, 0.78f, 1.0f), 0.35f},
-      {glm::scale(glm::translate(glm::mat4(1.0f), sceneOffset + glm::vec3(mTrackGauge * 0.5f, -1.25f, -mRouteLength * 0.5f)),
-                  glm::vec3(0.08f, 0.08f, mRouteLength * 0.5f)),
-       glm::vec4(0.72f, 0.74f, 0.78f, 1.0f), 0.35f},
-      {glm::scale(
-           glm::translate(glm::mat4(1.0f),
-                          mStopPosition + glm::vec3(0.0f, -0.65f, -trainPosition)),
-           glm::vec3(mTrainWidth, mTrainHeight, mTrackGauge * 1.6f)),
-       glm::vec4(0.12f, 0.42f, 0.85f, 1.0f), 0.55f},
-  };
-  for (float z = -mColumnSpacing; z > -mRouteLength;
-       z -= mColumnSpacing) {
-    for (float x : {-mPlatformWidth - 3.0f, mPlatformWidth + 3.0f}) {
-      instances.push_back(
-          {glm::scale(
-               glm::translate(glm::mat4(1.0f),
-                              sceneOffset + glm::vec3(x, 1.2f, z)),
-               glm::vec3(0.35f, 2.8f, 0.35f)),
-           glm::vec4(0.38f, 0.40f, 0.44f, 1.0f), 0.8f});
-    }
-  }
-  for (size_t stopIndex = 0; stopIndex < mStopPositions.size(); ++stopIndex) {
-    const float stopPosition = mStopPositions[stopIndex];
-    if (stopPosition < 0.0f || stopPosition > mRouteLength) continue;
-    const bool terminal = stopIndex + 1 == mStopPositions.size();
-    const bool nextStop = stopPosition > trainPosition + 0.5f &&
-                          (stopIndex == 0 ||
-                           mStopPositions[stopIndex - 1] <= trainPosition + 0.5f);
-    instances.push_back(
-        {glm::scale(
-             glm::translate(
-                 glm::mat4(1.0f),
-                 sceneOffset + glm::vec3(mPlatformWidth + 1.0f, 1.5f,
-                                         -stopPosition)),
-             glm::vec3(0.18f, 1.5f, 0.18f)),
-         terminal ? glm::vec4(0.90f, 0.18f, 0.10f, 1.0f)
-                  : nextStop ? glm::vec4(0.15f, 0.85f, 1.0f, 1.0f)
-                  : glm::vec4(0.95f, 0.65f, 0.08f, 1.0f),
-         0.4f});
-    instances.push_back(
-        {glm::scale(
-             glm::translate(
-                 glm::mat4(1.0f),
-                 sceneOffset + glm::vec3(-mPlatformWidth - 0.8f, 2.8f,
-                                         -stopPosition)),
-             glm::vec3(0.08f, 0.08f, 0.08f)),
-         terminal ? glm::vec4(1.0f, 0.18f, 0.08f, 1.0f)
-                  : nextStop ? glm::vec4(0.20f, 0.90f, 1.0f, 1.0f)
-                  : glm::vec4(1.0f, 0.82f, 0.18f, 1.0f),
-         0.25f});
-  }
-  const float blockLength = mRouteLength / static_cast<float>(mBlockCount);
-  for (size_t block = 0; block < mBlockCount; ++block) {
-    const float signalPosition = blockLength * static_cast<float>(block);
-    const bool occupied =
-        block < occupiedBlocks.size() && occupiedBlocks[block];
-    instances.push_back(
-        {glm::scale(
-             glm::translate(
-                 glm::mat4(1.0f),
-                 sceneOffset +
-                     glm::vec3(-mPlatformWidth - 1.2f, 1.0f,
-                               -signalPosition)),
-             glm::vec3(0.12f, 1.0f, 0.12f)),
-         occupied ? glm::vec4(0.88f, 0.10f, 0.08f, 1.0f)
-                  : glm::vec4(0.10f, 0.82f, 0.30f, 1.0f),
-         0.35f});
-  }
-  for (const glm::vec2& passenger : passengerPositions) {
-    instances.push_back(
-        {glm::scale(
-             glm::translate(glm::mat4(1.0f),
-                sceneOffset +
-                    glm::vec3(passenger.x, 0.25f, passenger.y)),
-             glm::vec3(0.16f, 0.5f, 0.16f)),
-         glm::vec4(0.20f, 0.75f, 0.95f, 1.0f), 0.8f});
-  }
+  const std::vector<SceneInstance> instances =
+      buildKadikoyScene(trainPosition, occupiedBlocks, passengerPositions);
   mModel.bind(cmd);
   for (const SceneInstance& instance : instances) {
     for (size_t i = 0; i < mModel.subMeshCount(); ++i) {
