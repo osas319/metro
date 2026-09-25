@@ -139,11 +139,11 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
 
   for (float x : {-mTrackGauge * 0.5f, mTrackGauge * 0.5f}) {
     addBox({x, -1.34f, -halfRoute}, {0.12f, 0.10f, halfRoute},
-           {0.32f, 0.34f, 0.38f, 1.0f}, 0.52f, 10.0f);
+           {0.20f, 0.22f, 0.25f, 1.0f}, 0.72f, 6.0f);
     addBox({x, -1.24f, -halfRoute}, {0.075f, 0.12f, halfRoute},
-           {0.48f, 0.50f, 0.53f, 1.0f}, 0.20f, 10.0f);
+           {0.38f, 0.39f, 0.41f, 1.0f}, 0.34f, 14.0f);
     addBox({x, -1.16f, -halfRoute}, {0.105f, 0.055f, halfRoute},
-           {0.64f, 0.66f, 0.69f, 1.0f}, 0.16f, 10.0f);
+           {0.58f, 0.60f, 0.63f, 1.0f}, 0.17f, 14.0f);
   }
 
   const float firstTraverse = std::floor(visibleStart / 2.0f) * 2.0f;
