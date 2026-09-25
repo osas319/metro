@@ -11,6 +11,7 @@
 
 #include <vector>
 #include <string>
+#include <cstdint>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
@@ -94,11 +95,19 @@ private:
   VkShaderModule loadShader(const char* filename);
   VkFormat pickDepthFormat() const;
 
+  enum class SceneModel : uint8_t {
+    Box,
+    TrainCar,
+    StationModule
+  };
+
   struct SceneInstance {
     glm::mat4 transform{1.0f};
     glm::vec4 color{1.0f};
     float roughness = 0.7f;
     float materialId = 0.0f;
+    SceneModel model = SceneModel::Box;
+    bool useModelMaterial = false;
   };
 
   // Kadıköy sahnesini veri tabanlı placeholder geometriyle kurar.
@@ -150,6 +159,8 @@ private:
   std::vector<VkDescriptorSet> mDescriptorSets;
 
   Model mModel;
+  Model mTrainCarModel;
+  Model mStationModuleModel;
   float mRouteLength = 2000.0f;
   float mPlatformWidth = 4.0f;
   float mTrackGauge = 2.4f;
