@@ -352,32 +352,38 @@ std::vector<BuiltinPart> makeTunnelModuleParts() {
   std::vector<BuiltinPart> parts;
 
   BuiltinPart wall;
-  wall.color = {0.17f, 0.19f, 0.22f, 1.0f};
-  wall.roughness = 0.92f;
-  addBox(wall, {-4.25f, 1.25f, 0.0f}, {0.24f, 3.10f, 30.0f});
-  addBox(wall, {4.25f, 1.25f, 0.0f}, {0.24f, 3.10f, 30.0f});
+  wall.color = {0.12f, 0.14f, 0.17f, 1.0f};
+  wall.roughness = 0.96f;
+  wall.materialId = 12.0f;
+  addBox(wall, {-3.36f, -0.28f, 0.0f}, {0.30f, 0.95f, 30.0f});
+  addBox(wall, { 3.36f, -0.28f, 0.0f}, {0.30f, 0.95f, 30.0f});
   parts.push_back(std::move(wall));
 
   BuiltinPart arch;
-  arch.color = {0.13f, 0.15f, 0.18f, 1.0f};
-  arch.roughness = 0.95f;
+  arch.color = {0.10f, 0.115f, 0.14f, 1.0f};
+  arch.roughness = 0.96f;
   arch.materialId = 12.0f;
 
-  // Düz kutu tavan kaldırıldı: tünel kesiti artık yuvarlak/yarım silindir.
-  // Böylece oyuncu ray ekseninde ilerlerken tavanın gerçek eğrisini görür.
-  addTunnelCeiling(arch, 4.05f, -0.05f, 30.0f, 32);
-
-  // Kesitin iki yanındaki alt dikey duvarlar.
-  addBox(arch, {-4.03f, -0.30f, 0.0f}, {0.30f, 0.80f, 30.0f});
-  addBox(arch, { 4.03f, -0.30f, 0.0f}, {0.30f, 0.80f, 30.0f});
+  // Daha küçük bore: yarıçap ~3.35 m; ray çevresinde daha sıkı gerçek tünel hissi.
+  addTunnelCeiling(arch, 3.35f, -0.18f, 30.0f, 40);
   parts.push_back(std::move(arch));
 
+  // Tünelin yürüyüş/bakım yolları dar ve alçak; geniş platform gibi görünmez.
   BuiltinPart walkway;
-  walkway.color = {0.28f, 0.30f, 0.32f, 1.0f};
-  walkway.roughness = 0.90f;
-  addBox(walkway, {-2.15f, -0.28f, 0.0f}, {1.45f, 0.20f, 30.0f});
-  addBox(walkway, {2.15f, -0.28f, 0.0f}, {1.45f, 0.20f, 30.0f});
+  walkway.color = {0.18f, 0.20f, 0.23f, 1.0f};
+  walkway.roughness = 0.92f;
+  walkway.materialId = 6.0f;
+  addBox(walkway, {-2.58f, -1.02f, 0.0f}, {0.42f, 0.30f, 30.0f});
+  addBox(walkway, {2.58f, -1.02f, 0.0f}, {0.42f, 0.30f, 30.0f});
+
+  // Sürekli beton zemin: ray yatağının altında boşluk kalmaz.
+  BuiltinPart floor;
+  floor.color = {0.075f, 0.085f, 0.10f, 1.0f};
+  floor.roughness = 0.98f;
+  floor.materialId = 6.0f;
+  addBox(floor, {0.0f, -1.64f, 0.0f}, {6.35f, 0.24f, 30.0f});
   parts.push_back(std::move(walkway));
+  parts.push_back(std::move(floor));
 
   BuiltinPart cable;
   cable.color = {0.08f, 0.09f, 0.11f, 1.0f};
@@ -408,67 +414,64 @@ std::vector<BuiltinPart> makeStationModuleParts() {
   std::vector<BuiltinPart> parts;
   constexpr float moduleLength = 30.0f;
 
-  // Zemin / granit platform kaplamasi.
+  // Yalnızca SOL tarafta yolcu platformu; sağ taraf tamamen ray/tünel alanıdır.
+  constexpr float platformSide = -1.0f;
   BuiltinPart platform;
   platform.color = {0.43f, 0.45f, 0.46f, 1.0f};
   platform.roughness = 0.82f;
   platform.materialId = 9.0f;
-  for (float side : {-1.0f, 1.0f})
-    addBox(platform, {side * 2.55f, -0.56f, 0.0f}, {3.40f, 1.00f, moduleLength});
+  addBox(platform, {platformSide * 2.55f, -0.56f, 0.0f},
+         {3.40f, 1.00f, moduleLength});
   parts.push_back(std::move(platform));
 
-  // Platform kenar tasi ve sari guvenlik seridi.
+  // Sol platform kenarı ve sarı güvenlik çizgisi.
   BuiltinPart edge;
   edge.color = {0.68f, 0.70f, 0.70f, 1.0f};
   edge.roughness = 0.64f;
   edge.materialId = 3.0f;
-  for (float side : {-1.0f, 1.0f})
-    addBox(edge, {side * 0.94f, -0.02f, 0.0f}, {0.15f, 0.12f, 29.7f});
+  addBox(edge, {platformSide * 0.94f, -0.02f, 0.0f},
+         {0.15f, 0.12f, 29.7f});
   parts.push_back(std::move(edge));
 
   BuiltinPart safety;
   safety.color = {0.98f, 0.70f, 0.06f, 1.0f};
   safety.roughness = 0.34f;
   safety.materialId = 7.0f;
-  for (float side : {-1.0f, 1.0f})
-    addBox(safety, {side * 0.90f, 0.055f, 0.0f}, {0.045f, 0.025f, 29.0f});
+  addBox(safety, {platformSide * 0.90f, 0.055f, 0.0f},
+         {0.045f, 0.025f, 29.0f});
   parts.push_back(std::move(safety));
 
-  // Beton / seramik duvar.
+  // İstasyonda sol arka duvar; sağ tarafta istasyon duvarı yok, tünel devam ediyor.
   BuiltinPart wall;
   wall.color = {0.72f, 0.73f, 0.71f, 1.0f};
   wall.roughness = 0.76f;
   wall.materialId = 12.0f;
-  for (float side : {-1.0f, 1.0f})
-    addBox(wall, {side * 4.35f, 1.55f, 0.0f}, {0.24f, 3.45f, moduleLength});
+  addBox(wall, {platformSide * 4.35f, 1.55f, 0.0f},
+         {0.24f, 3.45f, moduleLength});
   parts.push_back(std::move(wall));
 
-  // Duvar plaka derzleri.
+  // Sol duvar plakaları/derzleri.
   BuiltinPart wallTiles;
   wallTiles.color = {0.55f, 0.57f, 0.57f, 1.0f};
   wallTiles.roughness = 0.52f;
   wallTiles.materialId = 12.0f;
-  for (float side : {-1.0f, 1.0f}) {
-    for (float z = -14.0f; z <= 14.0f; z += 2.5f)
-      addBox(wallTiles, {side * 4.215f, 1.55f, z},
-             {0.025f, 3.28f, 0.025f});
-    addBox(wallTiles, {side * 4.215f, 2.55f, 0.0f},
-           {0.025f, 0.025f, moduleLength});
-  }
+  for (float z = -14.0f; z <= 14.0f; z += 2.5f)
+    addBox(wallTiles, {platformSide * 4.215f, 1.55f, z},
+           {0.025f, 3.28f, 0.025f});
+  addBox(wallTiles, {platformSide * 4.215f, 2.55f, 0.0f},
+         {0.025f, 0.025f, moduleLength});
   parts.push_back(std::move(wallTiles));
 
-  // M4 mavi yonlendirme / mimari aks.
+  // M4 mavi yönlendirme aksı yalnızca yolcu tarafında.
   BuiltinPart wallAccent;
   wallAccent.color = {0.030f, 0.20f, 0.42f, 1.0f};
   wallAccent.roughness = 0.38f;
   wallAccent.materialId = 7.0f;
-  for (float side : {-1.0f, 1.0f}) {
-    addBox(wallAccent, {side * 4.20f, 0.92f, 0.0f},
-           {0.035f, 0.22f, moduleLength});
-    for (float z = -11.0f; z <= 11.0f; z += 11.0f)
-      addBox(wallAccent, {side * 4.16f, 1.72f, z},
-             {0.04f, 1.55f, 0.12f});
-  }
+  addBox(wallAccent, {platformSide * 4.20f, 0.92f, 0.0f},
+         {0.035f, 0.22f, moduleLength});
+  for (float z = -11.0f; z <= 11.0f; z += 11.0f)
+    addBox(wallAccent, {platformSide * 4.16f, 1.72f, z},
+           {0.04f, 1.55f, 0.12f});
   parts.push_back(std::move(wallAccent));
 
   // Tavan: moduler alçı panel + taşıyici traversler.
@@ -498,7 +501,8 @@ std::vector<BuiltinPart> makeStationModuleParts() {
   furniture.color = {0.09f, 0.12f, 0.15f, 1.0f};
   furniture.roughness = 0.62f;
   furniture.materialId = 3.0f;
-  for (float side : {-1.0f, 1.0f}) {
+  {
+    const float side = -1.0f;
     addBox(furniture, {side * 2.65f, 0.12f, -9.0f},
            {1.05f, 0.10f, 1.95f});
     addBox(furniture, {side * 2.65f, 0.50f, -9.0f},
@@ -513,8 +517,7 @@ std::vector<BuiltinPart> makeStationModuleParts() {
   tactile.color = {0.70f, 0.70f, 0.66f, 1.0f};
   tactile.roughness = 0.74f;
   tactile.materialId = 9.0f;
-  for (float side : {-1.0f, 1.0f})
-    addBox(tactile, {side * 1.07f, 0.015f, 0.0f}, {0.12f, 0.045f, 29.0f});
+  addBox(tactile, {-1.07f, 0.015f, 0.0f}, {0.12f, 0.045f, 29.0f});
   parts.push_back(std::move(tactile));
 
   // LED armaturlari.
@@ -522,7 +525,7 @@ std::vector<BuiltinPart> makeStationModuleParts() {
   lights.color = {1.0f, 0.92f, 0.78f, 1.0f};
   lights.roughness = 0.16f;
   lights.materialId = 5.0f;
-  for (float side : {-2.45f, 2.45f})
+  for (float side : {-2.45f})
     for (float z = -12.0f; z <= 12.0f; z += 6.0f)
       addBox(lights, {side, 3.76f, z}, {0.22f, 0.045f, 3.8f});
   parts.push_back(std::move(lights));
