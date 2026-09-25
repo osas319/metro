@@ -548,6 +548,8 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
 
   const ImVec2 windowPos = ImGui::GetWindowPos();
   const ImVec2 windowSize = ImGui::GetWindowSize();
+  mViewportMin = {windowPos.x, windowPos.y};
+  mViewportMax = {windowPos.x + windowSize.x, windowPos.y + windowSize.y};
   ImGuiIO& io = ImGui::GetIO();
 
   ImGui::SetCursorPos({0.0f, 0.0f});
