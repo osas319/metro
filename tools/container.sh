@@ -46,6 +46,27 @@ if [[ -n "${METRO_STATION_MANIFEST:-}" ]]; then
   run_args+=(-e "METRO_STATION_MANIFEST=${METRO_STATION_MANIFEST}")
 fi
 
+ensure_submodules() {
+  if [[ ! -d "${ROOT}/.git" && ! -f "${ROOT}/.git" ]]; then
+    echo "HATA: Git metadata bulunamadı (${ROOT}/.git)." >&2
+    echo "Repo'yu git clone ile aldıktan sonra tekrar çalıştırın." >&2
+    return 1
+  fi
+
+  echo "Metro third_party submodule'leri hazırlanıyor..."
+  podman run --rm \
+    --userns=keep-id \
+    -v "${ROOT}:/work" \
+    -w /work \
+    "${IMAGE}" \
+    git submodule sync --recursive
+  podman run --rm \
+    --userns=keep-id \
+    -v "${ROOT}:/work" \
+    -w /work \
+    "${IMAGE}" \
+    git submodule update --init --recursive
+}
 usage() {
   cat <<EOF
 Kullanım: tools/container.sh <komut> [arg]
@@ -63,15 +84,19 @@ cmd="${1:-}"; [[ $# -gt 0 ]] && shift
 
 case "${cmd}" in
   image)      podman build -t "${IMAGE}" "${ROOT}" ;;
-  configure)  podman run "${run_args[@]}" "${IMAGE}" \
+  configure)  ensure_submodules
+              podman run "${run_args[@]}" "${IMAGE}" \
                 cmake -S /work -B /work/build -G Ninja \
                 -DCMAKE_BUILD_TYPE="${1:-Debug}" ;;
-  build)      podman run "${run_args[@]}" "${IMAGE}" \
+  build)      ensure_submodules
+              podman run "${run_args[@]}" "${IMAGE}" \
                 cmake --build /work/build -j"$(nproc)" "$@" ;;
-  test)       podman run "${run_args[@]}" "${IMAGE}" \
+  test)       ensure_submodules
+              podman run "${run_args[@]}" "${IMAGE}" \
                 ctest --test-dir /work/build --output-on-failure "$@" ;;
   shell)      podman run -it "${run_args[@]}" "${IMAGE}" ;;
-  run)        podman run "${run_args[@]}" "${IMAGE}" /work/build/metro "$@" ;;
+  run)        ensure_submodules
+              podman run "${run_args[@]}" "${IMAGE}" /work/build/metro "$@" ;;
   vulkaninfo) podman run "${run_args[@]}" "${IMAGE}" vulkaninfo --summary ;;
   *)          usage; exit 1 ;;
 esac
