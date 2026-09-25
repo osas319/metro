@@ -102,19 +102,19 @@ ProjectedPoint projectWorldPoint(const app::Camera& camera,
 
 float distanceToSegment(const ImVec2& point, const ImVec2& a, const ImVec2& b,
                         float* outT = nullptr) {
-  const ImVec2 ab = b - a;
+  const ImVec2 ab{b.x - a.x, b.y - a.y};
   const float ab2 = ab.x * ab.x + ab.y * ab.y;
   if (ab2 <= 0.001f) {
     if (outT) *outT = 0.0f;
-    const ImVec2 d = point - a;
+    const ImVec2 d{point.x - a.x, point.y - a.y};
     return std::sqrt(d.x * d.x + d.y * d.y);
   }
 
-  const ImVec2 ap = point - a;
+  const ImVec2 ap{point.x - a.x, point.y - a.y};
   const float t = std::clamp((ap.x * ab.x + ap.y * ab.y) / ab2, 0.0f, 1.0f);
   if (outT) *outT = t;
-  const ImVec2 closest = a + ab * t;
-  const ImVec2 d = point - closest;
+  const ImVec2 closest{a.x + ab.x * t, a.y + ab.y * t};
+  const ImVec2 d{point.x - closest.x, point.y - closest.y};
   return std::sqrt(d.x * d.x + d.y * d.y);
 }
 
@@ -603,7 +603,8 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
                               scene.worldPosition(entity));
         if (!point.visible)
           continue;
-        const ImVec2 d = mouse - point.screen;
+        const ImVec2 d{mouse.x - point.screen.x,
+                       mouse.y - point.screen.y};
         const float distance = std::sqrt(d.x * d.x + d.y * d.y);
         if (distance < nearest) {
           nearest = distance;
@@ -636,7 +637,8 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
             projectWorldPoint(camera, windowPos, windowSize,
                               originWorld + axis * 2.0f);
         if (origin.visible && endpoint.visible) {
-          const ImVec2 screenAxis = endpoint.screen - origin.screen;
+          const ImVec2 screenAxis{endpoint.screen.x - origin.screen.x,
+                                  endpoint.screen.y - origin.screen.y};
           const float pixelsPerUnit =
               std::sqrt(screenAxis.x * screenAxis.x +
                         screenAxis.y * screenAxis.y) / 2.0f;
@@ -724,7 +726,8 @@ void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
           drawList->AddLine(origin.screen, endpoint.screen, colors[axis],
                              axis == mGizmoAxis ? 5.0f : 3.0f);
           drawList->AddCircleFilled(endpoint.screen, 6.0f, colors[axis]);
-          drawList->AddText(endpoint.screen + ImVec2(7.0f, -7.0f),
+          drawList->AddText(ImVec2(endpoint.screen.x + 7.0f,
+                                   endpoint.screen.y - 7.0f),
                             colors[axis], labels[axis]);
         }
       }
@@ -815,7 +818,9 @@ void UI::drawGameplayHUD(float trainSpeedMps, float trainPosition,
   ImGui::Text("%.0f", speedKmh);
   ImGui::SameLine();
   ImGui::TextDisabled("km/h");
-  ImGui::ProgressBar(progress, {260.0f, 16.0f}, "M4  %3.0f%%");
+  char progressLabel[32];
+  std::snprintf(progressLabel, sizeof(progressLabel), "M4  %3.0f%%", progress * 100.0f);
+  ImGui::ProgressBar(progress, {260.0f, 16.0f}, progressLabel);
   ImGui::EndGroup();
 
   ImGui::SetCursorPos({size.x * 0.5f - 150.0f, 18.0f});
