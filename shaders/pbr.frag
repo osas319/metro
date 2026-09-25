@@ -1,7 +1,7 @@
 #version 450
 // Cook-Torrance PBR (metallic-roughness): D(GGX) + Smith geometrisi +
-// Schlick Fresnel. Tek yönlü ışık + hafif ambient; doku yok — faktörler
-// push-constant'tan. HDR offscreen hedefe (kHdrFormat) yazar; ACES tonemap
+// Schlick Fresnel. Gerçek sRGB malzeme texture array'i + push-constant faktörleri
+// birlikte kullanılır. HDR offscreen hedefe (kHdrFormat) yazar; ACES tonemap
 // artık ayrı bir post-process geçişinde (tonemap.frag) uygulanıyor, bu
 // yüzden burada ışık şiddetini 1.0 üstüne çıkarmaktan çekinmeye gerek yok —
 // parlak alanlar sert kırpılmak yerine ACES eğrisiyle yumuşak biçimde
@@ -286,9 +286,9 @@ void main() {
     // Tünel atmosferi: uzak geometriyi yumuşatıp sahne derinliği sağlar.
     const vec3 tunnelFogColor = vec3(0.0015, 0.0020, 0.0035);
     float cameraDistance = distance(frame.cameraPos.xyz, vWorldPos);
-    // Oyuncunun uzağı net şekilde göremediği yoğun tünel sisi.
-    // 35 m'den sonra hızla kapanır, 90 m civarında neredeyse siyaha iner.
-    float fogFactor = 1.0 - smoothstep(30.0, 90.0, cameraDistance);
+    // Tünelin atmosferini korurken tren/gövde ve rayların orta mesafede
+    // kaybolmasını önle. Uzak geometri yavaşça siyaha karışsın.
+    float fogFactor = 1.0 - smoothstep(55.0, 170.0, cameraDistance);
     fogFactor *= fogFactor;
     color = mix(tunnelFogColor, color, fogFactor);
 
