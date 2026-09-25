@@ -65,6 +65,7 @@ private:
   std::filesystem::path mContentPath = "assets";
   entt::entity mGizmoEntity{entt::null};
   int mGizmoAxis = -1;
+  bool mViewportHovered = false;
 };
 
 } // namespace metro::editor
