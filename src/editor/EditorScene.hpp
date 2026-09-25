@@ -45,6 +45,9 @@ public:
   glm::mat4 worldTransform(entt::entity entity) const;
   glm::vec3 worldPosition(entt::entity entity) const;
 
+  // Parent değiştirirken entity'nin çocuklarından birinin altına taşınmasını engeller.
+  bool setParent(entt::entity entity, entt::entity parent);
+
   const std::vector<entt::entity>& order() const { return mOrder; }
   entt::entity selected() const { return mSelected; }
   void select(entt::entity entity) { mSelected = entity; }
@@ -57,6 +60,7 @@ public:
 
 private:
   glm::mat4 localTransform(const SceneEntity& node) const;
+  bool isDescendant(entt::entity entity, entt::entity possibleParent) const;
 
   entt::registry mRegistry;
   std::vector<entt::entity> mOrder;
