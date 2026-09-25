@@ -130,21 +130,26 @@ void Application::handleEvent(const SDL_Event& e) {
       mResized = true;
       break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
-      // Free-look: sağ veya orta mouse basılı tutulurken kamera başı döner.
-      // Editörde MMB orbit/pan için ImGui tarafından işlenir.
-      if (!mEditorMode &&
-          (e.button.button == SDL_BUTTON_RIGHT ||
-           e.button.button == SDL_BUTTON_MIDDLE) &&
-          !mRenderer.editorWantsMouse()) {
+      if (mEditorMode) {
+        if (e.button.button == SDL_BUTTON_RIGHT &&
+            mEditorUI.viewportHovered() &&
+            !mRenderer.editorWantsKeyboard()) {
+          mEditorOrbitHeld = true;
+        }
+      } else if ((e.button.button == SDL_BUTTON_RIGHT ||
+                  e.button.button == SDL_BUTTON_MIDDLE) &&
+                 !mRenderer.editorWantsMouse()) {
         mMouseCaptured = true;
         mCameraViewMode = CameraViewMode::Free;
         SDL_SetWindowRelativeMouseMode(mWindow, true);
       }
       break;
     case SDL_EVENT_MOUSE_BUTTON_UP:
-      if (!mEditorMode &&
-          (e.button.button == SDL_BUTTON_RIGHT ||
-           e.button.button == SDL_BUTTON_MIDDLE)) {
+      if (mEditorMode) {
+        if (e.button.button == SDL_BUTTON_RIGHT)
+          mEditorOrbitHeld = false;
+      } else if (e.button.button == SDL_BUTTON_RIGHT ||
+                 e.button.button == SDL_BUTTON_MIDDLE) {
         mMouseCaptured = false;
         SDL_SetWindowRelativeMouseMode(mWindow, false);
       }
@@ -154,6 +159,7 @@ void Application::handleEvent(const SDL_Event& e) {
         mEditorMode = !mEditorMode;
         mPlayMode = false;
         mMouseCaptured = false;
+        mEditorOrbitHeld = false;
         mCameraViewMode = CameraViewMode::Free;
         SDL_SetWindowRelativeMouseMode(mWindow, false);
       } else if (e.key.key == SDLK_F5) {
@@ -253,8 +259,9 @@ void Application::handleEvent(const SDL_Event& e) {
         mCameraViewMode = CameraViewMode::Free;
         mMouseCaptured = true;
         SDL_SetWindowRelativeMouseMode(mWindow, true);
-      } else if (e.key.key == SDLK_ESCAPE && mMouseCaptured) {
+      } else if (e.key.key == SDLK_ESCAPE && (mMouseCaptured || mEditorOrbitHeld)) {
         mMouseCaptured = false;
+        mEditorOrbitHeld = false;
         SDL_SetWindowRelativeMouseMode(mWindow, false);
       }
       break;
@@ -265,12 +272,10 @@ void Application::handleEvent(const SDL_Event& e) {
         mEmergencyBrakeHeld = false;
       break;
     case SDL_EVENT_MOUSE_MOTION:
-      if (mMouseCaptured) {
+      if (mMouseCaptured || mEditorOrbitHeld) {
         mCamera.yaw += e.motion.xrel * mCamera.mouseSensitivity;
         mCamera.pitch -= e.motion.yrel * mCamera.mouseSensitivity;
-
-        if (mCamera.pitch > 89.0f) mCamera.pitch = 89.0f;
-        if (mCamera.pitch < -89.0f) mCamera.pitch = -89.0f;
+        mCamera.pitch = std::clamp(mCamera.pitch, -89.0f, 89.0f);
       }
       break;
     default:
