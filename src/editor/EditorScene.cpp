@@ -203,16 +203,45 @@ void Scene::createDefaultScene() {
   const auto world = create("M4 World", "Scene");
   const auto route = create("M4 Route", "Folder", world);
 
-  const auto kadikoy = create("Kadikoy Station", "Station", route);
-  if (auto* node = get(kadikoy)) {
-    node->asset = "Station/0";
-    node->transform.position = {0.0f, 0.0f, 0.0f};
-  }
+  struct DefaultStop {
+    const char* name;
+    float position;
+  };
 
-  const auto ayrilik = create("Ayrilik Cesmesi Station", "Station", route);
-  if (auto* node = get(ayrilik)) {
-    node->asset = "Station/1";
-    node->transform.position = {0.0f, 0.0f, -1148.0f};
+  // Durak konumları station manifest ile aynı veri setinden gelir; bunlar
+  // editörde sahne yerleşimini başlangıçta görünür kılmak için tutulur.
+  constexpr DefaultStop stops[] = {
+    {"Kadikoy", 0.0f},
+    {"Ayrilik Cesmesi", 1148.0f},
+    {"Acibadem", 2435.0f},
+    {"Unalan", 3988.25f},
+    {"Goztepe", 5541.5f},
+    {"Yenisahra", 7094.75f},
+    {"Kozyatagi", 8648.0f},
+    {"Bostanci", 10201.25f},
+    {"Kucukyali", 11754.5f},
+    {"Maltepe", 13307.75f},
+    {"Huzurevi", 14861.0f},
+    {"Gulsuyu", 16414.25f},
+    {"Esenkent", 17967.5f},
+    {"Hastane-Adliye", 19520.75f},
+    {"Soganlik", 21074.0f},
+    {"Kartal", 22627.25f},
+    {"Yakacik-Adnan Kahveci", 24180.5f},
+    {"Pendik", 25733.75f},
+    {"Tavsantepe", 27287.0f},
+    {"Fevzi Cakmak-Hastane", 28840.25f},
+    {"Yayalar-Sehitler", 30393.5f},
+    {"Kurtkoy", 31946.75f},
+    {"Sabiha Gokcen Havalimani", 33500.0f}
+  };
+
+  for (size_t i = 0; i < std::size(stops); ++i) {
+    const auto station = create(std::string(stops[i].name) + " Station", "Station", route);
+    if (auto* node = get(station)) {
+      node->asset = "Station/" + std::to_string(i);
+      node->transform.position = {0.0f, 0.0f, -stops[i].position};
+    }
   }
 
   create("Track", "Rail", route);
