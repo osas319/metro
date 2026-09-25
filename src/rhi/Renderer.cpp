@@ -60,14 +60,16 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     instances.push_back(s);
   };
 
-  // Ana tünel gövdesi: zemin, iki platform ve koyu tavan.
-  addBox({0.0f, -1.5f, -halfRoute},
-          {mPlatformWidth * 2.0f + 3.0f, 0.15f, halfRoute},
-          {0.22f, 0.25f, 0.30f, 1.0f}, 0.92f, 1.0f);
-  // Tünel zemini sürekli; istasyon modülü kendi platformunu sağlar.
-  addBox({0.0f, 4.0f, -halfRoute},
-          {9.0f, 0.15f, halfRoute},
-          {0.13f, 0.16f, 0.20f, 1.0f}, 0.96f);
+  // Tünel dış kabuğu artık 30 m'lik modüllerden oluşur. İstasyon bölgesinde
+  // bu modüller atlanır; istasyonun kendi tavan/duvar modülü devreye girer.
+  constexpr float tunnelModuleLength = 30.0f;
+  const float firstTunnelCenter =
+      std::floor(visibleStart / tunnelModuleLength) * tunnelModuleLength +
+      tunnelModuleLength * 0.5f;
+  for (float p = firstTunnelCenter; p <= visibleEnd; p += tunnelModuleLength) {
+    if (isInsideStation(p)) continue;
+    addModelInstance(SceneModel::TunnelModule, {0.0f, 0.0f, -p});
+  }
 
   // Raylar ve traversler.
   for (float x : {-mTrackGauge * 0.5f, mTrackGauge * 0.5f}) {
@@ -309,6 +311,9 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
     }
     if (!mStationModuleModel.loadBuiltin(ctx, mCommandPool, BuiltinModelType::StationModule)) {
       throw std::runtime_error("Builtin StationModule modeli yuklenemedi");
+    }
+    if (!mTunnelModuleModel.loadBuiltin(ctx, mCommandPool, BuiltinModelType::TunnelModule)) {
+      throw std::runtime_error("Builtin TunnelModule modeli yuklenemedi");
     }
     createSyncObjects();
   } catch (const std::exception& e) {
@@ -1051,6 +1056,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
     const Model* model = &mModel;
     if (instance.model == SceneModel::TrainCar) model = &mTrainCarModel;
     if (instance.model == SceneModel::StationModule) model = &mStationModuleModel;
+    if (instance.model == SceneModel::TunnelModule) model = &mTunnelModuleModel;
 
     if (model != boundModel) {
       model->bind(cmd);
@@ -1298,6 +1304,7 @@ void Renderer::shutdown() {
   mModel.destroy(*mCtx);
   mTrainCarModel.destroy(*mCtx);
   mStationModuleModel.destroy(*mCtx);
+  mTunnelModuleModel.destroy(*mCtx);
 
   if (mPipeline) vkDestroyPipeline(mCtx->device(), mPipeline, nullptr);
   mPipeline = VK_NULL_HANDLE;
