@@ -132,16 +132,29 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     addModelInstance(SceneModel::TunnelModule, {0.0f, 0.0f, -p});
   }
 
-  // Raylar ve traversler.
+  // Ray yatağı + iki gerçek çelik ray: taban, web ve parlak ray başı.
+  addBox({0.0f, -1.53f, -halfRoute},
+         {3.10f, 0.18f, halfRoute},
+         {0.095f, 0.10f, 0.11f, 1.0f}, 0.98f, 6.0f);
+
   for (float x : {-mTrackGauge * 0.5f, mTrackGauge * 0.5f}) {
-    addBox({x, -1.24f, -halfRoute}, {0.055f, 0.055f, halfRoute},
-           {0.72f, 0.74f, 0.78f, 1.0f}, 0.28f, 3.0f);
+    addBox({x, -1.34f, -halfRoute}, {0.12f, 0.10f, halfRoute},
+           {0.32f, 0.34f, 0.38f, 1.0f}, 0.52f, 10.0f);
+    addBox({x, -1.24f, -halfRoute}, {0.075f, 0.12f, halfRoute},
+           {0.48f, 0.50f, 0.53f, 1.0f}, 0.20f, 10.0f);
+    addBox({x, -1.16f, -halfRoute}, {0.105f, 0.055f, halfRoute},
+           {0.64f, 0.66f, 0.69f, 1.0f}, 0.16f, 10.0f);
   }
+
   const float firstTraverse = std::floor(visibleStart / 2.0f) * 2.0f;
   for (float p = firstTraverse; p <= visibleEnd; p += 2.0f) {
     const float z = -p;
-    addBox({0.0f, -1.27f, z}, {1.0f, 0.035f, 0.10f},
-           {0.26f, 0.28f, 0.30f, 1.0f}, 0.85f);
+    addBox({0.0f, -1.40f, z}, {2.35f, 0.13f, 0.16f},
+           {0.23f, 0.25f, 0.28f, 1.0f}, 0.92f, 6.0f);
+    // Küçük bağlantı plakaları ray ayağının altında görünsün.
+    for (float x : {-mTrackGauge * 0.5f, mTrackGauge * 0.5f})
+      addBox({x, -1.34f, z}, {0.22f, 0.035f, 0.28f},
+             {0.20f, 0.21f, 0.23f, 1.0f}, 0.72f, 6.0f);
   }
 
   // İstasyon kolonları dedicated StationModule modelinde bulunur.
@@ -155,11 +168,10 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   addBox({7.9f, 2.35f, -halfRoute}, {0.08f, 0.14f, halfRoute},
          {0.10f, 0.11f, 0.13f, 1.0f}, 0.78f);
 
-  // Tünel aydınlatması: görünür alana yalnızca gerekli armatürleri üret.
-  // Emissive materialId=5 sayesinde düşük ortam ışığında bile ritmik bir aydınlatma
-  // ve tren yaklaşırken farlarla birleşen bir ışık hissi oluşur.
-  const float firstLamp = std::ceil(visibleStart / 18.0f) * 18.0f;
-  for (float p = firstLamp; p <= visibleEnd; p += 18.0f) {
+  // Tünel aydınlatması: armatürler artık daha seyrek ve daha düşük yoğunluklu;
+  // uzak tünel karanlığa gömülür.
+  const float firstLamp = std::ceil(visibleStart / 24.0f) * 24.0f;
+  for (float p = firstLamp; p <= visibleEnd; p += 24.0f) {
     if (isInsideStation(p)) continue;
     const float z = -p;
     addBox({0.0f, 4.05f, z}, {0.72f, 0.055f, 0.16f},
