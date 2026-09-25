@@ -305,10 +305,16 @@ int Application::run() {
     if (!mMouseCaptured) {
       // Sürücü kabini: kamera trenin önünde, ray eksenine hizalı.
       // Serbest kamera için sol tıklama ile fareyi yakala.
+      const float motionSway =
+          std::clamp(mTrain.acceleration() * 0.018f, -0.035f, 0.035f);
+      const float roadVibration =
+          std::sin(static_cast<float>(nowNs) * 0.000006f) *
+          (0.004f + std::clamp(mTrain.speed() / 22.2f, 0.0f, 1.0f) * 0.009f);
       renderCamera.position =
-          glm::vec3(0.0f, 1.72f, -renderTrainPosition - 36.8f);
+          glm::vec3(motionSway, 1.72f + roadVibration,
+                    -renderTrainPosition - 36.8f);
       renderCamera.yaw = -90.0f;
-      renderCamera.pitch = -3.0f;
+      renderCamera.pitch = -3.0f - motionSway * 25.0f;
     }
     std::vector<glm::vec2> passengerPositions;
     passengerPositions.reserve(mPassengers.walkingAgents().size());
