@@ -1115,7 +1115,8 @@ void Renderer::createSyncObjects() {
 void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                                    const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
                                    const std::vector<bool>& occupiedBlocks,
-                                   const std::vector<glm::vec2>& passengerPositions) {
+                                   const std::vector<glm::vec2>& passengerPositions,
+                                   const std::vector<EditorMarker>& editorMarkers) {
   VkCommandBufferBeginInfo begin{};
   begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   if (vkBeginCommandBuffer(cmd, &begin) != VK_SUCCESS) throw std::runtime_error("vkBeginCommandBuffer");
@@ -1161,7 +1162,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                           &mDescriptorSets[imageIndex], 0, nullptr);
 
   const std::vector<SceneInstance> instances =
-      buildKadikoyScene(trainPosition, trainSpeed, doorOpenFraction, occupiedBlocks, passengerPositions);
+      buildKadikoyScene(trainPosition, trainSpeed, doorOpenFraction, occupiedBlocks, passengerPositions, editorMarkers);
 
   const Model* boundModel = nullptr;
   for (const SceneInstance& instance : instances) {
@@ -1190,6 +1191,26 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                          0, sizeof(ModelPush), &push);
       model->drawSubMesh(cmd, i);
+    }
+  }
+
+  // Editor seçim markerları: dünya uzayında küçük kutular.
+  if (!editorMarkers.empty()) {
+    mModel.bind(cmd);
+    for (const EditorMarker& marker : editorMarkers) {
+      ModelPush push{};
+      push.model = glm::scale(
+          glm::translate(glm::mat4(1.0f), marker.position),
+          marker.scale);
+      push.baseColor = marker.color;
+      push.metallic = 0.0f;
+      push.roughness = 0.38f;
+      push.materialId = 5.0f;
+      vkCmdPushConstants(cmd, mPipelineLayout,
+                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                         0, sizeof(ModelPush), &push);
+      if (mModel.subMeshCount() > 0)
+        mModel.drawSubMesh(cmd, 0);
     }
   }
 
@@ -1225,7 +1246,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
 
 void Renderer::drawFrame(const app::Camera& camera, float trainPosition, float trainSpeed, float doorOpenFraction,
                          const std::vector<bool>& occupiedBlocks,
-                         const std::vector<glm::vec2>& passengerPositions) {
+                         const std::vector<glm::vec2>& passengerPositions,
+                         const std::vector<EditorMarker>& editorMarkers) {
   const VkDevice dev = mCtx->device();
   const uint32_t syncCount = static_cast<uint32_t>(mInFlight.size());
 
