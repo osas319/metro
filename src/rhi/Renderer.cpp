@@ -288,22 +288,30 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
         addModelInstance(SceneModel::TrainCar, {0.0f, 0.0f, carZ});
       }
 
-    // Hareketli kapılar iki kanatlıdır; her kanat ters yöne kayar.
+    // Bu hat düzeninde yolcu platformu trenin SOL tarafında.
+    // Sol kapılar açılır; sağ taraf tünel/servis alanı olduğundan kapalı kalır.
     for (float doorZ : {-carLength * 0.28f, carLength * 0.28f}) {
       const float slide = 0.42f * doorOpenFraction;
       for (float wing : {-0.21f, 0.21f}) {
-        addParentedBox(editorTrainTransform, {-mTrainWidth * 0.51f - slide, 0.70f, carZ + doorZ + wing},
+        addParentedBox(editorTrainTransform,
+               {-mTrainWidth * 0.51f - slide, 0.70f, carZ + doorZ + wing},
                {0.025f, 0.62f, 0.18f},
                {0.66f, 0.68f, 0.71f, 1.0f}, 0.18f);
-        addParentedBox(editorTrainTransform, {mTrainWidth * 0.51f + slide, 0.70f, carZ + doorZ + wing},
+        // Sağ kapı kanatları her durumda kapalı konumda tutulur.
+        addParentedBox(editorTrainTransform,
+               {mTrainWidth * 0.51f, 0.70f, carZ + doorZ + wing},
                {0.025f, 0.62f, 0.18f},
                {0.66f, 0.68f, 0.71f, 1.0f}, 0.18f);
       }
-      // Kapı açıklığında koyu kauçuk fitil.
-      addParentedBox(editorTrainTransform, {-mTrainWidth * 0.515f - slide, 0.70f, carZ + doorZ},
+
+      // Sol kapı açıklığında açılınca iki yana ayrılan koyu kauçuk fitil.
+      addParentedBox(editorTrainTransform,
+             {-mTrainWidth * 0.515f - slide, 0.70f, carZ + doorZ},
              {0.030f, 0.64f, 0.025f},
              {0.035f, 0.045f, 0.060f, 1.0f}, 0.42f);
-      addParentedBox(editorTrainTransform, {mTrainWidth * 0.515f + slide, 0.70f, carZ + doorZ},
+      // Sağ tarafta gerçek bir açıklık oluşmaz.
+      addParentedBox(editorTrainTransform,
+             {mTrainWidth * 0.515f, 0.70f, carZ + doorZ},
              {0.030f, 0.64f, 0.025f},
              {0.035f, 0.045f, 0.060f, 1.0f}, 0.42f);
     }
