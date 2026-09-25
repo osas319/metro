@@ -67,6 +67,7 @@ private:
   CameraViewMode mCameraViewMode = CameraViewMode::Free;
   editor::Scene mEditorScene;
   editor::UI mEditorUI;
+  editor::GizmoMode mEditorGizmoMode = editor::GizmoMode::Translate;
   float mDisplayFps = 0.0f;
   Uint64 mLastTitleNs = 0;
   const bool* mKeyboardState = nullptr;
