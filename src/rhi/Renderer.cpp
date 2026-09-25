@@ -139,15 +139,24 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
         setCenter + (static_cast<float>(car) - 1.5f) * (carLength + carGap);
     addModelInstance(SceneModel::TrainCar, {0.0f, 0.0f, carZ});
 
-    // Hareketli kapılar: model gövdesinden ayrı oldukları için açılıp kapanabilirler.
+    // Hareketli kapılar iki kanatlıdır; her kanat ters yöne kayar.
     for (float doorZ : {-carLength * 0.28f, carLength * 0.28f}) {
       const float slide = 0.42f * doorOpenFraction;
-      addBox({-mTrainWidth * 0.51f - slide, 0.70f, carZ + doorZ},
-             {0.025f, 0.62f, 0.42f},
-             {0.68f, 0.70f, 0.73f, 1.0f}, 0.18f);
-      addBox({mTrainWidth * 0.51f + slide, 0.70f, carZ + doorZ},
-             {0.025f, 0.62f, 0.42f},
-             {0.68f, 0.70f, 0.73f, 1.0f}, 0.18f);
+      for (float wing : {-0.21f, 0.21f}) {
+        addBox({-mTrainWidth * 0.51f - slide, 0.70f, carZ + doorZ + wing},
+               {0.025f, 0.62f, 0.18f},
+               {0.66f, 0.68f, 0.71f, 1.0f}, 0.18f);
+        addBox({mTrainWidth * 0.51f + slide, 0.70f, carZ + doorZ + wing},
+               {0.025f, 0.62f, 0.18f},
+               {0.66f, 0.68f, 0.71f, 1.0f}, 0.18f);
+      }
+      // Kapı açıklığında koyu kauçuk fitil.
+      addBox({-mTrainWidth * 0.515f - slide, 0.70f, carZ + doorZ},
+             {0.030f, 0.64f, 0.025f},
+             {0.035f, 0.045f, 0.060f, 1.0f}, 0.42f);
+      addBox({mTrainWidth * 0.515f + slide, 0.70f, carZ + doorZ},
+             {0.030f, 0.64f, 0.025f},
+             {0.035f, 0.045f, 0.060f, 1.0f}, 0.42f);
     }
   }
 
