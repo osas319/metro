@@ -34,6 +34,7 @@ bool Application::init() {
        .maxSubsteps = station.physicsMaxSubsteps,
        .trainWidth = station.trainWidth,
        .trainHeight = station.trainHeight,
+       .trainLength = station.trainLength,
        .trackGauge = station.trackGauge,
        .routeLength = station.routeLength,
        .platformWidth = station.platformWidth,
