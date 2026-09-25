@@ -305,7 +305,7 @@ int Application::run() {
       // Sürücü kabini: kamera trenin önünde, ray eksenine hizalı.
       // Serbest kamera için sol tıklama ile fareyi yakala.
       renderCamera.position =
-          glm::vec3(0.0f, 1.72f, -renderTrainPosition - 3.05f);
+          glm::vec3(0.0f, 1.72f, -renderTrainPosition - 36.8f);
       renderCamera.yaw = -90.0f;
       renderCamera.pitch = -3.0f;
     }
