@@ -11,6 +11,8 @@ struct Camera {
 
   float moveSpeed = 5.0f;
   float mouseSensitivity = 0.1f;
+  float nearClip = 0.1f;
+  float farClip = 50000.0f;
 
   glm::vec3 getFront() const {
     glm::vec3 front;
@@ -33,7 +35,8 @@ struct Camera {
   }
 
   glm::mat4 getProjectionMatrix(float aspect) const {
-    glm::mat4 proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 5000.0f);
+    glm::mat4 proj = glm::perspective(glm::radians(45.0f), aspect,
+                                       nearClip, farClip);
     // Vulkan Y is down, GLM uses OpenGL's Y up
     proj[1][1] *= -1;
     return proj;
