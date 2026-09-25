@@ -30,6 +30,38 @@ layout(location = 0) out vec4 outColor;
 
 const float PI = 3.14159265359;
 
+float hash13(vec3 p) {
+    p = fract(p * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
+
+float noise3(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float n000 = hash13(i + vec3(0,0,0));
+    float n100 = hash13(i + vec3(1,0,0));
+    float n010 = hash13(i + vec3(0,1,0));
+    float n110 = hash13(i + vec3(1,1,0));
+    float n001 = hash13(i + vec3(0,0,1));
+    float n101 = hash13(i + vec3(1,0,1));
+    float n011 = hash13(i + vec3(0,1,1));
+    float n111 = hash13(i + vec3(1,1,1));
+    float nx00 = mix(n000, n100, f.x);
+    float nx10 = mix(n010, n110, f.x);
+    float nx01 = mix(n001, n101, f.x);
+    float nx11 = mix(n011, n111, f.x);
+    return mix(mix(nx00, nx10, f.y), mix(nx01, nx11, f.y), f.z);
+}
+
+float tileMask(vec2 uv, vec2 tileScale, float groutWidth) {
+    vec2 cell = fract(uv * tileScale);
+    float gx = 1.0 - smoothstep(0.0, groutWidth, min(cell.x, 1.0 - cell.x));
+    float gy = 1.0 - smoothstep(0.0, groutWidth, min(cell.y, 1.0 - cell.y));
+    return max(gx, gy);
+}
+
 // Trowbridge-Reitz GGX normal dağılımı
 float distributionGGX(float NdotH, float alpha) {
     float a2 = alpha * alpha;
@@ -131,6 +163,33 @@ void main() {
         color += push.baseColor.rgb * 2.5;
     } else if (materialId == 8.0) {
         color += push.baseColor.rgb * 1.4;
+    } else if (materialId == 9.0) {
+        // Platform/tactile tas: ince derzler, ufak ton varyasyonu ve kir.
+        float grout = tileMask(vWorldPos.xz, vec2(5.0, 7.0), 0.055);
+        float stoneNoise = noise3(vWorldPos * vec3(1.8, 0.9, 1.8));
+        color *= mix(0.82, 1.04, 1.0 - grout);
+        color *= 0.92 + stoneNoise * 0.10;
+    } else if (materialId == 10.0) {
+        // Fircalanmis paslanmaz/cati metali.
+        float brushed = 0.94 + 0.06 * sin(vWorldPos.z * 7.0 + noise3(vWorldPos * 2.0));
+        color *= brushed;
+    } else if (materialId == 11.0) {
+        // CAF govde boyasi: panel ton farki + kenar kirlenmesi.
+        float panel = 0.96 + 0.04 * sin(vWorldPos.z * 1.7);
+        float grime = smoothstep(0.35, 0.95, noise3(vWorldPos * 2.2));
+        color *= panel;
+        color *= mix(1.0, 0.90, grime * 0.22);
+    } else if (materialId == 12.0) {
+        // Fayans/beton: moduler derz + mikroyuzey.
+        float grout = tileMask(vWorldPos.xz, vec2(2.8, 8.0), 0.035);
+        float variation = 0.94 + 0.06 * noise3(vWorldPos * 3.0);
+        color *= mix(0.72, 1.0, 1.0 - grout);
+        color *= variation;
+    } else if (materialId == 13.0) {
+        // Hafif kirli cam yansimasi.
+        float tint = 0.94 + 0.06 * noise3(vWorldPos * 1.6);
+        color *= tint;
+        color += vec3(0.015, 0.025, 0.04) * (1.0 - NdotV);
     }
 
     // Tünel atmosferi: uzak geometriyi yumuşatıp sahne derinliği sağlar.
