@@ -402,6 +402,12 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
     if (!mModel.load(ctx, mCommandPool, selectedModel)) {
       throw std::runtime_error(std::string("Model yuklenemedi: ") + selectedModel);
     }
+    if (!mTrainCarModel.loadBuiltin(ctx, mCommandPool, BuiltinModelType::TrainCar)) {
+      throw std::runtime_error("Builtin TrainCar modeli yuklenemedi");
+    }
+    if (!mStationModuleModel.loadBuiltin(ctx, mCommandPool, BuiltinModelType::StationModule)) {
+      throw std::runtime_error("Builtin StationModule modeli yuklenemedi");
+    }
     createSyncObjects();
   } catch (const std::exception& e) {
     METRO_ERROR("Renderer init: %s", e.what());
@@ -1388,6 +1394,8 @@ void Renderer::shutdown() {
   mCommandPool = VK_NULL_HANDLE;
 
   mModel.destroy(*mCtx);
+  mTrainCarModel.destroy(*mCtx);
+  mStationModuleModel.destroy(*mCtx);
 
   if (mPipeline) vkDestroyPipeline(mCtx->device(), mPipeline, nullptr);
   mPipeline = VK_NULL_HANDLE;
