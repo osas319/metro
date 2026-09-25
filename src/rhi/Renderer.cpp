@@ -168,99 +168,16 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     }
   };
 
-  addBox({0.0f, 3.12f, -24.0f}, {3.25f, 0.52f, 0.08f},
+  addBox({0.0f, 3.38f, -24.0f}, {3.25f, 0.52f, 0.08f},
          {0.025f, 0.14f, 0.22f, 1.0f}, 0.35f, 8.0f);
-  addText("KADIKOY", {-2.55f, 3.36f, -24.10f});
+  addText("KADIKOY", {-2.55f, 3.62f, -24.10f});
 
-  addBox({0.0f, 2.82f, -44.0f}, {1.25f, 0.42f, 0.06f},
+  addBox({0.0f, 3.12f, -44.0f}, {1.25f, 0.42f, 0.06f},
          {0.025f, 0.14f, 0.22f, 1.0f}, 0.35f, 8.0f);
-  addText("M4", {-0.36f, 3.02f, -44.10f}, 0.055f, 0.014f);
+  addText("M4", {-0.36f, 3.28f, -44.10f}, 0.055f, 0.014f);
 
-  // Kadıköy başlangıç bölümünün mimari hacmi: yalnızca başlangıçta görünür.
-  if (visibleStart < 120.0f) {
-  for (float z = -6.0f; z > -102.0f; z -= 6.0f) {
-    addBox({-8.35f, 1.35f, z}, {0.10f, 2.55f, 2.75f},
-           {0.20f, 0.22f, 0.25f, 1.0f}, 0.88f);
-    addBox({8.35f, 1.35f, z}, {0.10f, 2.55f, 2.75f},
-           {0.20f, 0.22f, 0.25f, 1.0f}, 0.88f);
-  }
-
-  }
-
-  // Üst geçiş/asma kat hissi.
-  addBox({0.0f, 2.95f, -58.0f},
-         {7.4f, 0.18f, 16.0f},
-         {0.30f, 0.32f, 0.36f, 1.0f}, 0.76f);
-  for (float x : {-6.4f, 6.4f}) {
-    for (float z : {-46.0f, -58.0f, -70.0f}) {
-      addBox({x, 1.45f, z}, {0.28f, 2.85f, 0.28f},
-             {0.36f, 0.38f, 0.43f, 1.0f}, 0.70f);
-    }
-  }
-
-  // Merdivenler ve yürüyen merdiven hacimleri.
-  for (int step = 0; step < 9; ++step) {
-    const float x = -4.6f + static_cast<float>(step) * 0.24f;
-    const float y = 0.30f + static_cast<float>(step) * 0.11f;
-    addBox({x, y, -58.0f},
-           {0.24f, 0.20f, 2.2f},
-           {0.44f, 0.45f, 0.49f, 1.0f}, 0.80f);
-  }
-  for (int step = 0; step < 9; ++step) {
-    const float x = 4.6f - static_cast<float>(step) * 0.24f;
-    const float y = 0.30f + static_cast<float>(step) * 0.11f;
-    addBox({x, y, -58.0f},
-           {0.24f, 0.20f, 2.2f},
-           {0.44f, 0.45f, 0.49f, 1.0f}, 0.80f);
-  }
-
-  // Turnike adaları ve üst tabela çerçeveleri.
-  for (float z : {-24.0f, -34.0f, -44.0f}) {
-    for (float x : {-2.0f, -0.75f, 0.75f, 2.0f}) {
-      addBox({x, 0.55f, z}, {0.22f, 0.55f, 0.62f},
-             {0.08f, 0.22f, 0.30f, 1.0f}, 0.42f);
-    }
-    addBox({0.0f, 2.40f, z}, {3.4f, 0.08f, 0.10f},
-           {0.04f, 0.20f, 0.30f, 1.0f}, 0.30f, 8.0f);
-  }
-
-  // Acil çıkış ve elektrik servis kutuları.
-  for (float z = -30.0f; z > -120.0f; z -= 30.0f) {
-    addBox({-7.75f, 0.75f, z}, {0.50f, 0.75f, 0.16f},
-           {0.18f, 0.20f, 0.24f, 1.0f}, 0.68f);
-    addBox({7.75f, 0.75f, z}, {0.50f, 0.75f, 0.16f},
-           {0.18f, 0.20f, 0.24f, 1.0f}, 0.68f);
-  }
-
-  // Tünel boyunca periyodik aydınlatma kutuları.
-  for (float z = -18.0f; z > -mRouteLength; z -= 32.0f) {
-    if (z < visibleMinZ || z > visibleMaxZ) continue;
-    addBox({0.0f, 3.72f, z}, {0.34f, 0.08f, 0.16f},
-           {0.95f, 0.92f, 0.78f, 1.0f}, 0.18f, 5.0f);
-    addBox({-7.85f, 1.95f, z}, {0.10f, 0.10f, 0.10f},
-           {0.92f, 0.74f, 0.20f, 1.0f}, 0.22f);
-    addBox({7.85f, 1.95f, z}, {0.10f, 0.10f, 0.10f},
-           {0.92f, 0.74f, 0.20f, 1.0f}, 0.22f);
-  }
-
-  // Güvenlik kapıları/peron sonu bariyerleri.
-  for (float x : {-mPlatformWidth - 0.20f, mPlatformWidth + 0.20f}) {
-    addBox({x, 0.65f, -110.0f}, {1.25f, 0.65f, 0.08f},
-           {0.14f, 0.16f, 0.18f, 1.0f}, 0.55f);
-  }
-
-  // Kadıköy peronundaki tabela/aydınlatma ritmi.
-  for (float z = -12.0f; z > -mRouteLength; z -= 24.0f) {
-    for (float x : {-mPlatformWidth + 0.7f, mPlatformWidth - 0.7f}) {
-      addBox({x, 2.65f, z}, {0.08f, 0.08f, 0.08f},
-             {0.85f, 0.92f, 1.0f, 1.0f}, 0.25f, 5.0f);
-      addBox({x, 2.45f, z}, {0.45f, 0.025f, 0.06f},
-             {0.12f, 0.38f, 0.55f, 1.0f}, 0.35f);
-    }
-  }
-
-  // Her durakta gerçek bir istasyon hacmi: iki yan peron, kanopi,
-  // taşıyıcılar ve peron aydınlatması. Tünel boyunca artık peron yok.
+  // İstasyon geometrisi: yalnızca gerçek durak noktalarında iki yan peron.
+  // Peron kotu rayın yaklaşık 1 m üstündedir; parçalar tek bir hacme bağlanır.
   constexpr float stationHalfLength = 58.0f;
   for (size_t i = 0; i < mStopPositions.size(); ++i) {
     const float p = mStopPositions[i];
@@ -268,34 +185,68 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
     if (p + stationHalfLength < visibleStart || p - stationHalfLength > visibleEnd) continue;
 
     const float z = -p;
+    const float trackHalf = mTrackGauge * 0.5f;
+    const float platformInner = trackHalf + 0.14f;
+    const float platformOuter = mPlatformWidth;
+    const float platformCenter = (platformInner + platformOuter) * 0.5f;
+    const float platformHalfWidth = (platformOuter - platformInner) * 0.5f;
+
     for (float side : {-1.0f, 1.0f}) {
-      const float x = side * mPlatformWidth;
-      addBox({x, -0.10f, z},
-             {mPlatformWidth * 0.95f, 0.22f, stationHalfLength},
-             {0.42f, 0.44f, 0.47f, 1.0f}, 0.82f, 2.0f);
-      addBox({x, 3.35f, z},
-             {mPlatformWidth * 0.82f, 0.10f, stationHalfLength},
-             {0.22f, 0.24f, 0.28f, 1.0f}, 0.78f);
-      for (float supportP = p - 48.0f; supportP <= p + 48.0f; supportP += 24.0f) {
-        addBox({x + side * 3.0f, 1.55f, -supportP},
-               {0.18f, 1.80f, 0.18f},
-               {0.34f, 0.36f, 0.41f, 1.0f}, 0.72f);
-        addBox({x, 3.08f, -supportP},
-               {mPlatformWidth * 0.82f, 0.12f, 0.16f},
-               {0.28f, 0.30f, 0.34f, 1.0f}, 0.76f);
-        addBox({x, 3.22f, -supportP},
-               {1.2f, 0.035f, 0.08f},
-               {0.98f, 0.90f, 0.72f, 1.0f}, 0.18f, 5.0f);
+      // Ana peron döşemesi.
+      addBox({side * platformCenter, -0.50f, z},
+             {platformHalfWidth, 0.50f, stationHalfLength},
+             {0.40f, 0.42f, 0.45f, 1.0f}, 0.88f, 2.0f);
+
+      // Peron arka tarafında düşük süpürgelik/duvar tabanı.
+      addBox({side * (platformOuter - 0.12f), 0.45f, z},
+             {0.12f, 0.95f, stationHalfLength},
+             {0.25f, 0.27f, 0.31f, 1.0f}, 0.90f, 1.0f);
+
+      // Ray tarafında sarı güvenlik + ince taktil şerit.
+      addBox({side * (platformInner + 0.10f), 0.03f, z},
+             {0.045f, 0.025f, stationHalfLength - 0.8f},
+             {0.96f, 0.70f, 0.08f, 1.0f}, 0.42f, 6.0f);
+      addBox({side * (platformInner + 0.28f), 0.05f, z},
+             {0.07f, 0.035f, stationHalfLength - 0.8f},
+             {0.76f, 0.76f, 0.72f, 1.0f}, 0.72f, 2.0f);
+
+      // Tavana bağlı istasyon aydınlatmaları; artık havada duran taşıyıcı yok.
+      for (float lightP = p - 45.0f; lightP <= p + 45.0f; lightP += 15.0f) {
+        addBox({side * (platformOuter - 1.0f), 3.28f, -lightP},
+               {0.75f, 0.045f, 0.12f},
+               {0.95f, 0.92f, 0.82f, 1.0f}, 0.18f, 5.0f);
       }
-      // Peron kenarındaki sarı güvenlik çizgisi yalnızca istasyon bölgesinde.
-      addBox({side * (mPlatformWidth * 1.15f), 0.08f, z},
-             {0.055f, 0.025f, stationHalfLength - 1.0f},
-             {0.95f, 0.70f, 0.08f, 1.0f}, 0.42f, 6.0f);
     }
-    // Peron tabelası: M4 + istasyon numarası görsel işareti.
-    addBox({0.0f, 3.08f, z},
-           {1.8f, 0.42f, 0.08f},
+
+    // İstasyonun adı/hat tabelası merkezi eksende, tavana bağlı.
+    addBox({0.0f, 3.38f, z},
+           {2.15f, 0.38f, 0.06f},
            {0.025f, 0.14f, 0.22f, 1.0f}, 0.35f, 8.0f);
+
+    // Yan duvarlarda tabelayı gerçekten duvara bağlayan kısa kollar.
+    for (float side : {-1.0f, 1.0f}) {
+      addBox({side * 8.18f, 2.55f, z},
+             {0.12f, 0.75f, 0.08f},
+             {0.20f, 0.22f, 0.25f, 1.0f}, 0.60f, 3.0f);
+      addBox({side * 8.02f, 2.55f, z},
+             {0.85f, 0.45f, 0.035f},
+             {0.04f, 0.20f, 0.32f, 1.0f}, 0.40f, 8.0f);
+    }
+  }
+
+  // Kadıköy peronundaki temel mobilya; yalnız ilk 120 m içinde.
+  if (visibleStart < 120.0f) {
+    for (float z : {-18.0f, -42.0f, -66.0f}) {
+      for (float side : {-1.0f, 1.0f}) {
+        const float x = side * 2.9f;
+        addBox({x, 0.05f, z},
+               {0.80f, 0.08f, 0.28f},
+               {0.20f, 0.23f, 0.27f, 1.0f}, 0.68f);
+        addBox({x, 0.30f, z},
+               {0.80f, 0.28f, 0.08f},
+               {0.30f, 0.33f, 0.38f, 1.0f}, 0.62f);
+      }
+    }
   }
 
   // Her gerçek stop için sinyal direği + durak işareti.
