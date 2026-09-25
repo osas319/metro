@@ -122,6 +122,8 @@ private:
   void createRenderPass();       // sahne (PBR) render pass — HDR renk hedefine yazar
   void createDepthResources();
   void createHdrResources();     // offscreen HDR renk hedefi (per swapchain image) + sampler
+  void createMaterialTextures(); // gerçek BMP PBR albedo texture array
+  void destroyMaterialTextures();
   void createFrameUniforms();   // UBO + descriptor pool/set'ler (per image)
   void createPipeline();
   void createFramebuffers();
@@ -188,6 +190,14 @@ private:
   std::vector<VmaAllocation> mHdrAllocs;
   std::vector<VkImageView> mHdrViews;
   VkSampler mHdrSampler = VK_NULL_HANDLE; // pipeline ömründe; extent'ten bağımsız
+
+  // 6 katmanlı gerçek malzeme texture array'i: concrete/tile/ballast/rail/train/glass.
+  static constexpr uint32_t kMaterialTextureLayers = 6;
+  static constexpr uint32_t kMaterialTextureSize = 128;
+  VkImage mMaterialTextureImage = VK_NULL_HANDLE;
+  VmaAllocation mMaterialTextureAlloc = VK_NULL_HANDLE;
+  VkImageView mMaterialTextureView = VK_NULL_HANDLE;
+  VkSampler mMaterialTextureSampler = VK_NULL_HANDLE;
 
   // --- Post-process geçişi: HDR'ı örnekleyip ACES tonemap ile swapchain'e (LDR) yazar ---
   VkRenderPass mPostRenderPass = VK_NULL_HANDLE;
