@@ -214,6 +214,9 @@ int main() {
   assert(route.stopCount() == 3);
   signal.setOccupied(1, true);
   assert(!signal.canEnter(1));
+  assert(signal.aspect(1) == metro::sim::SignalAspect::Stop);
+  assert(signal.aspect(0) == metro::sim::SignalAspect::Caution);
+  assert(signal.aspect(5) == metro::sim::SignalAspect::Proceed);
   assert(signal.canEnter(5));
   const auto occupiedBlocks = signal.occupiedBlocks();
   assert(occupiedBlocks.size() == 3);
