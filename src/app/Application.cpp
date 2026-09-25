@@ -446,6 +446,15 @@ int Application::run() {
     gameplayHUD.doorOpenFraction = mTrain.doorOpenFraction();
     gameplayHUD.onboardPassengers = mPassengers.onboard();
     gameplayHUD.waitingPassengers = mPassengers.waiting();
+    gameplayHUD.tractionActive = !mEditorMode &&
+                                  mKeyboardState[SDL_SCANCODE_UP] &&
+                                  !mKeyboardState[SDL_SCANCODE_DOWN] &&
+                                  !mKeyboardState[SDL_SCANCODE_SPACE];
+    gameplayHUD.serviceBrakeActive = !mEditorMode &&
+                                     mKeyboardState[SDL_SCANCODE_DOWN] &&
+                                     !mKeyboardState[SDL_SCANCODE_SPACE];
+    gameplayHUD.emergencyBrakeActive = !mEditorMode &&
+                                       mKeyboardState[SDL_SCANCODE_SPACE];
 
     mRenderer.beginEditorFrame();
     mEditorUI.draw(mEditorScene, mEditorMode, mPlayMode, mEditorGizmoMode,
