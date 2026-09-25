@@ -254,10 +254,10 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   // Kadıköy'de banklar doğrudan peron döşemesine oturur.
   if (visibleStart < 120.0f) {
     for (float z : {-18.0f, -42.0f, -66.0f}) {
-      addBox({platformOuter - 1.25f, -0.46f, z},
+      addBox({mPlatformWidth - 1.25f, -0.46f, z},
              {0.85f, 0.08f, 0.28f},
              {0.24f, 0.25f, 0.27f, 1.0f}, 0.68f);
-      addBox({platformOuter - 1.25f, -0.08f, z},
+      addBox({mPlatformWidth - 1.25f, -0.08f, z},
              {0.85f, 0.30f, 0.08f},
              {0.34f, 0.35f, 0.37f, 1.0f}, 0.62f);
     }
