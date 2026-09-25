@@ -91,25 +91,47 @@ void main() {
     vec3 albedo = push.baseColor.rgb;
     float materialId = push.materialId;
 
-    // Gercek doku assetleri gelene kadar yüzeylere uygun prosedürel varyantlar.
-    float checker = mod(abs(floor(vWorldPos.x) + floor(vWorldPos.z)), 2.0);
+    // Dahili materyaller için görünür yüzey dokusu: çok ölçekli beton/metal
+    // tanesi, panel kirleri ve kireç derzleri. Bunlar düz renk yerine
+    // UV + dünya koordinatlarından örneklenen prosedürel texture katmanlarıdır.
+    float macroNoise = noise3(vWorldPos * 0.42);
+    float fineNoise = noise3(vWorldPos * 4.8);
+    float microNoise = noise3(vWorldPos * 14.0);
+    float surfaceTexture = 0.78 + macroNoise * 0.16 +
+                            fineNoise * 0.06 + microNoise * 0.025;
+    albedo *= surfaceTexture;
+
+    float checker = mod(abs(floor(vWorldPos.x * 1.5) +
+                            floor(vWorldPos.z * 1.5)), 2.0);
+
     if (materialId == 1.0) {
-        float seam = max(step(0.94, fract(vWorldPos.x)),
-                         step(0.94, fract(vWorldPos.z)));
-        albedo *= mix(0.96, 0.80, seam);
+        float seam = max(step(0.94, fract(vWorldPos.x * 1.8)),
+                         step(0.94, fract(vWorldPos.z * 1.8)));
+        albedo *= mix(1.04, 0.62, seam);
     } else if (materialId == 2.0) {
-        float variation = 0.94 + 0.06 *
-            sin(dot(floor(vWorldPos * 0.5), vec3(1.7, 2.3, 3.1)));
-        albedo *= variation;
+        float grain = noise3(vWorldPos * vec3(0.8, 8.0, 12.0));
+        albedo *= 0.78 + grain * 0.30;
     } else if (materialId == 3.0) {
-        albedo = mix(albedo, vec3(0.52, 0.55, 0.60), 0.35);
+        // Paslanmaz/çelik kaplama: ince fırçalı metal çizgileri.
+        float brushed = 0.72 + 0.24 *
+            noise3(vec3(vWorldPos.x * 2.0, vWorldPos.y * 18.0,
+                        vWorldPos.z * 0.35));
+        albedo = mix(albedo, vec3(0.46, 0.49, 0.53), 0.32);
+        albedo *= brushed;
     } else if (materialId == 4.0) {
-        albedo = mix(albedo, vec3(0.012, 0.040, 0.070), 0.72);
+        // Cam: koyu gövde + düzensiz yansıma/kir.
+        float glassNoise = noise3(vWorldPos * 2.4);
+        albedo = mix(albedo, vec3(0.012, 0.038, 0.070), 0.72);
+        albedo *= 0.86 + glassNoise * 0.18;
     } else if (materialId == 6.0) {
-        albedo *= checker < 1.0 ? 1.0 : 0.10;
+        // Beton/kaldırım blokları.
+        albedo *= checker < 1.0 ? 1.08 : 0.72;
+        albedo *= 0.90 + noise3(vWorldPos * 3.2) * 0.18;
     } else if (materialId == 7.0) {
         float stripe = smoothstep(0.40, 0.60, fract(vWorldPos.y * 1.5));
+        float stripeNoise = 0.92 + noise3(vWorldPos * 6.0) * 0.10;
         albedo = mix(albedo, vec3(0.05, 0.34, 0.62), stripe * 0.35);
+        albedo *= stripeNoise;
     }
     float metallic = clamp(push.metallic, 0.0, 1.0);
     float roughness = clamp(push.roughness, 0.045, 1.0); // sıfır parlaklık patlamasını önle
@@ -186,27 +208,40 @@ void main() {
     } else if (materialId == 8.0) {
         color += push.baseColor.rgb * 1.4;
     } else if (materialId == 9.0) {
-        // Platform/tactile tas: ince derzler, ufak ton varyasyonu ve kir.
-        float grout = tileMask(vWorldPos.xz, vec2(5.0, 7.0), 0.055);
-        float stoneNoise = noise3(vWorldPos * vec3(1.8, 0.9, 1.8));
-        color *= mix(0.82, 1.04, 1.0 - grout);
-        color *= 0.92 + stoneNoise * 0.10;
+        // Platform/tactile taş: büyük plakalar + açık derz + leke.
+        float grout = tileMask(vWorldPos.xz, vec2(3.2, 6.5), 0.045);
+        float stoneNoise = noise3(vWorldPos * vec3(2.2, 1.0, 2.2));
+        float stain = noise3(vWorldPos * 0.55);
+        color *= mix(0.48, 1.0, 1.0 - grout);
+        color *= 0.78 + stoneNoise * 0.22;
+        color *= 0.92 + stain * 0.10;
     } else if (materialId == 10.0) {
-        // Fircalanmis paslanmaz/cati metali.
-        float brushed = 0.94 + 0.06 * sin(vWorldPos.z * 7.0 + noise3(vWorldPos * 2.0));
+        // Fırçalanmış paslanmaz çelik.
+        float brushed = 0.80 + 0.18 *
+            noise3(vec3(vWorldPos.x * 1.5, vWorldPos.y * 20.0,
+                        vWorldPos.z * 0.75));
         color *= brushed;
     } else if (materialId == 11.0) {
-        // CAF govde boyasi: panel ton farki + kenar kirlenmesi.
-        float panel = 0.96 + 0.04 * sin(vWorldPos.z * 1.7);
-        float grime = smoothstep(0.35, 0.95, noise3(vWorldPos * 2.2));
-        color *= panel;
-        color *= mix(1.0, 0.90, grime * 0.22);
+        // CAF gövde: panel araları, boya ton farkı ve kir.
+        vec2 panelUV = vec2(vWorldPos.x, vWorldPos.z);
+        float panelSeam = max(
+            1.0 - smoothstep(0.025, 0.075, abs(fract(panelUV.y * 0.11) - 0.5)),
+            1.0 - smoothstep(0.025, 0.075, abs(fract(panelUV.x * 0.45) - 0.5))
+        );
+        float grime = smoothstep(0.34, 0.86, noise3(vWorldPos * 1.6));
+        float paintVariation = 0.88 + 0.12 * noise3(vWorldPos * 5.0);
+        color *= paintVariation;
+        color *= mix(1.0, 0.56, panelSeam * 0.75);
+        color *= mix(1.0, 0.72, grime * 0.32);
     } else if (materialId == 12.0) {
-        // Fayans/beton: moduler derz + mikroyuzey.
-        float grout = tileMask(vWorldPos.xz, vec2(2.8, 8.0), 0.035);
-        float variation = 0.94 + 0.06 * noise3(vWorldPos * 3.0);
-        color *= mix(0.72, 1.0, 1.0 - grout);
-        color *= variation;
+        // İstasyon/tünel beton ve fayans.
+        vec2 tileUV = vec2(vWorldPos.x, vWorldPos.z);
+        float grout = tileMask(tileUV, vec2(3.0, 5.0), 0.045);
+        float tileNoise = noise3(vWorldPos * 2.8);
+        float damp = noise3(vWorldPos * 0.65);
+        color *= mix(0.52, 1.0, 1.0 - grout);
+        color *= 0.76 + tileNoise * 0.22;
+        color *= 0.94 + damp * 0.10;
     } else if (materialId == 13.0) {
         // Hafif kirli cam yansimasi.
         float tint = 0.94 + 0.06 * noise3(vWorldPos * 1.6);
