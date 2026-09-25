@@ -267,6 +267,9 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
           speedKmh < 0.1f ? 0.85f : 0.12f,
           0.12f, 1.0f}, 0.25f);
 
+
+  }
+
   // Yürüyen yolcular.
   for (const glm::vec2& p : passengerPositions) {
     addBox({p.x, 0.25f, p.y}, {0.16f, 0.50f, 0.16f},
