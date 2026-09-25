@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <entt/entt.hpp>
+#include <filesystem>
 
 #include "core/Log.hpp"
 #include "app/StationManifest.hpp"
@@ -105,12 +106,21 @@ bool Application::init() {
                         return positions;
                       }(), station.blockCount)) return false;
 
+  // Editor sahnesini diskteki son çalışma ile geri yükle; yoksa varsayılan ağacı kullan.
+  if (std::filesystem::exists(mEditorUI.scenePath())) {
+    if (!mEditorScene.load(mEditorUI.scenePath()))
+      METRO_WARN("Editor sahnesi yuklenemedi: %s", mEditorUI.scenePath().c_str());
+  }
+  mEditorMode = true;
+  mPlayMode = false;
+
   METRO_INFO("Pencere acildi; dongu basliyor (kapatmak icin pencereyi kapat)");
   METRO_INFO("Kontroller: Yukari=cekis Asagi=fren Space=acil-fren O/C=kapi F1=kabin F2=takip F3=serbest W/A/S/D");
   return true;
 }
 
 void Application::handleEvent(const SDL_Event& e) {
+  mRenderer.processEditorEvent(e);
   switch (e.type) {
     case SDL_EVENT_QUIT:
       mRunning = false;
@@ -128,7 +138,7 @@ void Application::handleEvent(const SDL_Event& e) {
       mResized = true;
       break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
-      if (e.button.button == SDL_BUTTON_LEFT) {
+      if (e.button.button == SDL_BUTTON_LEFT && !mRenderer.editorWantsMouse()) {
         mMouseCaptured = !mMouseCaptured;
         mCameraViewMode =
             mMouseCaptured ? CameraViewMode::Free : CameraViewMode::Cab;
@@ -136,15 +146,28 @@ void Application::handleEvent(const SDL_Event& e) {
       }
       break;
     case SDL_EVENT_KEY_DOWN:
-      if (e.key.key == SDLK_F1) {
+      if (e.key.key == SDLK_F4) {
+        mEditorMode = !mEditorMode;
+        mPlayMode = false;
+        mMouseCaptured = false;
+        mCameraViewMode = CameraViewMode::Free;
+        SDL_SetWindowRelativeMouseMode(mWindow, false);
+      } else if (e.key.key == SDLK_F5) {
+        mPlayMode = !mPlayMode;
+        if (mPlayMode) {
+          mEditorMode = false;
+          mMouseCaptured = false;
+          SDL_SetWindowRelativeMouseMode(mWindow, false);
+        }
+      } else if (!mRenderer.editorWantsKeyboard() && e.key.key == SDLK_F1) {
         mCameraViewMode = CameraViewMode::Cab;
         mMouseCaptured = false;
         SDL_SetWindowRelativeMouseMode(mWindow, false);
-      } else if (e.key.key == SDLK_F2) {
+      } else if (!mRenderer.editorWantsKeyboard() && e.key.key == SDLK_F2) {
         mCameraViewMode = CameraViewMode::Chase;
         mMouseCaptured = false;
         SDL_SetWindowRelativeMouseMode(mWindow, false);
-      } else if (e.key.key == SDLK_F3) {
+      } else if (!mRenderer.editorWantsKeyboard() && e.key.key == SDLK_F3) {
         mCameraViewMode = CameraViewMode::Free;
         mMouseCaptured = true;
         SDL_SetWindowRelativeMouseMode(mWindow, true);
@@ -173,9 +196,17 @@ void Application::update(float dt) {
       mKeyboardState = SDL_GetKeyboardState(&count);
   }
 
-  const bool throttle = mKeyboardState[SDL_SCANCODE_UP];
-  const bool emergencyBrake = mKeyboardState[SDL_SCANCODE_SPACE];
-  const bool brake = mKeyboardState[SDL_SCANCODE_DOWN] || emergencyBrake;
+  if (mEditorMode && !mPlayMode) {
+    if (!mRenderer.editorWantsKeyboard())
+      mPlayMode = false;
+    // Edit modunda tren fizik simülasyonu durur; kamera kontrolü aşağıda devam eder.
+  }
+  const bool editorInput = mEditorMode && mRenderer.editorWantsKeyboard();
+  const bool simulate = !mEditorMode || mPlayMode;
+  const bool throttle = simulate && !editorInput && mKeyboardState[SDL_SCANCODE_UP];
+  const bool emergencyBrake = simulate && !editorInput && mKeyboardState[SDL_SCANCODE_SPACE];
+  const bool brake = simulate && !editorInput &&
+                     (mKeyboardState[SDL_SCANCODE_DOWN] || emergencyBrake);
   bool platformAligned = false;
   for (const sim::Stop& stop : mRoute.stops()) {
     if (std::abs(mTrain.position() - stop.position) <= 0.5f) {
@@ -184,12 +215,13 @@ void Application::update(float dt) {
     }
   }
   platformAligned = platformAligned && mTrain.speed() < 0.05f;
-  if (mKeyboardState[SDL_SCANCODE_O]) {
+  if (simulate && !editorInput && mKeyboardState[SDL_SCANCODE_O]) {
     mTrain.requestDoorsOpen(true, platformAligned);
   }
-  if (mKeyboardState[SDL_SCANCODE_C]) {
+  if (simulate && !editorInput && mKeyboardState[SDL_SCANCODE_C]) {
     mTrain.requestDoorsOpen(false, false);
   }
+  if (simulate) {
   const size_t currentBlock =
       std::min(static_cast<size_t>(mTrain.position() / mBlockLength),
                mSignal.blockCount() - 1);
@@ -256,6 +288,8 @@ void Application::update(float dt) {
   consumeAudioEvents();
   mAudioBackend.updateTrainSound(mTrain.speed(), mTrain.acceleration());
 
+  }
+
   if (!mMouseCaptured) return;
 
   float velocity = mCamera.moveSpeed * dt;
@@ -316,9 +350,19 @@ int Application::run() {
     
     update(dt);
 
+    mRenderer.beginEditorFrame();
+    mEditorUI.draw(mEditorScene, mEditorMode, mPlayMode,
+                   mTrain.speed(), mTrain.position(), mRouteLength,
+                   mContext.deviceName(), mDisplayFps);
+    mRenderer.finishEditorFrame();
+
     const float renderTrainPosition = mPhysics.interpolatedPosition(mTrain);
     Camera renderCamera = mCamera;
-    if (mCameraViewMode == CameraViewMode::Cab) {
+    if (mEditorMode) {
+      renderCamera = mCamera;
+      renderCamera.yaw = mCamera.yaw;
+      renderCamera.pitch = mCamera.pitch;
+    } else if (mCameraViewMode == CameraViewMode::Cab) {
       const float motionSway =
           std::clamp(mTrain.acceleration() * 0.018f, -0.035f, 0.035f);
       const float roadVibration =
@@ -357,6 +401,8 @@ int Application::run() {
     mRenderer.drawFrame(renderCamera, renderTrainPosition, mTrain.speed(), mTrain.doorOpenFraction(),
                         mSignal.occupiedBlocks(), passengerPositions);
     ++frameCount;
+    if (dt > 0.0001f)
+      mDisplayFps = 0.9f * mDisplayFps + 0.1f / dt;
 
     if (nowNs - mLastTitleNs >= Uint64(250000000)) {
       const sim::Stop& titleStop =
