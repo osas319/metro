@@ -529,9 +529,10 @@ bool Renderer::initEditorUI() {
   }
 
   if (mEditorBlurView != VK_NULL_HANDLE && mEditorBlurSampler != VK_NULL_HANDLE) {
-    mEditorBlurTexture =
+    const VkDescriptorSet blurDescriptor =
         ImGui_ImplVulkan_AddTexture(mEditorBlurSampler, mEditorBlurView,
                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    mEditorBlurTexture = reinterpret_cast<ImTextureID>(blurDescriptor);
   }
 
   mEditorUIInitialized = true;
@@ -544,7 +545,8 @@ void Renderer::shutdownEditorUI() {
     return;
 
   if (mEditorBlurTexture != 0)
-    ImGui_ImplVulkan_RemoveTexture(mEditorBlurTexture);
+    ImGui_ImplVulkan_RemoveTexture(
+        reinterpret_cast<VkDescriptorSet>(mEditorBlurTexture));
   mEditorBlurTexture = 0;
   ImGui_ImplVulkan_Shutdown();
   ImGui_ImplSDL3_Shutdown();
