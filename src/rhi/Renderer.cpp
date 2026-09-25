@@ -150,13 +150,22 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
 
   // Blok sinyalleri.
   const float blockLength = mRouteLength / static_cast<float>(std::max<size_t>(mBlockCount, 1));
+  const size_t occupiedBlock = std::min(
+      static_cast<size_t>(std::max(trainPosition, 0.0f) / blockLength),
+      mBlockCount > 0 ? mBlockCount - 1 : 0);
   for (size_t block = 0; block < mBlockCount; ++block) {
     const float p = blockLength * static_cast<float>(block);
-    const bool occupied = block < occupiedBlocks.size() && occupiedBlocks[block];
+    const bool occupied =
+        block < occupiedBlocks.size() && occupiedBlocks[block];
+    const bool nextBlock = block == occupiedBlock + 1;
+    const glm::vec4 aspectColor =
+        occupied ? glm::vec4(0.88f, 0.08f, 0.06f, 1.0f)
+        : nextBlock ? glm::vec4(0.95f, 0.72f, 0.08f, 1.0f)
+                    : glm::vec4(0.08f, 0.80f, 0.25f, 1.0f);
     addBox({-mPlatformWidth - 1.25f, 1.0f, -p},
-           {0.12f, 1.0f, 0.12f},
-           occupied ? glm::vec4(0.88f, 0.08f, 0.06f, 1.0f)
-                    : glm::vec4(0.08f, 0.80f, 0.25f, 1.0f), 0.30f);
+           {0.12f, 1.0f, 0.12f}, aspectColor, 0.30f);
+    addBox({-mPlatformWidth - 1.25f, 2.05f, -p},
+           {0.24f, 0.08f, 0.08f}, aspectColor, 0.20f);
   }
 
   // 4 vagonlu CAF M4 seti. Fizik noktası setin referans noktasıdır;
