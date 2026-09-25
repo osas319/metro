@@ -208,6 +208,10 @@ void Application::handleEvent(const SDL_Event& e) {
                  e.key.key == SDLK_L) {
         if (auto* node = mEditorScene.get(mEditorScene.selected()))
           node->locked = !node->locked;
+      } else if (!mRenderer.editorWantsKeyboard() && !mEditorMode &&
+                 e.key.key == SDLK_H && !mHornHeld) {
+        mHornHeld = true;
+        mAudioEvents.push({audio::EventType::Horn, 0});
       } else if (!mRenderer.editorWantsKeyboard() && e.key.key == SDLK_F1) {
         mCameraViewMode = CameraViewMode::Cab;
         mMouseCaptured = false;
@@ -224,6 +228,10 @@ void Application::handleEvent(const SDL_Event& e) {
         mMouseCaptured = false;
         SDL_SetWindowRelativeMouseMode(mWindow, false);
       }
+      break;
+    case SDL_EVENT_KEY_UP:
+      if (e.key.key == SDLK_H)
+        mHornHeld = false;
       break;
     case SDL_EVENT_MOUSE_MOTION:
       if (mMouseCaptured) {
@@ -398,10 +406,42 @@ int Application::run() {
 
     update(dt);
 
+    const sim::Stop& hudStop =
+        mRoute.nextStop(mTrain.position(), mRouteLength);
+    const float hudDistance =
+        std::max(0.0f, hudStop.position - mTrain.position());
+    const size_t hudCurrentBlock =
+        mSignal.blockCount() > 0
+            ? std::min(static_cast<size_t>(mTrain.position() / mBlockLength),
+                       mSignal.blockCount() - 1)
+            : 0;
+    const size_t hudNextBlock = hudCurrentBlock + 1;
+    const sim::SignalAspect hudAspect =
+        mSignal.blockCount() > 0 ? mSignal.aspect(hudNextBlock)
+                                 : sim::SignalAspect::Proceed;
+    const char* hudSignal = hudAspect == sim::SignalAspect::Stop
+                                ? "STOP"
+                                : (hudAspect == sim::SignalAspect::Caution
+                                       ? "CAUTION"
+                                       : "PROCEED");
+    editor::GameplayHUDData gameplayHUD{};
+    gameplayHUD.nextStation = hudStop.name.c_str();
+    gameplayHUD.distanceToNextStation = hudDistance;
+    gameplayHUD.signalAspect = hudSignal;
+    gameplayHUD.recommendedSpeedMps = mTrain.recommendedSpeed(hudDistance);
+    gameplayHUD.accelerationMps2 = mTrain.acceleration();
+    gameplayHUD.dwellSeconds = mStopDwellSeconds;
+    gameplayHUD.dwellLimitSeconds =
+        hudStop.dwellSeconds >= 0.0f ? hudStop.dwellSeconds : mStopDwellSecondsLimit;
+    gameplayHUD.doorsOpen = mTrain.doorsOpen();
+    gameplayHUD.doorOpenFraction = mTrain.doorOpenFraction();
+    gameplayHUD.onboardPassengers = mPassengers.onboard();
+    gameplayHUD.waitingPassengers = mPassengers.waiting();
+
     mRenderer.beginEditorFrame();
     mEditorUI.draw(mEditorScene, mEditorMode, mPlayMode, mEditorGizmoMode,
-                   mTrain.speed(), mTrain.position(), mRouteLength,
-                   mContext.deviceName(), mDisplayFps);
+                   mCamera, mTrain.speed(), mTrain.position(), mRouteLength,
+                   mContext.deviceName(), mDisplayFps, gameplayHUD);
     mRenderer.finishEditorFrame();
 
     const float renderTrainPosition = mPhysics.interpolatedPosition(mTrain);
