@@ -161,6 +161,7 @@ private:
   Model mModel;
   Model mTrainCarModel;
   Model mStationModuleModel;
+  Model mTunnelModuleModel;
   float mRouteLength = 2000.0f;
   float mPlatformWidth = 4.0f;
   float mTrackGauge = 2.4f;
