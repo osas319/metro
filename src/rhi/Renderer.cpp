@@ -36,13 +36,13 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   // Ana tünel gövdesi: zemin, iki platform ve koyu tavan.
   addBox({0.0f, -1.5f, -halfRoute},
           {mPlatformWidth * 2.0f + 3.0f, 0.15f, halfRoute},
-          {0.22f, 0.25f, 0.30f, 1.0f}, 0.92f);
+          {0.22f, 0.25f, 0.30f, 1.0f}, 0.92f, 1.0f);
   addBox({-mPlatformWidth, -0.2f, -halfRoute},
           {mPlatformWidth * 0.95f, 0.30f, halfRoute},
-          {0.48f, 0.50f, 0.54f, 1.0f}, 0.78f);
+          {0.48f, 0.50f, 0.54f, 1.0f}, 0.78f, 2.0f);
   addBox({mPlatformWidth, -0.2f, -halfRoute},
           {mPlatformWidth * 0.95f, 0.30f, halfRoute},
-          {0.48f, 0.50f, 0.54f, 1.0f}, 0.78f);
+          {0.48f, 0.50f, 0.54f, 1.0f}, 0.78f, 2.0f);
   addBox({0.0f, 4.0f, -halfRoute},
           {9.0f, 0.15f, halfRoute},
           {0.13f, 0.16f, 0.20f, 1.0f}, 0.96f);
@@ -50,7 +50,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   // Raylar ve traversler.
   for (float x : {-mTrackGauge * 0.5f, mTrackGauge * 0.5f}) {
     addBox({x, -1.24f, -halfRoute}, {0.055f, 0.055f, halfRoute},
-           {0.72f, 0.74f, 0.78f, 1.0f}, 0.28f);
+           {0.72f, 0.74f, 0.78f, 1.0f}, 0.28f, 3.0f);
   }
   for (float z = -2.0f; z > -mRouteLength; z -= 2.0f)
     addBox({0.0f, -1.27f, z}, {1.0f, 0.035f, 0.10f},
@@ -150,7 +150,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
              {0.08f, 0.22f, 0.30f, 1.0f}, 0.42f);
     }
     addBox({0.0f, 2.40f, z}, {3.4f, 0.08f, 0.10f},
-           {0.04f, 0.20f, 0.30f, 1.0f}, 0.30f);
+           {0.04f, 0.20f, 0.30f, 1.0f}, 0.30f, 8.0f);
   }
 
   // Acil çıkış ve elektrik servis kutuları.
@@ -164,7 +164,7 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
   // Tünel boyunca periyodik aydınlatma kutuları.
   for (float z = -18.0f; z > -mRouteLength; z -= 32.0f) {
     addBox({0.0f, 3.72f, z}, {0.34f, 0.08f, 0.16f},
-           {0.95f, 0.92f, 0.78f, 1.0f}, 0.18f);
+           {0.95f, 0.92f, 0.78f, 1.0f}, 0.18f, 5.0f);
     addBox({-7.85f, 1.95f, z}, {0.10f, 0.10f, 0.10f},
            {0.92f, 0.74f, 0.20f, 1.0f}, 0.22f);
     addBox({7.85f, 1.95f, z}, {0.10f, 0.10f, 0.10f},
@@ -179,15 +179,15 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
 
   // Peron kenar güvenlik şeridi.
   addBox({-mPlatformWidth + 0.10f, 0.14f, -halfRoute},
-         {0.08f, 0.035f, halfRoute}, {0.95f, 0.70f, 0.08f, 1.0f}, 0.45f);
+         {0.08f, 0.035f, halfRoute}, {0.95f, 0.70f, 0.08f, 1.0f}, 0.45f, 6.0f);
   addBox({mPlatformWidth - 0.10f, 0.14f, -halfRoute},
-         {0.08f, 0.035f, halfRoute}, {0.95f, 0.70f, 0.08f, 1.0f}, 0.45f);
+         {0.08f, 0.035f, halfRoute}, {0.95f, 0.70f, 0.08f, 1.0f}, 0.45f, 6.0f);
 
   // Kadıköy peronundaki tabela/aydınlatma ritmi.
   for (float z = -12.0f; z > -mRouteLength; z -= 24.0f) {
     for (float x : {-mPlatformWidth + 0.7f, mPlatformWidth - 0.7f}) {
       addBox({x, 2.65f, z}, {0.08f, 0.08f, 0.08f},
-             {0.85f, 0.92f, 1.0f, 1.0f}, 0.25f);
+             {0.85f, 0.92f, 1.0f, 1.0f}, 0.25f, 5.0f);
       addBox({x, 2.45f, z}, {0.45f, 0.025f, 0.06f},
              {0.12f, 0.38f, 0.55f, 1.0f}, 0.35f);
     }
