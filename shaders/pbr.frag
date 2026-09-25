@@ -132,6 +132,20 @@ void main() {
         float stripeNoise = 0.92 + noise3(vWorldPos * 6.0) * 0.10;
         albedo = mix(albedo, vec3(0.05, 0.34, 0.62), stripe * 0.35);
         albedo *= stripeNoise;
+    } else if (materialId == 14.0) {
+        // Ray çeliği: boyuna taşlama çizgileri, kararma ve teker temas izi.
+        float longitudinal = noise3(vec3(vWorldPos.x * 7.0,
+                                         vWorldPos.y * 20.0,
+                                         vWorldPos.z * 0.75));
+        float fineGroove = 0.93 + 0.07 * longitudinal;
+        float darkStain = smoothstep(0.35, 0.82,
+                                     noise3(vWorldPos * vec3(1.4, 4.0, 0.12)));
+        float headHighlight = smoothstep(0.0, 1.0,
+                                         1.0 - abs(vWorldPos.y + 1.16) / 0.055);
+        albedo = mix(vec3(0.30, 0.32, 0.34),
+                     vec3(0.62, 0.66, 0.70), headHighlight);
+        albedo *= fineGroove;
+        albedo *= mix(1.0, 0.58, darkStain * 0.65);
     }
     float metallic = clamp(push.metallic, 0.0, 1.0);
     float roughness = clamp(push.roughness, 0.045, 1.0); // sıfır parlaklık patlamasını önle
@@ -250,12 +264,12 @@ void main() {
     }
 
     // Tünel atmosferi: uzak geometriyi yumuşatıp sahne derinliği sağlar.
-    const vec3 tunnelFogColor = vec3(0.004, 0.006, 0.010);
+    const vec3 tunnelFogColor = vec3(0.0015, 0.0020, 0.0035);
     float cameraDistance = distance(frame.cameraPos.xyz, vWorldPos);
-    // Uzak tünel kademeli olarak siyaha/sise karışır; yakındaki tren ve raylar
-    // okunaklı kalırken 120 m+ ileri görüş belirgin şekilde kapanır.
-    float fogFactor = exp(-cameraDistance * 0.0070);
-    fogFactor = clamp(fogFactor, 0.0, 1.0);
+    // Oyuncunun uzağı net şekilde göremediği yoğun tünel sisi.
+    // 35 m'den sonra hızla kapanır, 90 m civarında neredeyse siyaha iner.
+    float fogFactor = 1.0 - smoothstep(30.0, 90.0, cameraDistance);
+    fogFactor *= fogFactor;
     color = mix(tunnelFogColor, color, fogFactor);
 
     // Swapchain SRGB: lineer yaz, donanım kodlasın. ACES tonemap post ile.
