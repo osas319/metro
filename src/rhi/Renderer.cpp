@@ -1043,7 +1043,7 @@ void Renderer::drawFrame(const app::Camera& camera, float trainPosition, float d
   // 2) Komut tamponunu bu image için yeniden yaz.
   vkResetCommandBuffer(mCommands[mFrame], 0);
   recordCommandBuffer(mCommands[mFrame], imageIndex, camera, trainPosition,
-                      occupiedBlocks, passengerPositions);
+                      doorOpenFraction, occupiedBlocks, passengerPositions);
 
   // 3) Submit: renk çıktısı aşamasına kadar bekle.
   VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
