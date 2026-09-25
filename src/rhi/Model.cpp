@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <cmath>
+#include <utility>
 
 namespace metro::rhi {
 
@@ -333,6 +334,8 @@ void Model::destroy(VulkanContext& ctx) {
     mIndexBuffer = VK_NULL_HANDLE;
   }
   mSubMeshes.clear();
+  mVertexCount = 0;
+  mIndexCount = 0;
 }
 
 bool Model::load(VulkanContext& ctx, VkCommandPool pool, const std::string& path) {
