@@ -57,9 +57,9 @@ Bunlar **kasıtlı olarak değiştirilmedi**; sahne ölçeğini büyütmek ayrı
 
 | Alan | Şu an | Olması gereken | Etki |
 |---|---|---|---|
-| `route_length` | 2000.0 **[PLACEHOLDER]** | 33500.0 | Tren hızı, blok uzunluğu, kamera ölçeği, ses doppler |
-| `stop` konumları | 87 m eşit aralık **[PLACEHOLDER]** | Durak başına gerçek chainage (ilk iki değer §2'de doğrulandı) | Sinyal/blok ve varış frenleme mesafesi |
-| `track_gauge` | 2.4 **[PLACEHOLDER]** | 1.435 | Ray/araç ölçeği, peron kenar boşluğu |
+| `route_length` | 33500.0 **[DOĞRULANDI]** | 33500.0 | Gerçek hat ölçeği |
+| `stop` konumları | İlk iki aralık doğrulanmış; kalanlar yaklaşık **[TBD]** | Saha/NAVITIME verisiyle gerçek chainage | Sinyal/blok ve varış frenleme mesafesi |
+| `track_gauge` | 1.435 **[DOĞRULANDI]** | 1.435 | Ray ve araç ölçeği |
 | `platform_width` | 4.0 **[PLACEHOLDER]** | Saha ölçümü **[TBD]** | Peron geometrisi (gerçek ada peronları tipik olarak belirgin biçimde daha geniş) |
 
 > Not: `stop` listesi ve `route_length` değiştirilmeden gerçek mimari mesh
