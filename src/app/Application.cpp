@@ -166,8 +166,12 @@ void Application::handleEvent(const SDL_Event& e) {
         mPlayMode = !mPlayMode;
         if (mPlayMode) {
           mEditorMode = false;
+          mCameraViewMode = CameraViewMode::Cab;
           mMouseCaptured = false;
           SDL_SetWindowRelativeMouseMode(mWindow, false);
+        } else {
+          mEditorMode = true;
+          mCameraViewMode = CameraViewMode::Free;
         }
       } else if (mEditorMode && (!mRenderer.editorWantsKeyboard() || mEditorUI.viewportHovered()) &&
                  (e.key.key == SDLK_W || e.key.key == SDLK_E || e.key.key == SDLK_R)) {
