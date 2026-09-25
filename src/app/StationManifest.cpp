@@ -288,9 +288,11 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
            std::pair{"max_speed_mps", &parsed.trainParameters.maxSpeed},
            std::pair{"acceleration_mps2", &parsed.trainParameters.acceleration},
            std::pair{"service_brake_mps2", &parsed.trainParameters.serviceBrake},
+           std::pair{"emergency_brake_mps2", &parsed.trainParameters.emergencyBrake},
            std::pair{"rolling_resistance_mps2",
                      &parsed.trainParameters.rollingResistance},
-           std::pair{"max_jerk_mps3", &parsed.trainParameters.maxJerk}}) {
+           std::pair{"max_jerk_mps3", &parsed.trainParameters.maxJerk},
+           std::pair{"traction_response", &parsed.trainParameters.tractionResponse}}) {
     if (source.find("\"" + std::string(parameter.first) + "\"") !=
             std::string::npos &&
         !readPositiveNumber(source, parameter.first, *parameter.second)) {
@@ -299,9 +301,9 @@ bool StationManifest::load(const std::string& path, StationManifest& out) {
       return false;
     }
   }
-  if (parsed.trainParameters.serviceBrake <
-      parsed.trainParameters.acceleration) {
-    METRO_ERROR("Station manifest servis freni ivmelenmeden dusuk: %s",
+  if (parsed.trainParameters.emergencyBrake <
+          parsed.trainParameters.serviceBrake) {
+    METRO_ERROR("Station manifest acil fren servis freninden dusuk: %s",
                 path.c_str());
     return false;
   }
