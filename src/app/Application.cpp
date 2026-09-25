@@ -192,6 +192,21 @@ void Application::handleEvent(const SDL_Event& e) {
             node->transform.scale = glm::max(node->transform.scale, glm::vec3(0.05f));
           }
         }
+      } else if (mEditorMode && !mRenderer.editorWantsKeyboard() && e.key.key == SDLK_F) {
+        const auto* node = mEditorScene.get(mEditorScene.selected());
+        if (node != nullptr) {
+          const glm::vec3 target = mEditorScene.worldPosition(node->id);
+          mCamera.position = target + glm::vec3(6.0f, 3.5f, 6.0f);
+          const glm::vec3 direction = glm::normalize(target - mCamera.position);
+          mCamera.yaw = glm::degrees(std::atan2(direction.z, direction.x));
+          mCamera.pitch = glm::degrees(std::asin(std::clamp(direction.y, -1.0f, 1.0f)));
+          mMouseCaptured = false;
+          SDL_SetWindowRelativeMouseMode(mWindow, false);
+        }
+      } else if (mEditorMode && !mRenderer.editorWantsKeyboard() &&
+                 e.key.key == SDLK_L) {
+        if (auto* node = mEditorScene.get(mEditorScene.selected()))
+          node->locked = !node->locked;
       } else if (!mRenderer.editorWantsKeyboard() && e.key.key == SDLK_F1) {
         mCameraViewMode = CameraViewMode::Cab;
         mMouseCaptured = false;
