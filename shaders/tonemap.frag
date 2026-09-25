@@ -30,6 +30,24 @@ vec3 acesFilm(vec3 x) {
 void main() {
     vec3 hdr = texture(uHdrColor, vUv).rgb;
 
+    // Editörde 3D sahnenin tamamını çok hafif Gaussian-benzeri bir filtreyle
+    // yumuşat. ImGui daha sonra ayrı olarak çizildiği için arayüz keskin kalır.
+    // Bu, cam panel hissini verirken editör sahnesinin dikkat dağıtmasını azaltır.
+    if (editorBackdropBlur > 0.5) {
+        ivec2 editorSize = textureSize(uHdrColor, 0);
+        vec2 editorTexel = 1.0 / vec2(editorSize);
+        vec3 backdrop = hdr * 0.22;
+        backdrop += texture(uHdrColor, vUv + vec2(editorTexel.x * 1.5, 0.0)).rgb * 0.12;
+        backdrop += texture(uHdrColor, vUv - vec2(editorTexel.x * 1.5, 0.0)).rgb * 0.12;
+        backdrop += texture(uHdrColor, vUv + vec2(0.0, editorTexel.y * 1.5)).rgb * 0.12;
+        backdrop += texture(uHdrColor, vUv - vec2(0.0, editorTexel.y * 1.5)).rgb * 0.12;
+        backdrop += texture(uHdrColor, vUv + editorTexel * 2.2).rgb * 0.06;
+        backdrop += texture(uHdrColor, vUv - editorTexel * 2.2).rgb * 0.06;
+        backdrop += texture(uHdrColor, vUv + vec2(editorTexel.x * 2.2, -editorTexel.y * 2.2)).rgb * 0.06;
+        backdrop += texture(uHdrColor, vUv + vec2(-editorTexel.x * 2.2, editorTexel.y * 2.2)).rgb * 0.06;
+        hdr = mix(hdr, backdrop, 0.62);
+    }
+
     // İleri hareket bulanıklığı tren hızına göre yumuşak biçimde artar.
     // smoothstep kullanıldığı için belirli bir hızda bir anda açılmaz.
     float speed = abs(trainSpeedMps);
