@@ -120,6 +120,33 @@ float distanceToSegment(const ImVec2& point, const ImVec2& a, const ImVec2& b,
 
 } // namespace
 
+void UI::drawGlassBackground(ImTextureID editorBlurTexture, float tintAlpha) {
+  ImGuiViewport* viewport = ImGui::GetMainViewport();
+  ImDrawList* drawList = ImGui::GetWindowDrawList();
+  const ImVec2 pos = ImGui::GetWindowPos();
+  const ImVec2 size = ImGui::GetWindowSize();
+  const ImVec2 max{pos.x + size.x, pos.y + size.y};
+  const float rounding = 14.0f;
+
+  if (editorBlurTexture != 0 && viewport->Size.x > 1.0f && viewport->Size.y > 1.0f) {
+    const ImVec2 uv0{
+        std::clamp((pos.x - viewport->Pos.x) / viewport->Size.x, 0.0f, 1.0f),
+        std::clamp((pos.y - viewport->Pos.y) / viewport->Size.y, 0.0f, 1.0f)};
+    const ImVec2 uv1{
+        std::clamp((max.x - viewport->Pos.x) / viewport->Size.x, 0.0f, 1.0f),
+        std::clamp((max.y - viewport->Pos.y) / viewport->Size.y, 0.0f, 1.0f)};
+    drawList->AddImageRounded(editorBlurTexture, pos, max, uv0, uv1,
+                              IM_COL32(255, 255, 255, 228), rounding);
+  }
+
+  const int alpha = static_cast<int>(std::clamp(tintAlpha, 0.0f, 1.0f) * 255.0f);
+  drawList->AddRectFilled(pos, max, IM_COL32(11, 16, 27, alpha), rounding);
+  drawList->AddRect(pos, max, IM_COL32(165, 205, 255, 62), rounding, 0, 1.0f);
+  drawList->AddLine(ImVec2(pos.x + 18.0f, pos.y + 1.0f),
+                    ImVec2(max.x - 18.0f, pos.y + 1.0f),
+                    IM_COL32(220, 238, 255, 48), 1.0f);
+}
+
 void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode,
               app::Camera& camera, float trainSpeedMps, float trainPosition,
               float routeLength, const char* gpuName, float fps,
@@ -130,14 +157,14 @@ void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMo
     return;
   }
 
-  // Modern, sade "glass" tema. 3D sahne tonemap geçişinde bulanıklaştırıldığı
-  // için yarı saydam paneller sahnenin üzerinde cam panel gibi görünür.
+  // Liquid-glass editor: 3D viewport keskin kalır; panel arkaplanlarında
+  // ayrı blur texture + yarı saydam tint kullanılır.
   ImGuiStyle& style = ImGui::GetStyle();
-  style.WindowRounding = 12.0f;
-  style.ChildRounding = 10.0f;
-  style.FrameRounding = 8.0f;
-  style.PopupRounding = 10.0f;
-  style.ScrollbarRounding = 10.0f;
+  style.WindowRounding = 14.0f;
+  style.ChildRounding = 12.0f;
+  style.FrameRounding = 10.0f;
+  style.PopupRounding = 12.0f;
+  style.ScrollbarRounding = 12.0f;
   style.GrabRounding = 8.0f;
   style.WindowBorderSize = 1.0f;
   style.ChildBorderSize = 1.0f;
@@ -147,19 +174,19 @@ void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMo
   style.ItemSpacing = {8.0f, 7.0f};
   style.ItemInnerSpacing = {6.0f, 5.0f};
 
-  style.Colors[ImGuiCol_WindowBg] = {0.035f, 0.045f, 0.065f, 0.80f};
-  style.Colors[ImGuiCol_ChildBg] = {0.025f, 0.032f, 0.048f, 0.46f};
+  style.Colors[ImGuiCol_WindowBg] = {0.025f, 0.035f, 0.055f, 0.18f};
+  style.Colors[ImGuiCol_ChildBg] = {0.020f, 0.028f, 0.045f, 0.10f};
   style.Colors[ImGuiCol_PopupBg] = {0.045f, 0.055f, 0.078f, 0.96f};
-  style.Colors[ImGuiCol_Border] = {0.45f, 0.52f, 0.66f, 0.18f};
-  style.Colors[ImGuiCol_FrameBg] = {0.10f, 0.12f, 0.17f, 0.78f};
-  style.Colors[ImGuiCol_FrameBgHovered] = {0.16f, 0.20f, 0.28f, 0.92f};
-  style.Colors[ImGuiCol_FrameBgActive] = {0.18f, 0.24f, 0.34f, 0.98f};
-  style.Colors[ImGuiCol_Button] = {0.10f, 0.13f, 0.19f, 0.86f};
-  style.Colors[ImGuiCol_ButtonHovered] = {0.16f, 0.22f, 0.31f, 0.96f};
+  style.Colors[ImGuiCol_Border] = {0.56f, 0.72f, 0.92f, 0.22f};
+  style.Colors[ImGuiCol_FrameBg] = {0.16f, 0.21f, 0.30f, 0.34f};
+  style.Colors[ImGuiCol_FrameBgHovered] = {0.24f, 0.32f, 0.46f, 0.48f};
+  style.Colors[ImGuiCol_FrameBgActive] = {0.20f, 0.40f, 0.64f, 0.62f};
+  style.Colors[ImGuiCol_Button] = {0.12f, 0.18f, 0.28f, 0.34f};
+  style.Colors[ImGuiCol_ButtonHovered] = {0.28f, 0.40f, 0.58f, 0.52f};
   style.Colors[ImGuiCol_ButtonActive] = {0.12f, 0.42f, 0.70f, 1.0f};
-  style.Colors[ImGuiCol_Header] = {0.10f, 0.15f, 0.22f, 0.72f};
-  style.Colors[ImGuiCol_HeaderHovered] = {0.14f, 0.22f, 0.33f, 0.88f};
-  style.Colors[ImGuiCol_HeaderActive] = {0.12f, 0.36f, 0.58f, 0.92f};
+  style.Colors[ImGuiCol_Header] = {0.18f, 0.28f, 0.42f, 0.30f};
+  style.Colors[ImGuiCol_HeaderHovered] = {0.28f, 0.40f, 0.58f, 0.46f};
+  style.Colors[ImGuiCol_HeaderActive] = {0.18f, 0.48f, 0.78f, 0.56f};
   style.Colors[ImGuiCol_Separator] = {0.42f, 0.50f, 0.64f, 0.15f};
   style.Colors[ImGuiCol_Text] = {0.90f, 0.93f, 0.98f, 0.96f};
   style.Colors[ImGuiCol_TextDisabled] = {0.56f, 0.61f, 0.70f, 0.78f};
@@ -176,15 +203,16 @@ void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMo
     mStatus = scene.save(mScenePath) ? "Scene saved (Ctrl+S)" : "Save failed";
   }
 
-  drawToolbar(scene, editorMode, playMode, gizmoMode);
-  drawHierarchy(scene);
-  drawInspector(scene);
-  drawContentBrowser(scene);
-  drawViewport(scene, camera, gizmoMode, trainSpeedMps, trainPosition,
+  drawToolbar(scene, editorMode, playMode, gizmoMode, editorBlurTexture);
+  drawHierarchy(scene, editorBlurTexture);
+  drawInspector(scene, editorBlurTexture);
+  drawContentBrowser(scene, editorBlurTexture);
+  drawViewport(scene, camera, gizmoMode, editorBlurTexture, trainSpeedMps, trainPosition,
                routeLength, gpuName, fps);
 }
 
-void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode) {
+void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMode,
+                      ImTextureID editorBlurTexture) {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
   ImGui::SetNextWindowPos(viewport->WorkPos);
   ImGui::SetNextWindowSize({viewport->WorkSize.x, 58.0f});
@@ -199,6 +227,7 @@ void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& 
     return;
   }
 
+  drawGlassBackground(editorBlurTexture, 0.48f);
   ImGui::TextColored({0.28f, 0.72f, 1.0f, 1.0f}, "M4");
   ImGui::SameLine();
   ImGui::TextDisabled("EDITOR");
@@ -280,7 +309,7 @@ void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& 
   ImGui::End();
 }
 
-void UI::drawHierarchy(Scene& scene) {
+void UI::drawHierarchy(Scene& scene, ImTextureID editorBlurTexture) {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
   ImGui::SetNextWindowPos({viewport->WorkPos.x, viewport->WorkPos.y + 58.0f},
                           ImGuiCond_FirstUseEver);
@@ -295,6 +324,7 @@ void UI::drawHierarchy(Scene& scene) {
     return;
   }
 
+  drawGlassBackground(editorBlurTexture, 0.54f);
   ImGui::TextUnformatted("HIERARCHY");
   ImGui::SameLine();
   ImGui::TextDisabled("%zu entities", scene.size());
@@ -371,7 +401,7 @@ void UI::drawEntityTree(Scene& scene, entt::entity entity) {
   }
 }
 
-void UI::drawInspector(Scene& scene) {
+void UI::drawInspector(Scene& scene, ImTextureID editorBlurTexture) {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
   const float width = 340.0f;
   ImGui::SetNextWindowPos(
@@ -388,6 +418,7 @@ void UI::drawInspector(Scene& scene) {
     return;
   }
 
+  drawGlassBackground(editorBlurTexture, 0.54f);
   ImGui::TextUnformatted("INSPECTOR");
 
   SceneEntity* node = scene.get(scene.selected());
@@ -477,7 +508,7 @@ void UI::drawInspector(Scene& scene) {
   ImGui::End();
 }
 
-void UI::drawContentBrowser(Scene& scene) {
+void UI::drawContentBrowser(Scene& scene, ImTextureID editorBlurTexture) {
   (void)scene;
   ImGuiViewport* viewport = ImGui::GetMainViewport();
   const float height = 205.0f;
@@ -496,6 +527,7 @@ void UI::drawContentBrowser(Scene& scene) {
     return;
   }
 
+  drawGlassBackground(editorBlurTexture, 0.50f);
   ImGui::TextUnformatted("CONTENT");
   ImGui::SameLine();
   ImGui::TextDisabled("%s", mContentPath.generic_string().c_str());
@@ -583,6 +615,7 @@ void UI::drawContentBrowser(Scene& scene) {
 }
 
 void UI::drawViewport(Scene& scene, app::Camera& camera, GizmoMode& gizmoMode,
+                      ImTextureID editorBlurTexture,
                       float trainSpeedMps, float trainPosition,
                       float routeLength, const char* gpuName, float fps) {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
