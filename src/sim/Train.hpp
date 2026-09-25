@@ -23,6 +23,11 @@ public:
   float doorOpenFraction() const { return mDoorOpenFraction; }
   bool requestDoorsOpen(bool open, bool platformAligned);
 
+  float maxSpeed() const { return mParameters.maxSpeed; }
+  float serviceBrake() const { return mParameters.serviceBrake; }
+  float brakingDistance() const;
+  float recommendedSpeed(float distanceMeters) const;
+
 private:
   float mPosition = 0.0f;
   float mSpeed = 0.0f;
