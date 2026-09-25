@@ -458,7 +458,7 @@ void UI::drawContentBrowser(Scene& scene) {
   }
   std::sort(entries.begin(), entries.end(),
             [](const auto& a, const auto& b) {
-              const std::error_code ea{}, eb{};
+              std::error_code ea, eb;
               const bool ad = a.is_directory(ea);
               const bool bd = b.is_directory(eb);
               if (ad != bd) return ad > bd;
