@@ -130,6 +130,44 @@ void UI::draw(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& gizmoMo
     return;
   }
 
+  // Modern, sade "glass" tema. 3D sahne tonemap geçişinde bulanıklaştırıldığı
+  // için yarı saydam paneller sahnenin üzerinde cam panel gibi görünür.
+  ImGuiStyle& style = ImGui::GetStyle();
+  style.WindowRounding = 12.0f;
+  style.ChildRounding = 10.0f;
+  style.FrameRounding = 8.0f;
+  style.PopupRounding = 10.0f;
+  style.ScrollbarRounding = 10.0f;
+  style.GrabRounding = 8.0f;
+  style.WindowBorderSize = 1.0f;
+  style.ChildBorderSize = 1.0f;
+  style.FrameBorderSize = 1.0f;
+  style.WindowPadding = {14.0f, 12.0f};
+  style.FramePadding = {10.0f, 7.0f};
+  style.ItemSpacing = {8.0f, 7.0f};
+  style.ItemInnerSpacing = {6.0f, 5.0f};
+
+  style.Colors[ImGuiCol_WindowBg] = {0.035f, 0.045f, 0.065f, 0.80f};
+  style.Colors[ImGuiCol_ChildBg] = {0.025f, 0.032f, 0.048f, 0.46f};
+  style.Colors[ImGuiCol_PopupBg] = {0.045f, 0.055f, 0.078f, 0.96f};
+  style.Colors[ImGuiCol_Border] = {0.45f, 0.52f, 0.66f, 0.18f};
+  style.Colors[ImGuiCol_FrameBg] = {0.10f, 0.12f, 0.17f, 0.78f};
+  style.Colors[ImGuiCol_FrameBgHovered] = {0.16f, 0.20f, 0.28f, 0.92f};
+  style.Colors[ImGuiCol_FrameBgActive] = {0.18f, 0.24f, 0.34f, 0.98f};
+  style.Colors[ImGuiCol_Button] = {0.10f, 0.13f, 0.19f, 0.86f};
+  style.Colors[ImGuiCol_ButtonHovered] = {0.16f, 0.22f, 0.31f, 0.96f};
+  style.Colors[ImGuiCol_ButtonActive] = {0.12f, 0.42f, 0.70f, 1.0f};
+  style.Colors[ImGuiCol_Header] = {0.10f, 0.15f, 0.22f, 0.72f};
+  style.Colors[ImGuiCol_HeaderHovered] = {0.14f, 0.22f, 0.33f, 0.88f};
+  style.Colors[ImGuiCol_HeaderActive] = {0.12f, 0.36f, 0.58f, 0.92f};
+  style.Colors[ImGuiCol_Separator] = {0.42f, 0.50f, 0.64f, 0.15f};
+  style.Colors[ImGuiCol_Text] = {0.90f, 0.93f, 0.98f, 0.96f};
+  style.Colors[ImGuiCol_TextDisabled] = {0.56f, 0.61f, 0.70f, 0.78f};
+  style.Colors[ImGuiCol_CheckMark] = {0.35f, 0.72f, 1.0f, 1.0f};
+  style.Colors[ImGuiCol_SliderGrab] = {0.28f, 0.62f, 0.92f, 0.92f};
+  style.Colors[ImGuiCol_SliderGrabActive] = {0.42f, 0.78f, 1.0f, 1.0f};
+  style.Colors[ImGuiCol_NavHighlight] = {0.28f, 0.62f, 0.92f, 0.76f};
+
   ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(),
                                ImGuiDockNodeFlags_PassthruCentralNode);
 
@@ -161,7 +199,12 @@ void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& 
     return;
   }
 
-  if (ImGui::Button(playMode ? "||  PAUSE" : ">  PLAY", {92.0f, 32.0f})) {
+  ImGui::TextColored({0.28f, 0.72f, 1.0f, 1.0f}, "M4");
+  ImGui::SameLine();
+  ImGui::TextDisabled("EDITOR");
+  ImGui::SameLine();
+
+  if (ImGui::Button(playMode ? "PAUSE" : "PLAY", {82.0f, 32.0f})) {
     playMode = !playMode;
     if (playMode) {
       // Play gerçekten oyun görünümüne geçsin; editör kamerası ve input
@@ -197,7 +240,7 @@ void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& 
   if (scaleMode) ImGui::PopStyleColor();
 
   ImGui::SameLine();
-  if (ImGui::Button(" +  ENTITY", {92.0f, 32.0f})) {
+  if (ImGui::Button("+ ENTITY", {88.0f, 32.0f})) {
     scene.create("New Entity", "Empty", creationParent(scene));
     mStatus = "Created entity";
   }
@@ -226,17 +269,7 @@ void UI::drawToolbar(Scene& scene, bool& editorMode, bool& playMode, GizmoMode& 
   }
 
   ImGui::SameLine();
-  ImGui::TextDisabled("|");
-
-  ImGui::SameLine();
-  ImGui::TextUnformatted("Metro Editor");
-  ImGui::SameLine();
-  ImGui::TextDisabled("Scene");
-  ImGui::SameLine();
-  ImGui::TextUnformatted(mScenePath.c_str());
-
-  ImGui::SameLine();
-  ImGui::TextDisabled("| %s", mStatus.c_str());
+  ImGui::TextDisabled("%s", mStatus.c_str());
 
   ImGui::SameLine();
   const float right = ImGui::GetContentRegionAvail().x;
@@ -254,12 +287,16 @@ void UI::drawHierarchy(Scene& scene) {
   ImGui::SetNextWindowSize({285.0f, viewport->WorkSize.y * 0.62f},
                            ImGuiCond_FirstUseEver);
 
-  if (!ImGui::Begin("Scene Hierarchy"))
-  {
+  const ImGuiWindowFlags panelFlags =
+      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+
+  if (!ImGui::Begin("Scene Hierarchy", nullptr, panelFlags)) {
     ImGui::End();
     return;
   }
 
+  ImGui::TextUnformatted("HIERARCHY");
+  ImGui::SameLine();
   ImGui::TextDisabled("%zu entities", scene.size());
   ImGui::SameLine();
   if (ImGui::SmallButton("+"))
@@ -343,10 +380,15 @@ void UI::drawInspector(Scene& scene) {
   ImGui::SetNextWindowSize({width, viewport->WorkSize.y * 0.62f},
                            ImGuiCond_FirstUseEver);
 
-  if (!ImGui::Begin("Inspector")) {
+  const ImGuiWindowFlags panelFlags =
+      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+
+  if (!ImGui::Begin("Inspector", nullptr, panelFlags)) {
     ImGui::End();
     return;
   }
+
+  ImGui::TextUnformatted("INSPECTOR");
 
   SceneEntity* node = scene.get(scene.selected());
   if (node == nullptr) {
@@ -443,11 +485,21 @@ void UI::drawContentBrowser(Scene& scene) {
       {viewport->WorkPos.x, viewport->WorkPos.y + viewport->WorkSize.y - height});
   ImGui::SetNextWindowSize({viewport->WorkSize.x, height});
 
-  if (!ImGui::Begin("Content Browser", nullptr,
-                    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
+  const ImGuiWindowFlags panelFlags =
+      ImGuiWindowFlags_NoTitleBar |
+      ImGuiWindowFlags_NoMove |
+      ImGuiWindowFlags_NoSavedSettings |
+      ImGuiWindowFlags_NoCollapse;
+
+  if (!ImGui::Begin("Content Browser", nullptr, panelFlags)) {
     ImGui::End();
     return;
   }
+
+  ImGui::TextUnformatted("CONTENT");
+  ImGui::SameLine();
+  ImGui::TextDisabled("%s", mContentPath.generic_string().c_str());
+  ImGui::SameLine();
 
   if (!std::filesystem::exists(mContentPath)) {
     mContentPath = "assets";
@@ -462,7 +514,6 @@ void UI::drawContentBrowser(Scene& scene) {
     mContentPath = "assets";
 
   ImGui::SameLine();
-  ImGui::TextDisabled("%s", mContentPath.generic_string().c_str());
   ImGui::Separator();
 
   std::vector<std::filesystem::directory_entry> entries;
