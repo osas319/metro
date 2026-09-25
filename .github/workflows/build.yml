@@ -1,0 +1,44 @@
+name: Metro build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build development image
+        run: docker build -t metro-dev:ci -f Containerfile .
+
+      - name: Configure
+        run: >
+          docker run --rm
+          -v "$GITHUB_WORKSPACE:/work"
+          -w /work
+          metro-dev:ci
+          cmake -S /work -B /work/build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: >
+          docker run --rm
+          -v "$GITHUB_WORKSPACE:/work"
+          -w /work
+          metro-dev:ci
+          cmake --build /work/build -j2
+
+      - name: Simulation tests
+        run: >
+          docker run --rm
+          -v "$GITHUB_WORKSPACE:/work"
+          -w /work
+          metro-dev:ci
+          ctest --test-dir /work/build --output-on-failure
