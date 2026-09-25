@@ -37,7 +37,10 @@ int main() {
   assert(doorAnimationTrain.doorOpenFraction() == 1.0f);
   doorAnimationTrain.requestDoorsOpen(false, false);
   doorAnimationTrain.update(0.1f, false, false);
+  assert(doorAnimationTrain.doorOpenFraction() > 0.0f);
   assert(doorAnimationTrain.doorOpenFraction() < 1.0f);
+  doorAnimationTrain.update(0.5f, false, false);
+  assert(doorAnimationTrain.doorOpenFraction() == 0.0f);
 
   metro::sim::Train signalTrain;
   signalTrain.update(1.0f, true, false, false);
