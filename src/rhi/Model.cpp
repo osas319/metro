@@ -125,67 +125,140 @@ void addFrustum(BuiltinPart& part, float z0, float z1,
 std::vector<BuiltinPart> makeTrainCarParts() {
   std::vector<BuiltinPart> parts;
 
+  // M4 CAF araci: yaklasik 22.43 m uzunluk / 3.009 m genislik.
+  // Geometri, gercek olcekli 4'lu set yerlesimine gore uzatildi.
+  constexpr float halfWidth = 1.505f;
+  constexpr float bodyLength = 22.43f;
+
   BuiltinPart chassis;
-  chassis.color = {0.10f, 0.12f, 0.15f, 1.0f};
+  chassis.color = {0.055f, 0.065f, 0.078f, 1.0f};
   chassis.roughness = 0.72f;
-  addBox(chassis, {0.0f, -0.50f, 0.0f}, {2.55f, 0.80f, 17.0f});
+  chassis.materialId = 3.0f;
+  addBox(chassis, {0.0f, -0.62f, 0.0f}, {2.72f, 0.74f, bodyLength - 0.55f});
+  addBox(chassis, {0.0f, -0.20f, -9.45f}, {2.82f, 0.32f, 0.42f});
+  addBox(chassis, {0.0f, -0.20f, 9.45f}, {2.82f, 0.32f, 0.42f});
   parts.push_back(std::move(chassis));
 
   BuiltinPart lower;
-  lower.color = {0.055f, 0.28f, 0.52f, 1.0f};
-  lower.roughness = 0.46f;
-  addBox(lower, {0.0f, 0.00f, 0.0f}, {2.68f, 0.72f, 16.8f});
+  lower.color = {0.035f, 0.22f, 0.44f, 1.0f};
+  lower.roughness = 0.40f;
+  lower.materialId = 11.0f;
+  addBox(lower, {0.0f, 0.00f, 0.0f}, {2.92f, 0.70f, bodyLength - 0.95f});
+  addBox(lower, {0.0f, 0.34f, 0.0f}, {2.96f, 0.16f, bodyLength - 1.35f});
   parts.push_back(std::move(lower));
 
+  // Acik renkli yan kabuk + egimli burun.
   BuiltinPart upper;
-  upper.color = {0.83f, 0.84f, 0.82f, 1.0f};
+  upper.color = {0.84f, 0.85f, 0.84f, 1.0f};
   upper.metallic = 0.05f;
-  upper.roughness = 0.30f;
-  addBox(upper, {0.0f, 0.72f, 0.0f}, {2.76f, 1.16f, 15.9f});
-  addFrustum(upper, -9.75f, -7.95f, 1.02f, 1.38f, 0.02f, 1.88f);
-  addFrustum(upper, 7.95f, 9.75f, 1.38f, 1.02f, 0.02f, 1.88f);
+  upper.roughness = 0.28f;
+  upper.materialId = 11.0f;
+  addBox(upper, {0.0f, 0.84f, 0.0f}, {2.98f, 1.12f, 20.15f});
+  addFrustum(upper, -11.18f, -9.35f, 1.02f, 1.48f, 0.18f, 1.92f);
+  addFrustum(upper, 9.35f, 11.18f, 1.48f, 1.02f, 0.18f, 1.92f);
   parts.push_back(std::move(upper));
 
+  // Mavi M4 guzergh bandi ve yan panel kirilimi.
+  BuiltinPart stripe;
+  stripe.color = {0.035f, 0.28f, 0.58f, 1.0f};
+  stripe.roughness = 0.34f;
+  stripe.materialId = 7.0f;
+  addBox(stripe, {0.0f, 0.40f, 0.0f}, {3.00f, 0.16f, 18.9f});
+  parts.push_back(std::move(stripe));
+
   BuiltinPart windows;
-  windows.color = {0.012f, 0.035f, 0.060f, 1.0f};
-  windows.metallic = 0.0f;
-  windows.roughness = 0.10f;
+  windows.color = {0.010f, 0.028f, 0.052f, 1.0f};
+  windows.roughness = 0.085f;
   windows.materialId = 4.0f;
-  for (float side : {-1.0f, 1.0f})
-    addBox(windows, {side * 1.395f, 0.93f, 0.0f}, {0.045f, 0.52f, 13.8f});
-  for (float z : {-9.68f, 9.68f})
-    addBox(windows, {0.0f, 1.13f, z}, {1.55f, 0.58f, 0.045f});
+  for (float side : {-1.0f, 1.0f}) {
+    addBox(windows, {side * (halfWidth - 0.055f), 1.02f, 0.0f},
+           {0.045f, 0.57f, 17.7f});
+    // Pencere arasi ince dikmeler.
+    for (float z : {-7.5f, -3.75f, 0.0f, 3.75f, 7.5f})
+      addBox(windows, {side * (halfWidth - 0.065f), 1.02f, z},
+             {0.055f, 0.61f, 0.055f});
+  }
+  for (float z : {-10.95f, 10.95f})
+    addBox(windows, {0.0f, 1.18f, z},
+           {1.18f, 0.62f, 0.05f});
   parts.push_back(std::move(windows));
 
+  BuiltinPart doors;
+  doors.color = {0.60f, 0.63f, 0.66f, 1.0f};
+  doors.metallic = 0.18f;
+  doors.roughness = 0.24f;
+  doors.materialId = 10.0f;
+  for (float side : {-1.0f, 1.0f}) {
+    for (float z : {-6.7f, 0.0f, 6.7f}) {
+      addBox(doors, {side * (halfWidth + 0.012f), 0.70f, z},
+             {0.055f, 0.93f, 1.34f});
+      addBox(doors, {side * (halfWidth + 0.018f), 0.70f, z - 0.68f},
+             {0.065f, 0.035f, 0.035f});
+      addBox(doors, {side * (halfWidth + 0.018f), 0.70f, z + 0.68f},
+             {0.065f, 0.035f, 0.035f});
+    }
+  }
+  parts.push_back(std::move(doors));
+
   BuiltinPart endCap;
-  endCap.color = {0.075f, 0.34f, 0.62f, 1.0f};
-  endCap.metallic = 0.05f;
-  endCap.roughness = 0.24f;
-  for (float z : {-9.70f, 9.70f})
-    addBox(endCap, {0.0f, 0.43f, z}, {1.95f, 0.62f, 0.10f});
+  endCap.color = {0.045f, 0.25f, 0.52f, 1.0f};
+  endCap.metallic = 0.07f;
+  endCap.roughness = 0.22f;
+  endCap.materialId = 7.0f;
+  for (float z : {-11.18f, 11.18f}) {
+    addBox(endCap, {0.0f, 0.46f, z}, {2.10f, 0.72f, 0.11f});
+    addBox(endCap, {0.0f, 1.05f, z}, {1.48f, 0.46f, 0.07f});
+  }
   parts.push_back(std::move(endCap));
 
   BuiltinPart roof;
-  roof.color = {0.48f, 0.50f, 0.51f, 1.0f};
-  roof.metallic = 0.22f;
-  roof.roughness = 0.34f;
-  addBox(roof, {0.0f, 1.63f, 0.0f}, {2.48f, 0.25f, 17.2f});
+  roof.color = {0.34f, 0.37f, 0.40f, 1.0f};
+  roof.metallic = 0.35f;
+  roof.roughness = 0.30f;
+  roof.materialId = 10.0f;
+  addBox(roof, {0.0f, 1.67f, 0.0f}, {2.62f, 0.25f, bodyLength - 0.20f});
+  addBox(roof, {0.0f, 1.83f, -3.4f}, {0.56f, 0.24f, 4.4f});
+  addBox(roof, {0.0f, 1.83f, 3.6f}, {0.40f, 0.20f, 1.80f});
   parts.push_back(std::move(roof));
 
+  BuiltinPart underfloor;
+  underfloor.color = {0.075f, 0.085f, 0.10f, 1.0f};
+  underfloor.roughness = 0.78f;
+  underfloor.materialId = 3.0f;
+  for (float z : {-7.2f, -2.4f, 2.4f, 7.2f})
+    addBox(underfloor, {0.0f, -0.92f, z}, {1.95f, 0.26f, 1.35f});
+  parts.push_back(std::move(underfloor));
+
   BuiltinPart bogies;
-  bogies.color = {0.08f, 0.09f, 0.11f, 1.0f};
-  bogies.roughness = 0.78f;
-  for (float z : {-5.9f, 5.9f})
-    addBox(bogies, {0.0f, -0.92f, z}, {1.72f, 0.28f, 1.45f});
+  bogies.color = {0.055f, 0.062f, 0.075f, 1.0f};
+  bogies.roughness = 0.80f;
+  bogies.materialId = 3.0f;
+  for (float z : {-7.05f, 7.05f}) {
+    addBox(bogies, {0.0f, -1.06f, z}, {1.95f, 0.32f, 1.65f});
+    addBox(bogies, {-0.62f, -1.25f, z}, {0.36f, 0.20f, 1.08f});
+    addBox(bogies, {0.62f, -1.25f, z}, {0.36f, 0.20f, 1.08f});
+  }
   parts.push_back(std::move(bogies));
 
-  BuiltinPart roofEquip;
-  roofEquip.color = {0.22f, 0.24f, 0.26f, 1.0f};
-  roofEquip.metallic = 0.18f;
-  roofEquip.roughness = 0.48f;
-  addBox(roofEquip, {0.0f, 1.88f, -1.8f}, {0.42f, 0.26f, 4.4f});
-  addBox(roofEquip, {0.0f, 1.88f, 3.6f}, {0.30f, 0.22f, 1.5f});
-  parts.push_back(std::move(roofEquip));
+  BuiltinPart lights;
+  lights.color = {0.92f, 0.95f, 1.0f, 1.0f};
+  lights.roughness = 0.12f;
+  lights.materialId = 5.0f;
+  for (float side : {-0.72f, 0.72f}) {
+    addBox(lights, {side, 0.72f, -11.27f}, {0.22f, 0.22f, 0.08f});
+    addBox(lights, {side, 0.72f, 11.27f}, {0.22f, 0.22f, 0.08f});
+  }
+  parts.push_back(std::move(lights));
+
+  BuiltinPart couplers;
+  couplers.color = {0.08f, 0.09f, 0.11f, 1.0f};
+  couplers.roughness = 0.70f;
+  couplers.materialId = 3.0f;
+  for (float z : {-11.52f, 11.52f}) {
+    addBox(couplers, {0.0f, -0.35f, z}, {0.46f, 0.36f, 0.30f});
+    addBox(couplers, {0.0f, 0.12f, z}, {0.24f, 0.28f, 0.44f});
+  }
+  parts.push_back(std::move(couplers));
 
   return parts;
 }
@@ -244,74 +317,139 @@ std::vector<BuiltinPart> makeTunnelModuleParts() {
 
 std::vector<BuiltinPart> makeStationModuleParts() {
   std::vector<BuiltinPart> parts;
+  constexpr float moduleLength = 30.0f;
 
+  // Zemin / granit platform kaplamasi.
   BuiltinPart platform;
-  platform.color = {0.48f, 0.49f, 0.48f, 1.0f};
-  platform.roughness = 0.88f;
+  platform.color = {0.43f, 0.45f, 0.46f, 1.0f};
+  platform.roughness = 0.82f;
+  platform.materialId = 9.0f;
   for (float side : {-1.0f, 1.0f})
-    addBox(platform, {side * 2.55f, -0.56f, 0.0f}, {3.40f, 1.00f, 30.0f});
+    addBox(platform, {side * 2.55f, -0.56f, 0.0f}, {3.40f, 1.00f, moduleLength});
   parts.push_back(std::move(platform));
 
-  BuiltinPart wall;
-  wall.color = {0.76f, 0.74f, 0.69f, 1.0f};
-  wall.roughness = 0.72f;
+  // Platform kenar tasi ve sari guvenlik seridi.
+  BuiltinPart edge;
+  edge.color = {0.68f, 0.70f, 0.70f, 1.0f};
+  edge.roughness = 0.64f;
+  edge.materialId = 3.0f;
   for (float side : {-1.0f, 1.0f})
-    addBox(wall, {side * 4.35f, 1.55f, 0.0f}, {0.22f, 3.45f, 30.0f});
+    addBox(edge, {side * 0.94f, -0.02f, 0.0f}, {0.15f, 0.12f, 29.7f});
+  parts.push_back(std::move(edge));
+
+  BuiltinPart safety;
+  safety.color = {0.98f, 0.70f, 0.06f, 1.0f};
+  safety.roughness = 0.34f;
+  safety.materialId = 7.0f;
+  for (float side : {-1.0f, 1.0f})
+    addBox(safety, {side * 0.90f, 0.055f, 0.0f}, {0.045f, 0.025f, 29.0f});
+  parts.push_back(std::move(safety));
+
+  // Beton / seramik duvar.
+  BuiltinPart wall;
+  wall.color = {0.72f, 0.73f, 0.71f, 1.0f};
+  wall.roughness = 0.76f;
+  wall.materialId = 12.0f;
+  for (float side : {-1.0f, 1.0f})
+    addBox(wall, {side * 4.35f, 1.55f, 0.0f}, {0.24f, 3.45f, moduleLength});
   parts.push_back(std::move(wall));
 
-  BuiltinPart wallAccent;
-  wallAccent.color = {0.035f, 0.18f, 0.34f, 1.0f};
-  wallAccent.roughness = 0.42f;
+  // Duvar plaka derzleri.
+  BuiltinPart wallTiles;
+  wallTiles.color = {0.55f, 0.57f, 0.57f, 1.0f};
+  wallTiles.roughness = 0.52f;
+  wallTiles.materialId = 12.0f;
   for (float side : {-1.0f, 1.0f}) {
-    for (float z = -12.0f; z <= 12.0f; z += 6.0f)
-      addBox(wallAccent, {side * 4.22f, 1.65f, z}, {0.035f, 2.1f, 1.2f});
+    for (float z = -14.0f; z <= 14.0f; z += 2.5f)
+      addBox(wallTiles, {side * 4.215f, 1.55f, z},
+             {0.025f, 3.28f, 0.025f});
+    addBox(wallTiles, {side * 4.215f, 2.55f, 0.0f},
+           {0.025f, 0.025f, moduleLength});
+  }
+  parts.push_back(std::move(wallTiles));
+
+  // M4 mavi yonlendirme / mimari aks.
+  BuiltinPart wallAccent;
+  wallAccent.color = {0.030f, 0.20f, 0.42f, 1.0f};
+  wallAccent.roughness = 0.38f;
+  wallAccent.materialId = 7.0f;
+  for (float side : {-1.0f, 1.0f}) {
+    addBox(wallAccent, {side * 4.20f, 0.92f, 0.0f},
+           {0.035f, 0.22f, moduleLength});
+    for (float z = -11.0f; z <= 11.0f; z += 11.0f)
+      addBox(wallAccent, {side * 4.16f, 1.72f, z},
+             {0.04f, 1.55f, 0.12f});
   }
   parts.push_back(std::move(wallAccent));
 
+  // Tavan: moduler alçı panel + taşıyici traversler.
   BuiltinPart ceiling;
-  ceiling.color = {0.82f, 0.82f, 0.78f, 1.0f};
-  ceiling.roughness = 0.84f;
-  addBox(ceiling, {0.0f, 3.92f, 0.0f}, {8.95f, 0.18f, 30.0f});
+  ceiling.color = {0.80f, 0.81f, 0.79f, 1.0f};
+  ceiling.roughness = 0.82f;
+  ceiling.materialId = 12.0f;
+  addBox(ceiling, {0.0f, 3.92f, 0.0f}, {8.95f, 0.18f, moduleLength});
+  for (float z = -12.0f; z <= 12.0f; z += 6.0f)
+    addBox(ceiling, {0.0f, 3.82f, z}, {8.55f, 0.08f, 0.09f});
   parts.push_back(std::move(ceiling));
 
   BuiltinPart pillars;
-  pillars.color = {0.52f, 0.53f, 0.51f, 1.0f};
-  pillars.metallic = 0.06f;
-  pillars.roughness = 0.60f;
+  pillars.color = {0.48f, 0.50f, 0.50f, 1.0f};
+  pillars.metallic = 0.08f;
+  pillars.roughness = 0.56f;
+  pillars.materialId = 3.0f;
   for (float side : {-1.0f, 1.0f})
-    for (float z = -12.0f; z <= 12.0f; z += 6.0f)
-      addBox(pillars, {side * 3.85f, 1.96f, z}, {0.30f, 3.72f, 0.30f});
+    for (float z = -12.0f; z <= 12.0f; z += 6.0f) {
+      addBox(pillars, {side * 3.85f, 1.96f, z}, {0.32f, 3.72f, 0.32f});
+      addBox(pillars, {side * 3.85f, 3.76f, z}, {0.48f, 0.14f, 0.48f});
+    }
   parts.push_back(std::move(pillars));
 
-  BuiltinPart safety;
-  safety.color = {0.96f, 0.70f, 0.05f, 1.0f};
-  safety.roughness = 0.42f;
-  for (float side : {-1.0f, 1.0f})
-    addBox(safety, {side * 0.89f, -0.02f, 0.0f}, {0.055f, 0.025f, 29.0f});
-  parts.push_back(std::move(safety));
+  // Banklar / servis dolaplari gibi insan olceginde detaylar.
+  BuiltinPart furniture;
+  furniture.color = {0.09f, 0.12f, 0.15f, 1.0f};
+  furniture.roughness = 0.62f;
+  furniture.materialId = 3.0f;
+  for (float side : {-1.0f, 1.0f}) {
+    addBox(furniture, {side * 2.65f, 0.12f, -9.0f},
+           {1.05f, 0.10f, 1.95f});
+    addBox(furniture, {side * 2.65f, 0.50f, -9.0f},
+           {1.05f, 0.10f, 1.95f});
+    for (float legZ : {-9.72f, -8.28f})
+      addBox(furniture, {side * 2.65f, -0.12f, legZ},
+             {0.08f, 0.34f, 0.08f});
+  }
+  parts.push_back(std::move(furniture));
 
   BuiltinPart tactile;
-  tactile.color = {0.76f, 0.76f, 0.70f, 1.0f};
-  tactile.roughness = 0.76f;
+  tactile.color = {0.70f, 0.70f, 0.66f, 1.0f};
+  tactile.roughness = 0.74f;
+  tactile.materialId = 9.0f;
   for (float side : {-1.0f, 1.0f})
-    addBox(tactile, {side * 1.08f, 0.00f, 0.0f}, {0.08f, 0.04f, 29.0f});
+    addBox(tactile, {side * 1.07f, 0.015f, 0.0f}, {0.12f, 0.045f, 29.0f});
   parts.push_back(std::move(tactile));
 
+  // LED armaturlari.
   BuiltinPart lights;
-  lights.color = {1.0f, 0.91f, 0.73f, 1.0f};
-  lights.roughness = 0.18f;
+  lights.color = {1.0f, 0.92f, 0.78f, 1.0f};
+  lights.roughness = 0.16f;
   lights.materialId = 5.0f;
-  for (float side : {-1.0f, 1.0f})
+  for (float side : {-2.45f, 2.45f})
     for (float z = -12.0f; z <= 12.0f; z += 6.0f)
-      addBox(lights, {side * 2.45f, 3.76f, z}, {0.22f, 0.045f, 3.8f});
+      addBox(lights, {side, 3.76f, z}, {0.22f, 0.045f, 3.8f});
   parts.push_back(std::move(lights));
 
+  // Yonlendirme panolari / reklam panolarinin hacmi.
   BuiltinPart signs;
-  signs.color = {0.05f, 0.17f, 0.29f, 1.0f};
-  signs.roughness = 0.36f;
+  signs.color = {0.025f, 0.12f, 0.23f, 1.0f};
+  signs.roughness = 0.30f;
+  signs.materialId = 5.0f;
   for (float z : {-10.0f, 0.0f, 10.0f}) {
-    addBox(signs, {-2.1f, 3.55f, z}, {1.65f, 0.36f, 0.06f});
-    addBox(signs, {2.1f, 3.55f, z}, {1.65f, 0.36f, 0.06f});
+    for (float side : {-1.0f, 1.0f}) {
+      addBox(signs, {side * 2.20f, 3.22f, z},
+             {1.70f, 0.46f, 0.07f});
+      addBox(signs, {side * 2.20f, 2.70f, z},
+             {1.42f, 0.06f, 0.05f});
+    }
   }
   parts.push_back(std::move(signs));
 
