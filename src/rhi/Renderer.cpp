@@ -1308,7 +1308,7 @@ void Renderer::createSyncObjects() {
 
 void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
                                    const app::Camera& camera, float trainPosition, float trainSpeed,
-                                   float doorOpenFraction, bool trainBraking,
+                                   float doorOpenFraction, bool trainBraking, bool editorBackdropBlur,
                                    const std::vector<bool>& occupiedBlocks,
                                    const std::vector<glm::vec2>& passengerPositions,
                                    const std::vector<EditorMarker>& editorMarkers,
@@ -1448,6 +1448,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
 
   PostProcessPush postPush{};
   postPush.trainSpeedMps = std::clamp(std::abs(trainSpeed), 0.0f, 22.2f);
+  postPush.editorBackdropBlur = editorBackdropBlur ? 1.0f : 0.0f;
   vkCmdPushConstants(cmd, mPostPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT,
                      0, sizeof(PostProcessPush), &postPush);
 
@@ -1459,7 +1460,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
 }
 
 void Renderer::drawFrame(const app::Camera& camera, float trainPosition, float trainSpeed,
-                         float doorOpenFraction, bool trainBraking,
+                         float doorOpenFraction, bool trainBraking, bool editorBackdropBlur,
                          const std::vector<bool>& occupiedBlocks,
                          const std::vector<glm::vec2>& passengerPositions,
                          const std::vector<EditorMarker>& editorMarkers,
@@ -1488,7 +1489,7 @@ void Renderer::drawFrame(const app::Camera& camera, float trainPosition, float t
   // 2) Komut tamponunu bu image için yeniden yaz.
   vkResetCommandBuffer(mCommands[mFrame], 0);
   recordCommandBuffer(mCommands[mFrame], imageIndex, camera, trainPosition,
-                      trainSpeed, doorOpenFraction, trainBraking, occupiedBlocks,
+                      trainSpeed, doorOpenFraction, trainBraking, editorBackdropBlur, occupiedBlocks,
                       passengerPositions, editorMarkers, editorOverrides);
 
   // 3) Submit: renk çıktısı aşamasına kadar bekle.
