@@ -12,7 +12,8 @@ enum class EventType {
   TerminalServiced,
   TrainDeparted,
   SignalChanged,
-  Horn
+  Horn,
+  EmergencyBrake
 };
 
 const char* eventName(EventType type);
