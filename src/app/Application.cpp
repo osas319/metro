@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <cstdlib>
+#include <cstdio>
 #include <entt/entt.hpp>
 
 #include "core/Log.hpp"
@@ -105,7 +106,7 @@ bool Application::init() {
                       }(), station.blockCount)) return false;
 
   METRO_INFO("Pencere acildi; dongu basliyor (kapatmak icin pencereyi kapat)");
-  METRO_INFO("Kontroller: Yukari=cekis Asagi=fren O/C=kapi F1=kabin F2=takip F3=serbest W/A/S/D");
+  METRO_INFO("Kontroller: Yukari=cekis Asagi=fren Space=acil-fren O/C=kapi F1=kabin F2=takip F3=serbest W/A/S/D");
   return true;
 }
 
@@ -173,7 +174,8 @@ void Application::update(float dt) {
   }
 
   const bool throttle = mKeyboardState[SDL_SCANCODE_UP];
-  const bool brake = mKeyboardState[SDL_SCANCODE_DOWN];
+  const bool emergencyBrake = mKeyboardState[SDL_SCANCODE_SPACE];
+  const bool brake = mKeyboardState[SDL_SCANCODE_DOWN] || emergencyBrake;
   bool platformAligned = false;
   for (const sim::Stop& stop : mRoute.stops()) {
     if (std::abs(mTrain.position() - stop.position) <= 0.5f) {
@@ -340,6 +342,18 @@ int Application::run() {
     mRenderer.drawFrame(renderCamera, renderTrainPosition, mTrain.speed(), mTrain.doorOpenFraction(),
                         mSignal.occupiedBlocks(), passengerPositions);
     ++frameCount;
+
+    if ((nowNs / Uint64(250000000)) !=
+        ((nowNs - static_cast<Uint64>(std::min(dt, 0.25f) * 1e9f)) /
+         Uint64(250000000))) {
+      const sim::Stop& titleStop = mRoute.nextStop(mTrain.position(), mRouteLength);
+      char title[256];
+      std::snprintf(title, sizeof(title),
+                    "Metro M4 | %5.1f km/s | %s | Kapi: %s",
+                    mTrain.speed() * 3.6f, titleStop.name.c_str(),
+                    mTrain.doorsOpen() ? "ACIK" : "KAPALI");
+      SDL_SetWindowTitle(mWindow, title);
+    }
 
     if (nowNs - lastStatsNs >= Uint64(2e9)) {
       const double secs = double(nowNs - lastStatsNs) / 1e9;
