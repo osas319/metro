@@ -5,6 +5,18 @@
 
 namespace metro::sim {
 
+void PassengerSystem::reset(size_t waiting) {
+  mOnboard = 0;
+  mWaiting = waiting;
+  mBoardedTotal = 0;
+  mAlightedTotal = 0;
+  mAlightedAtStops = 0;
+  mTransferTimer = 0.0f;
+  mBoardingDestination = 1;
+  mDestinationCounts.clear();
+  mAgents.clear();
+}
+
 void PassengerSystem::update(float dt, bool doorsOpen, bool trainStopped,
                              bool allowBoarding) {
   updateWalkingAgents(dt);
