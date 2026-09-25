@@ -269,10 +269,26 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
       const float z = -signalPosition;
       addBox({-4.95f, 0.70f, z}, {0.12f, 1.90f, 0.12f},
              {0.13f, 0.15f, 0.17f, 1.0f}, 0.70f);
-      addBox({-4.95f, 1.68f, z}, {0.34f, 0.44f, 0.22f},
-             {0.025f, 0.03f, 0.04f, 1.0f}, 0.30f);
-      addBox({-4.95f, 1.76f, z - 0.13f}, {0.11f, 0.11f, 0.025f},
-             lampColor, 0.18f, 5.0f);
+      addBox({-4.95f, 1.76f, z}, {0.34f, 0.56f, 0.22f},
+             {0.018f, 0.021f, 0.027f, 1.0f}, 0.32f);
+
+      // Üç aspektli sinyal: kırmızı / sarı / yeşil lambadan yalnızca
+      // geçerli durum parlak, diğerleri sönük görünür.
+      const glm::vec4 redLamp = occupied
+                                    ? glm::vec4(1.0f, 0.025f, 0.015f, 1.0f)
+                                    : glm::vec4(0.12f, 0.010f, 0.008f, 1.0f);
+      const glm::vec4 yellowLamp = (!occupied && nextOccupied)
+                                      ? glm::vec4(1.0f, 0.68f, 0.06f, 1.0f)
+                                      : glm::vec4(0.12f, 0.075f, 0.010f, 1.0f);
+      const glm::vec4 greenLamp = (!occupied && !nextOccupied)
+                                     ? glm::vec4(0.05f, 1.0f, 0.22f, 1.0f)
+                                     : glm::vec4(0.008f, 0.14f, 0.028f, 1.0f);
+      const glm::vec4 aspects[] = {redLamp, yellowLamp, greenLamp};
+      for (int aspect = 0; aspect < 3; ++aspect) {
+        addBox({-4.95f, 1.94f - static_cast<float>(aspect) * 0.18f,
+                z - 0.13f},
+               {0.11f, 0.11f, 0.025f}, aspects[aspect], 0.18f, 5.0f);
+      }
     }
   }
 
@@ -358,36 +374,69 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
            {0.95f * brakeIntensity, 0.035f, 0.025f, 1.0f}, 0.14f, 5.0f);
   }
 
-  // Kabin ön camı ve sürücü konsolu: kamera kabin içinde olduğunda sürüş hissini artırır.
-  addParentedBox(editorTrainTransform, {0.0f, 1.15f, -trainPosition - 38.0f},
-         {mTrainWidth * 0.46f, 0.50f, 0.05f},
-         {0.025f, 0.055f, 0.075f, 1.0f}, 0.10f);
-  addParentedBox(editorTrainTransform, {0.0f, 0.72f, -trainPosition - 37.5f},
-         {mTrainWidth * 0.30f, 0.18f, 0.70f},
-         {0.08f, 0.10f, 0.12f, 1.0f}, 0.65f);
-  addParentedBox(editorTrainTransform, {0.0f, 0.88f, -trainPosition - 37.0f},
-         {mTrainWidth * 0.18f, 0.08f, 0.12f},
-         {0.18f, 0.65f, 0.78f, 1.0f}, 0.25f, 5.0f);
+  // Kabin ön camı ve sürücü konsolu: tüm elemanlar ön kabin içindeki
+  // gerçek sürücü noktasına göre yerleştirilir. Kamera yaklaşık z=-45.1 m'dedir.
+  const float cabZ = -trainPosition - 45.05f;
 
-  // Kabin gösterge paneli: hız çubuğu, fren lambası ve kapı durumu.
+  // Ön cam üst çerçevesi.
+  addParentedBox(editorTrainTransform, {0.0f, 1.88f, cabZ},
+         {mTrainWidth * 0.46f, 0.055f, 0.05f},
+         {0.025f, 0.055f, 0.075f, 1.0f}, 0.10f);
+
+  // Konsol gövdesi ve eğimli üst panel.
+  addParentedBox(editorTrainTransform, {0.0f, 0.78f, cabZ + 0.95f},
+         {mTrainWidth * 0.30f, 0.20f, 0.70f},
+         {0.045f, 0.055f, 0.070f, 1.0f}, 0.72f, 3.0f);
+  addParentedBox(editorTrainTransform, {0.0f, 1.00f, cabZ + 0.72f},
+         {mTrainWidth * 0.22f, 0.08f, 0.42f},
+         {0.055f, 0.070f, 0.095f, 1.0f}, 0.58f, 3.0f);
+
+  // Sürücü ekranı.
+  addParentedBox(editorTrainTransform, {0.0f, 1.12f, cabZ + 0.57f},
+         {0.42f, 0.17f, 0.025f},
+         {0.008f, 0.035f, 0.060f, 1.0f}, 0.18f, 4.0f);
+
+  // Hız çubuğu: simülasyondaki gerçek hızla ilerler.
   const float speedKmh = std::clamp(trainSpeed * 3.6f, 0.0f, 80.0f);
   const float speedFraction = speedKmh / 80.0f;
-  addParentedBox(editorTrainTransform, {-0.65f, 0.92f, -trainPosition - 37.0f},
-         {1.55f, 0.035f, 0.08f},
-         {0.05f, 0.07f, 0.09f, 1.0f}, 0.40f);
-  addParentedBox(editorTrainTransform, {-0.65f + speedFraction * 1.55f, 0.98f, -trainPosition - 37.0f},
-         {0.035f, 0.08f, 0.10f},
-         {1.0f, 0.72f, 0.16f, 1.0f}, 0.18f);
-  addParentedBox(editorTrainTransform, {0.90f, 0.92f, -trainPosition - 37.0f},
-         {0.16f, 0.10f, 0.10f},
-         {doorOpenFraction > 0.05f ? 0.10f : 0.70f,
-          doorOpenFraction > 0.05f ? 0.85f : 0.72f,
-          doorOpenFraction > 0.05f ? 0.22f : 0.12f, 1.0f}, 0.25f);
-  addParentedBox(editorTrainTransform, {1.25f, 0.92f, -trainPosition - 37.0f},
-         {0.16f, 0.10f, 0.10f},
-         {speedKmh < 0.1f ? 0.10f : 0.75f,
-          speedKmh < 0.1f ? 0.85f : 0.12f,
-          0.12f, 1.0f}, 0.25f);
+  addParentedBox(editorTrainTransform, {-0.64f, 0.99f, cabZ + 0.52f},
+         {0.90f, 0.025f, 0.035f},
+         {0.025f, 0.040f, 0.055f, 1.0f}, 0.42f, 4.0f);
+  addParentedBox(editorTrainTransform,
+         {-0.64f + speedFraction * 0.90f, 1.02f, cabZ + 0.52f},
+         {0.030f, 0.045f, 0.035f},
+         {1.0f, 0.72f, 0.16f, 1.0f}, 0.18f, 5.0f);
+
+  // Kapı ve fren durum göstergeleri.
+  const glm::vec4 doorIndicator =
+      doorOpenFraction > 0.05f
+          ? glm::vec4(0.10f, 0.85f, 0.22f, 1.0f)
+          : glm::vec4(0.07f, 0.10f, 0.12f, 1.0f);
+  const glm::vec4 brakeIndicator =
+      trainBraking
+          ? glm::vec4(1.0f, 0.08f, 0.04f, 1.0f)
+          : glm::vec4(0.10f, 0.018f, 0.012f, 1.0f);
+  addParentedBox(editorTrainTransform, {0.35f, 1.02f, cabZ + 0.52f},
+         {0.09f, 0.055f, 0.035f}, doorIndicator, 0.18f, 5.0f);
+  addParentedBox(editorTrainTransform, {0.55f, 1.02f, cabZ + 0.52f},
+         {0.09f, 0.055f, 0.035f}, brakeIndicator, 0.18f, 5.0f);
+
+  // Ön cama yakın sol/sağ dikey çerçeveler, kabin açıklığını daha belirgin yapar.
+  for (float side : {-1.0f, 1.0f}) {
+    addParentedBox(editorTrainTransform,
+           {side * (mTrainWidth * 0.43f), 1.45f, cabZ + 0.10f},
+           {0.045f, 0.52f, 0.05f},
+           {0.025f, 0.030f, 0.040f, 1.0f}, 0.48f, 3.0f);
+  }
+
+  // Sürücü koltuğu arkada kalır; kabin kamerasında alt kısımda doğal bir
+  // siluet verir, görüş alanını kapatmaz.
+  addParentedBox(editorTrainTransform, {0.0f, 0.66f, cabZ + 2.05f},
+         {0.34f, 0.08f, 0.34f},
+         {0.06f, 0.07f, 0.085f, 1.0f}, 0.68f, 3.0f);
+  addParentedBox(editorTrainTransform, {0.0f, 0.98f, cabZ + 2.25f},
+         {0.36f, 0.48f, 0.08f},
+         {0.06f, 0.07f, 0.085f, 1.0f}, 0.72f, 3.0f);
 
 
   }
