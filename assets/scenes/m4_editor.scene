@@ -7,15 +7,57 @@ ENTITY 3 2 "Kadikoy Station" "Station" "Station/0" 1 0
 TRANSFORM 0 0 0 0 0 0 1 1 1
 ENTITY 4 2 "Ayrilik Cesmesi Station" "Station" "Station/1" 1 0
 TRANSFORM 0 0 -1148 0 0 0 1 1 1
-ENTITY 5 2 "Track" "Rail" "" 1 0
+ENTITY 5 2 "Acibadem Station" "Station" "Station/2" 1 0
+TRANSFORM 0 0 -2435 0 0 0 1 1 1
+ENTITY 6 2 "Unalan Station" "Station" "Station/3" 1 0
+TRANSFORM 0 0 -3988.25 0 0 0 1 1 1
+ENTITY 7 2 "Goztepe Station" "Station" "Station/4" 1 0
+TRANSFORM 0 0 -5541.5 0 0 0 1 1 1
+ENTITY 8 2 "Yenisahra Station" "Station" "Station/5" 1 0
+TRANSFORM 0 0 -7094.75 0 0 0 1 1 1
+ENTITY 9 2 "Kozyatagi Station" "Station" "Station/6" 1 0
+TRANSFORM 0 0 -8648 0 0 0 1 1 1
+ENTITY 10 2 "Bostanci Station" "Station" "Station/7" 1 0
+TRANSFORM 0 0 -10201.25 0 0 0 1 1 1
+ENTITY 11 2 "Kucukyali Station" "Station" "Station/8" 1 0
+TRANSFORM 0 0 -11754.5 0 0 0 1 1 1
+ENTITY 12 2 "Maltepe Station" "Station" "Station/9" 1 0
+TRANSFORM 0 0 -13307.75 0 0 0 1 1 1
+ENTITY 13 2 "Huzurevi Station" "Station" "Station/10" 1 0
+TRANSFORM 0 0 -14861 0 0 0 1 1 1
+ENTITY 14 2 "Gulsuyu Station" "Station" "Station/11" 1 0
+TRANSFORM 0 0 -16414.25 0 0 0 1 1 1
+ENTITY 15 2 "Esenkent Station" "Station" "Station/12" 1 0
+TRANSFORM 0 0 -17967.5 0 0 0 1 1 1
+ENTITY 16 2 "Hastane-Adliye Station" "Station" "Station/13" 1 0
+TRANSFORM 0 0 -19520.75 0 0 0 1 1 1
+ENTITY 17 2 "Soganlik Station" "Station" "Station/14" 1 0
+TRANSFORM 0 0 -21074 0 0 0 1 1 1
+ENTITY 18 2 "Kartal Station" "Station" "Station/15" 1 0
+TRANSFORM 0 0 -22627.25 0 0 0 1 1 1
+ENTITY 19 2 "Yakacik-Adnan Kahveci Station" "Station" "Station/16" 1 0
+TRANSFORM 0 0 -24180.5 0 0 0 1 1 1
+ENTITY 20 2 "Pendik Station" "Station" "Station/17" 1 0
+TRANSFORM 0 0 -25733.75 0 0 0 1 1 1
+ENTITY 21 2 "Tavsantepe Station" "Station" "Station/18" 1 0
+TRANSFORM 0 0 -27287 0 0 0 1 1 1
+ENTITY 22 2 "Fevzi Cakmak-Hastane Station" "Station" "Station/19" 1 0
+TRANSFORM 0 0 -28840.25 0 0 0 1 1 1
+ENTITY 23 2 "Yayalar-Sehitler Station" "Station" "Station/20" 1 0
+TRANSFORM 0 0 -30393.5 0 0 0 1 1 1
+ENTITY 24 2 "Kurtkoy Station" "Station" "Station/21" 1 0
+TRANSFORM 0 0 -31946.75 0 0 0 1 1 1
+ENTITY 25 2 "Sabiha Gokcen Havalimani Station" "Station" "Station/22" 1 0
+TRANSFORM 0 0 -33500 0 0 0 1 1 1
+ENTITY 26 2 "Track" "Rail" "" 1 0
 TRANSFORM 0 0 0 0 0 0 1 1 1
-ENTITY 6 2 "Catenary" "Infrastructure" "" 1 0
+ENTITY 27 2 "Catenary" "Infrastructure" "" 1 0
 TRANSFORM 0 0 0 0 0 0 1 1 1
-ENTITY 7 1 "Rolling Stock" "Folder" "" 1 0
+ENTITY 28 1 "Rolling Stock" "Folder" "" 1 0
 TRANSFORM 0 0 0 0 0 0 1 1 1
-ENTITY 8 7 "M4 CAF Train" "Train" "Builtin/TrainCar" 1 0
+ENTITY 29 28 "M4 CAF Train" "Train" "Builtin/TrainCar" 1 0
 TRANSFORM 0 0 0 0 0 0 1 1 1
-ENTITY 9 1 "Passenger System" "Simulation" "" 1 0
+ENTITY 30 1 "Passenger System" "Simulation" "" 1 0
 TRANSFORM 0 0 0 0 0 0 1 1 1
-ENTITY 10 1 "Signal System" "Simulation" "" 1 0
+ENTITY 31 1 "Signal System" "Simulation" "" 1 0
 TRANSFORM 0 0 0 0 0 0 1 1 1
