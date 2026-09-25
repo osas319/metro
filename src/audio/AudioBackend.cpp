@@ -102,4 +102,51 @@ void AudioBackend::play(EventType type) {
       static_cast<int>(samples.size() * sizeof(float)));
 }
 
+
+void AudioBackend::updateTrainSound(float speedMps, float accelerationMps2) {
+  if (mStream == nullptr) return;
+
+  speedMps = std::max(0.0f, speedMps);
+  if (!std::isfinite(speedMps) || !std::isfinite(accelerationMps2))
+    return;
+
+  constexpr int sampleRate = 48000;
+  constexpr int chunkSamples = sampleRate / 50; // 20 ms
+  constexpr int targetQueuedBytes = sampleRate / 5 * static_cast<int>(sizeof(float));
+
+  const int queued = SDL_GetAudioStreamQueued(mStream);
+  if (queued < 0 || queued >= targetQueuedBytes) return;
+
+  const float speedFraction = std::clamp(speedMps / 22.2f, 0.0f, 1.0f);
+  const float traction = std::clamp(std::max(accelerationMps2, 0.0f) / 1.2f, 0.0f, 1.0f);
+  const float braking = std::clamp(std::max(-accelerationMps2, 0.0f) / 2.4f, 0.0f, 1.0f);
+  const float gain =
+      0.006f + speedFraction * 0.030f + traction * 0.035f + braking * 0.010f;
+  const float frequency =
+      72.0f + speedFraction * 155.0f + traction * 95.0f;
+
+  constexpr float twoPi = 6.28318530717958647692f;
+  std::vector<float> samples(chunkSamples);
+  for (int i = 0; i < chunkSamples; ++i) {
+    const float sampleTime = static_cast<float>(i) / sampleRate;
+    const float phase = mMotorPhase + sampleTime * frequency;
+    const float fundamental = std::sin(twoPi * phase);
+    const float second = std::sin(twoPi * phase * 2.01f) * 0.32f;
+    const float tractionWhine =
+        std::sin(twoPi * phase * 3.97f) * (0.08f + traction * 0.22f);
+    const float brakeTone =
+        std::sin(twoPi * phase * 0.53f) * braking * 0.12f;
+    const float value =
+        (fundamental + second + tractionWhine + brakeTone) * gain;
+    const float fadeIn = std::min(1.0f, static_cast<float>(i) / 180.0f);
+    samples[static_cast<size_t>(i)] = value * fadeIn;
+  }
+
+  mMotorPhase += static_cast<float>(chunkSamples) * frequency / sampleRate;
+  mMotorPhase = std::fmod(mMotorPhase, 1.0f);
+  SDL_PutAudioStreamData(
+      mStream, samples.data(),
+      static_cast<int>(samples.size() * sizeof(float)));
+}
+
 } // namespace metro::audio
