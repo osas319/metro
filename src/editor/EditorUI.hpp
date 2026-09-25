@@ -70,6 +70,8 @@ private:
   entt::entity mGizmoEntity{entt::null};
   int mGizmoAxis = -1;
   bool mViewportHovered = false;
+  glm::vec2 mViewportMin{0.0f};
+  glm::vec2 mViewportMax{0.0f};
 };
 
 } // namespace metro::editor
