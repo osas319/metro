@@ -300,7 +300,9 @@ void Application::update(float dt) {
   }
   const bool editorInput = mEditorMode && mRenderer.editorWantsKeyboard();
   const bool simulate = !mEditorMode || mPlayMode;
-  const bool throttle = simulate && !editorInput && mKeyboardState[SDL_SCANCODE_UP];
+  const bool throttle = simulate && !editorInput &&
+                         (mKeyboardState[SDL_SCANCODE_W] ||
+                          mKeyboardState[SDL_SCANCODE_UP]);
   const bool emergencyBrake = simulate && !editorInput && mKeyboardState[SDL_SCANCODE_SPACE];
   const bool brake = simulate && !editorInput &&
                      (mKeyboardState[SDL_SCANCODE_DOWN] || emergencyBrake);
@@ -502,10 +504,19 @@ int Application::run() {
                             mTrain.speed() > gameplayHUD.recommendedSpeedMps + 1.0f &&
                             gameplayHUD.distanceToNextStation > 25.0f;
 
+    const bool editorModeBeforeUI = mEditorMode;
     mRenderer.beginEditorFrame();
     mEditorUI.draw(mEditorScene, mEditorMode, mPlayMode, mEditorGizmoMode,
                    mCamera, mTrain.speed(), mTrain.position(), mRouteLength,
                    mContext.deviceName(), mDisplayFps, gameplayHUD);
+
+    // Editor toolbar PLAY ile F5 ayni gameplay gecisini kullansin.
+    if (editorModeBeforeUI && !mEditorMode && mPlayMode) {
+      mCameraViewMode = CameraViewMode::Cab;
+      mMouseCaptured = false;
+      mEditorOrbitHeld = false;
+      SDL_SetWindowRelativeMouseMode(mWindow, false);
+    }
     mRenderer.finishEditorFrame();
 
     const float renderTrainPosition = mPhysics.interpolatedPosition(mTrain);
@@ -520,9 +531,11 @@ int Application::run() {
       const float roadVibration =
           std::sin(static_cast<float>(nowNs) * 0.000006f) *
           (0.004f + std::clamp(mTrain.speed() / 22.2f, 0.0f, 1.0f) * 0.009f);
+      // Dört vagonlu setin ön burnu yaklaşık -40.8 m'dedir.
+      // Kamerayı burun içine sokmamak için ön cama yakın görüş hattı.
       renderCamera.position =
-          glm::vec3(motionSway, 1.48f + roadVibration,
-                    -renderTrainPosition - 39.25f);
+          glm::vec3(motionSway, 1.62f + roadVibration,
+                    -renderTrainPosition - 40.9f);
       renderCamera.yaw = -90.0f;
       renderCamera.pitch = -3.0f - motionSway * 25.0f;
     } else if (mCameraViewMode == CameraViewMode::Chase) {
