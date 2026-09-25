@@ -7,6 +7,7 @@
 #include <cgltf/cgltf.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <algorithm>
 #include <stdexcept>
 #include <cstring>
 #include <cmath>
