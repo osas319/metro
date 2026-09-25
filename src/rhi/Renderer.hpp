@@ -62,7 +62,7 @@ public:
   void shutdown();
 
   // Bir kareyi uçur (acquire → record → submit → present).
-  void drawFrame(const app::Camera& camera, float trainPosition,
+  void drawFrame(const app::Camera& camera, float trainPosition, float doorOpenFraction,
                  const std::vector<bool>& occupiedBlocks,
                  const std::vector<glm::vec2>& passengerPositions = {});
 
@@ -85,7 +85,7 @@ private:
   void destroySwapchainDependent();
   void recreateSwapchain();
   void recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
-                           const app::Camera& camera, float trainPosition,
+                           const app::Camera& camera, float trainPosition, float doorOpenFraction,
                            const std::vector<bool>& occupiedBlocks,
                            const std::vector<glm::vec2>& passengerPositions);
   VkShaderModule loadShader(const char* filename);
