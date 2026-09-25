@@ -25,6 +25,7 @@ struct SubMesh {
   float baseColor[4] = {0.8f, 0.8f, 0.8f, 1.0f}; // pbrMetallicRoughness.baseColorFactor
   float metallic = 0.1f;                          // metallicFactor
   float roughness = 0.7f;                         // roughnessFactor
+  float materialId = 0.0f;                        // renderer material variant
 };
 
 class Model {
