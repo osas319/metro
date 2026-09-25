@@ -1135,13 +1135,20 @@ void Renderer::createEditorBlurResources() {
   subpass.colorAttachmentCount = 1;
   subpass.pColorAttachments = &colorRef;
 
-  VkSubpassDependency dep{};
-  dep.srcSubpass = VK_SUBPASS_EXTERNAL;
-  dep.dstSubpass = 0;
-  dep.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-  dep.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-  dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-  dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+  VkSubpassDependency deps[2]{};
+  deps[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+  deps[0].dstSubpass = 0;
+  deps[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+  deps[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+  deps[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  deps[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+  deps[1].srcSubpass = 0;
+  deps[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+  deps[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  deps[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+  deps[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+  deps[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
   VkRenderPassCreateInfo pass{};
   pass.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -1149,8 +1156,8 @@ void Renderer::createEditorBlurResources() {
   pass.pAttachments = &attachment;
   pass.subpassCount = 1;
   pass.pSubpasses = &subpass;
-  pass.dependencyCount = 1;
-  pass.pDependencies = &dep;
+  pass.dependencyCount = 2;
+  pass.pDependencies = deps;
   if (vkCreateRenderPass(mCtx->device(), &pass, nullptr,
                          &mEditorBlurRenderPass) != VK_SUCCESS)
     throw std::runtime_error("vkCreateRenderPass (editor blur)");
