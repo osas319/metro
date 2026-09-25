@@ -14,7 +14,8 @@ public:
     size_t maxSubsteps = 4;
     float trainWidth = 2.8f;
     float trainHeight = 3.2f;
-    float trackGauge = 2.4f;
+    float trainLength = 22.43f;
+    float trackGauge = 1.435f;
     float routeLength = 2000.0f;
     float platformWidth = 4.0f;
     float columnSpacing = 24.0f;
