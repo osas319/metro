@@ -328,11 +328,16 @@ void Application::update(float dt) {
   }
   const bool editorInput = mEditorMode && mRenderer.editorWantsKeyboard();
   const bool simulate = !mEditorMode || mPlayMode;
-  const bool throttle = simulate && !editorInput &&
+  const bool freeCameraActive = !mEditorMode && mCameraViewMode == CameraViewMode::Free;
+
+  // Freecam'de WASD kameraya aittir; tren kumandası yanlışlıkla aynı anda
+  // çekiş/fren vermesin. Cab/Chase modlarında eski tren kontrolleri devam eder.
+  const bool trainInputEnabled = simulate && !editorInput && !freeCameraActive;
+  const bool throttle = trainInputEnabled &&
                          (mKeyboardState[SDL_SCANCODE_W] ||
                           mKeyboardState[SDL_SCANCODE_UP]);
-  const bool emergencyBrake = simulate && !editorInput && mKeyboardState[SDL_SCANCODE_SPACE];
-  const bool brake = simulate && !editorInput &&
+  const bool emergencyBrake = trainInputEnabled && mKeyboardState[SDL_SCANCODE_SPACE];
+  const bool brake = trainInputEnabled &&
                      (mKeyboardState[SDL_SCANCODE_S] ||
                       mKeyboardState[SDL_SCANCODE_DOWN] ||
                       emergencyBrake);
@@ -344,10 +349,10 @@ void Application::update(float dt) {
     }
   }
   platformAligned = platformAligned && mTrain.speed() < 0.05f;
-  if (simulate && !editorInput && mKeyboardState[SDL_SCANCODE_O]) {
+  if (simulate && !editorInput && !freeCameraActive && mKeyboardState[SDL_SCANCODE_O]) {
     mTrain.requestDoorsOpen(true, platformAligned);
   }
-  if (simulate && !editorInput && mKeyboardState[SDL_SCANCODE_C]) {
+  if (simulate && !editorInput && !freeCameraActive && mKeyboardState[SDL_SCANCODE_C]) {
     mTrain.requestDoorsOpen(false, false);
   }
   if (simulate) {
@@ -533,14 +538,14 @@ int Application::run() {
     gameplayHUD.doorOpenFraction = mTrain.doorOpenFraction();
     gameplayHUD.onboardPassengers = mPassengers.onboard();
     gameplayHUD.waitingPassengers = mPassengers.waiting();
-    gameplayHUD.tractionActive = !mEditorMode &&
+    gameplayHUD.tractionActive = trainInputEnabled &&
                                   mKeyboardState[SDL_SCANCODE_UP] &&
                                   !mKeyboardState[SDL_SCANCODE_DOWN] &&
                                   !mKeyboardState[SDL_SCANCODE_SPACE];
-    gameplayHUD.serviceBrakeActive = !mEditorMode &&
+    gameplayHUD.serviceBrakeActive = trainInputEnabled &&
                                      mKeyboardState[SDL_SCANCODE_DOWN] &&
                                      !mKeyboardState[SDL_SCANCODE_SPACE];
-    gameplayHUD.emergencyBrakeActive = !mEditorMode &&
+    gameplayHUD.emergencyBrakeActive = trainInputEnabled &&
                                        mKeyboardState[SDL_SCANCODE_SPACE];
     gameplayHUD.overspeed = !mEditorMode &&
                             mTrain.speed() > gameplayHUD.recommendedSpeedMps + 1.0f &&
