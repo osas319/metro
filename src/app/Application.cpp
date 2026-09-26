@@ -516,6 +516,12 @@ int Application::run() {
                                 : (hudAspect == sim::SignalAspect::Caution
                                        ? "CAUTION"
                                        : "PROCEED");
+    const bool freeCameraActive =
+        !mEditorMode && mCameraViewMode == CameraViewMode::Free;
+    const bool editorInput =
+        mEditorMode && mRenderer.editorWantsKeyboard();
+    const bool trainInputEnabled =
+        (!mEditorMode || mPlayMode) && !editorInput && !freeCameraActive;
     editor::GameplayHUDData gameplayHUD{};
     gameplayHUD.nextStation = hudStop.name.c_str();
     gameplayHUD.distanceToNextStation = hudDistance;
