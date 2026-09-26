@@ -380,6 +380,57 @@ std::vector<BuiltinPart> makeTrainCarParts() {
 }
 
 
+std::vector<BuiltinPart> makeRailParts() {
+  // 30 m'lik ray modülü: 1.435 m standart hat açıklığında iki gerçek
+  // ray profili, düzenli traversler ve ray bağlantı plakaları.
+  // Renderer gerektiğinde X ekseninde ölçekleyerek manifest açıklığına uyarlar.
+  constexpr float gauge = 1.435f;
+  constexpr float length = 30.0f;
+  constexpr float halfLength = length * 0.5f;
+
+  std::vector<BuiltinPart> parts;
+
+  BuiltinPart sleepers;
+  sleepers.color = {0.21f, 0.225f, 0.245f, 1.0f};
+  sleepers.roughness = 0.91f;
+  sleepers.materialId = 6.0f;
+  for (float z = -halfLength + 0.375f; z < halfLength; z += 0.75f) {
+    addBox(sleepers, {0.0f, -1.40f, z}, {2.55f, 0.16f, 0.28f});
+  }
+  parts.push_back(std::move(sleepers));
+
+  BuiltinPart rail;
+  rail.color = {0.48f, 0.51f, 0.55f, 1.0f};
+  rail.metallic = 0.82f;
+  rail.roughness = 0.19f;
+  rail.materialId = 14.0f;
+  for (float side : {-1.0f, 1.0f}) {
+    const float x = side * gauge * 0.5f;
+    // Ayak, gövde ve kafa ayrı profiller: uzaktan da rayın silueti seçilir.
+    addBox(rail, {x, -1.32f, 0.0f}, {0.19f, 0.07f, length});
+    addBox(rail, {x, -1.22f, 0.0f}, {0.085f, 0.17f, length});
+    addBox(rail, {x, -1.10f, 0.0f}, {0.16f, 0.09f, length});
+  }
+  parts.push_back(std::move(rail));
+
+  BuiltinPart fasteners;
+  fasteners.color = {0.16f, 0.175f, 0.19f, 1.0f};
+  fasteners.metallic = 0.68f;
+  fasteners.roughness = 0.28f;
+  fasteners.materialId = 3.0f;
+  for (float z = -halfLength + 0.375f; z < halfLength; z += 0.75f) {
+    for (float side : {-1.0f, 1.0f}) {
+      const float x = side * gauge * 0.5f;
+      addBox(fasteners, {x, -1.32f, z}, {0.24f, 0.035f, 0.30f});
+      addBox(fasteners, {x, -1.285f, z},
+             {0.075f, 0.035f, 0.18f});
+    }
+  }
+  parts.push_back(std::move(fasteners));
+
+  return parts;
+}
+
 std::vector<BuiltinPart> makeTunnelModuleParts() {
   std::vector<BuiltinPart> parts;
 
@@ -846,8 +897,10 @@ bool Model::loadBuiltin(VulkanContext& ctx, VkCommandPool pool, BuiltinModelType
     parts = makeTrainCarParts();
   } else if (type == BuiltinModelType::StationModule) {
     parts = makeStationModuleParts();
-  } else {
+  } else if (type == BuiltinModelType::TunnelModule) {
     parts = makeTunnelModuleParts();
+  } else {
+    parts = makeRailParts();
   }
 
   std::vector<Vertex> vertices;
@@ -913,7 +966,9 @@ bool Model::loadBuiltin(VulkanContext& ctx, VkCommandPool pool, BuiltinModelType
   METRO_INFO("Builtin model hazir: %s (V: %u, I: %u)",
              type == BuiltinModelType::TrainCar
                  ? "TrainCar"
-                 : (type == BuiltinModelType::StationModule ? "StationModule" : "TunnelModule"),
+                 : (type == BuiltinModelType::StationModule
+                        ? "StationModule"
+                        : (type == BuiltinModelType::TunnelModule ? "TunnelModule" : "Rail")),
              mVertexCount, mIndexCount);
   return true;
 }
