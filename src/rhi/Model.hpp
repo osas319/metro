@@ -15,7 +15,8 @@ class VulkanContext;
 enum class BuiltinModelType {
   TrainCar,
   StationModule,
-  TunnelModule
+  TunnelModule,
+  Rail
 };
 
 struct SubMesh {
