@@ -151,25 +151,22 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
          {6.60f, 0.26f, halfRoute},
          {0.075f, 0.082f, 0.095f, 1.0f}, 0.97f, 6.0f);
 
-  for (float x : {-mTrackGauge * 0.5f, mTrackGauge * 0.5f}) {
-    addBox({x, -1.34f, -halfRoute}, {0.12f, 0.10f, halfRoute},
-           {0.20f, 0.22f, 0.25f, 1.0f}, 0.72f, 6.0f);
-    addBox({x, -1.24f, -halfRoute}, {0.075f, 0.12f, halfRoute},
-           {0.38f, 0.39f, 0.41f, 1.0f}, 0.34f, 14.0f);
-    addBox({x, -1.16f, -halfRoute}, {0.105f, 0.055f, halfRoute},
-           {0.58f, 0.60f, 0.63f, 1.0f}, 0.17f, 14.0f);
+  // Dedicated rail modules: gerçek ray profili + travers + bağlantı
+  // plakaları tek GPU modelinde tutulur. X ölçeği manifestteki hat açıklığına
+  // göre ayarlanır; görünür bölgeyle sınırlı tutulduğu için draw-call sayısı düşüktür.
+  constexpr float railModuleLength = 30.0f;
+  constexpr float railReferenceGauge = 1.435f;
+  const float railGaugeScale = mTrackGauge / railReferenceGauge;
+  const float firstRailCenter =
+      std::floor(visibleStart / railModuleLength) * railModuleLength +
+      railModuleLength * 0.5f;
+  for (float p = firstRailCenter;
+       p <= visibleEnd + railModuleLength * 0.5f;
+       p += railModuleLength) {
+    addModelInstance(SceneModel::Rail, {0.0f, 0.0f, -p},
+                     {railGaugeScale, 1.0f, 1.0f});
   }
 
-  const float firstTraverse = std::floor(visibleStart / 2.0f) * 2.0f;
-  for (float p = firstTraverse; p <= visibleEnd; p += 2.0f) {
-    const float z = -p;
-    addBox({0.0f, -1.40f, z}, {2.35f, 0.13f, 0.16f},
-           {0.23f, 0.25f, 0.28f, 1.0f}, 0.92f, 6.0f);
-    // Küçük bağlantı plakaları ray ayağının altında görünsün.
-    for (float x : {-mTrackGauge * 0.5f, mTrackGauge * 0.5f})
-      addBox({x, -1.34f, z}, {0.22f, 0.035f, 0.28f},
-             {0.20f, 0.21f, 0.23f, 1.0f}, 0.72f, 6.0f);
-  }
 
   // İstasyon kolonları dedicated StationModule modelinde bulunur.
   // Tünel duvarları ve kablo kanalları.
@@ -690,6 +687,9 @@ bool Renderer::init(VulkanContext& ctx, SDL_Window* window,
     }
     if (!mTunnelModuleModel.loadBuiltin(ctx, mCommandPool, BuiltinModelType::TunnelModule)) {
       throw std::runtime_error("Builtin TunnelModule modeli yuklenemedi");
+    }
+    if (!mRailModel.loadBuiltin(ctx, mCommandPool, BuiltinModelType::Rail)) {
+      throw std::runtime_error("Builtin Rail modeli yuklenemedi");
     }
     createSyncObjects();
   } catch (const std::exception& e) {
@@ -1935,6 +1935,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex,
     if (instance.model == SceneModel::TrainCar) model = &mTrainCarModel;
     if (instance.model == SceneModel::StationModule) model = &mStationModuleModel;
     if (instance.model == SceneModel::TunnelModule) model = &mTunnelModuleModel;
+    if (instance.model == SceneModel::Rail) model = &mRailModel;
     if (instance.model == SceneModel::External) {
       model = getEditorModel(instance.externalAsset);
       if (model == nullptr || model->subMeshCount() == 0)
@@ -2279,6 +2280,7 @@ void Renderer::shutdown() {
   mTrainCarModel.destroy(*mCtx);
   mStationModuleModel.destroy(*mCtx);
   mTunnelModuleModel.destroy(*mCtx);
+  mRailModel.destroy(*mCtx);
 
   if (mPipeline) vkDestroyPipeline(mCtx->device(), mPipeline, nullptr);
   mPipeline = VK_NULL_HANDLE;
