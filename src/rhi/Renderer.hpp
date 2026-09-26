@@ -156,6 +156,7 @@ private:
     TrainCar,
     StationModule,
     TunnelModule,
+    Rail,
     External
   };
 
@@ -247,6 +248,7 @@ private:
   Model mTrainCarModel;
   Model mStationModuleModel;
   Model mTunnelModuleModel;
+  Model mRailModel;
   mutable std::unordered_map<std::string, std::unique_ptr<Model>> mEditorModels;
   mutable std::unordered_set<std::string> mFailedEditorAssets;
   float mRouteLength = 2000.0f;
