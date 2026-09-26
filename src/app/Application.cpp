@@ -162,9 +162,15 @@ void Application::handleEvent(const SDL_Event& e) {
       } else if ((e.button.button == SDL_BUTTON_RIGHT ||
                   e.button.button == SDL_BUTTON_MIDDLE) &&
                  !mRenderer.editorWantsMouse()) {
-        // Fare ile serbest kameraya geçişte de trenin yanından başlayan
-        // aynı başlangıç noktasını kullan.
-        enterFreeCamera();
+        // Freecam zaten açıksa RMB/MMB yalnızca mouse capture'ı korur;
+        // her tıklamada kamera yeniden trene ışınlanmaz. Başka bir kamera
+        // modundan geliyorsak ilk tıklama Freecam'i tren-relative başlatır.
+        if (mCameraViewMode != CameraViewMode::Free)
+          enterFreeCamera();
+        else {
+          mMouseCaptured = true;
+          SDL_SetWindowRelativeMouseMode(mWindow, true);
+        }
       }
       break;
     case SDL_EVENT_MOUSE_BUTTON_UP:
