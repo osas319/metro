@@ -994,8 +994,13 @@ void UI::drawGameplayHUD(float trainSpeedMps, float trainPosition,
 
   ImGui::SetCursorPos({size.x * 0.5f - 150.0f, 18.0f});
   ImGui::BeginGroup();
-  ImGui::Text("KADIKÖY  →  SABİHA GÖKÇEN");
-  ImGui::TextDisabled("F1 CAB   F2 CHASE   F3 FREE   F4 EDITOR   F5 PLAY");
+  if (gameplay.serviceComplete) {
+    ImGui::TextColored({0.34f, 0.92f, 0.62f, 1.0f}, "SEFER TAMAMLANDI");
+    ImGui::TextDisabled("Kadıköy → Sabiha Gökçen   |   F6 yeniden başlat");
+  } else {
+    ImGui::Text("KADIKÖY  →  SABİHA GÖKÇEN");
+    ImGui::TextDisabled("F1 KABİN   F2 TAKİP   F3 SERBEST   F4 EDİTÖR   F5 OYNA");
+  }
   ImGui::EndGroup();
 
   ImGui::End();

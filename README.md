@@ -46,6 +46,23 @@ Host sisteme bağımlılık kurmak yerine geliştirme konteyneri kullanılır:
 
 Wayland çalıştırması için araç scripti oturumun Wayland socket'ini ve `/dev/dri` GPU erişimini konteynere aktarır.
 
+## Sürüş
+
+Uygulama doğrudan Kadıköy'den Sabiha Gökçen'e M4 seferini sürüş kamerasında başlatır.
+Oyuncu 23 durağı takip eder; sinyal, hız tavsiyesi, kapılar ve yolcu hareketi HUD'da
+görünür. Durak panolarındaki numara ve renk şeridi, tünelde yaklaşan istasyonu ayırt
+etmeye yardımcı olur. Terminale varınca sefer tamamlandı bildirimi çıkar.
+
+- `W` / `↑`: çekiş
+- `S` / `↓`: servis freni
+- `Space`: acil fren
+- `O` / `C`: kapı aç / kapa
+- `F1` / `F2` / `F3`: kabin / takip / serbest kamera
+- `F4`: editöre geçiş
+- `F5`: sürüşe dön
+- `F6`: seferi Kadıköy'den yeniden başlat
+- `H`: korna
+
 ## Durum
 
 Motor ve temel simülasyon altyapısı çalışıyor. Aktif geliştirme sırası gerçek istasyon

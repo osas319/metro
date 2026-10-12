@@ -32,6 +32,7 @@ struct GameplayHUDData {
   bool serviceBrakeActive = false;
   bool emergencyBrakeActive = false;
   bool overspeed = false;
+  bool serviceComplete = false;
 };
 
 class UI {

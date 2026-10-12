@@ -271,7 +271,7 @@ int main() {
   assert(station.stops.front().name == "Kadikoy");
   assert(station.stops.back().name == "Sabiha Gokcen Havalimani");
   assert(station.stops.back().position == station.routeLength);
-  assert(station.stops.front().dwellSeconds == 3.0f);
+  assert(station.stops.front().dwellSeconds == 12.0f);
   assert(station.stops.back().dwellSeconds == 0.0f);
   assert(station.modelPath == "assets/box.glb");
   assert(station.navmeshPath.empty());

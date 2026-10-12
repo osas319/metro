@@ -127,11 +127,13 @@ bool Application::init() {
     if (!mEditorScene.load(mEditorUI.scenePath()))
       METRO_WARN("Editor sahnesi yuklenemedi: %s", mEditorUI.scenePath().c_str());
   }
-  mEditorMode = true;
-  mPlayMode = false;
+  // Uygulama doğrudan sürüşe açılsın; editör F4 ile her zaman erişilebilir.
+  mEditorMode = false;
+  mPlayMode = true;
+  mCameraViewMode = CameraViewMode::Cab;
 
-  METRO_INFO("Pencere acildi; dongu basliyor (kapatmak icin pencereyi kapat)");
-  METRO_INFO("Kontroller: W/Yukari=cekis S/Asagi=fren Space=acil-fren O/C=kapi F1=kabin F2=takip F3=serbest");
+  METRO_INFO("M4 surusu basladi: Kadikoy -> Sabiha Gokcen");
+  METRO_INFO("Kontroller: W/Yukari=cekis S/Asagi=fren Space=acil-fren O/C=kapi F1=kabin F2=takip F3=serbest F4=editor F6=yeniden baslat");
   return true;
 }
 
@@ -371,25 +373,27 @@ void Application::update(float dt) {
                              mSignal.canEnter(nextBlock);
     const sim::Stop& upcomingStop = mRoute.nextStop(mTrain.position(), mRouteLength);
     const float stopTarget = upcomingStop.position;
-    const float stopDwellLimit = upcomingStop.dwellSeconds >= 0.0f
-                                     ? upcomingStop.dwellSeconds
-                                     : mStopDwellSecondsLimit;
     mPhysics.step(dt, mTrain, throttle, brake, signalClear, stopTarget, emergencyBrake);
-    const bool atStop = mTrain.position() >= stopTarget - 0.5f &&
-                        mTrain.position() <= stopTarget + 0.5f &&
+    size_t servicedStop = static_cast<size_t>(-1);
+    for (size_t i = 0; i < mRoute.stopCount(); ++i) {
+      if (std::abs(mTrain.position() - mRoute.stops()[i].position) <= 0.5f) {
+        servicedStop = i;
+        break;
+      }
+    }
+    const bool atStop = servicedStop != static_cast<size_t>(-1) &&
                         mTrain.speed() < 0.05f;
     const bool atTerminal = mTrain.position() >= mRouteLength &&
                             mTrain.speed() < 0.05f;
     if (atStop || atTerminal) {
-      size_t servicedStop = static_cast<size_t>(-1);
-      for (size_t i = 0; i < mRoute.stopCount(); ++i) {
-        if (std::abs(mTrain.position() - mRoute.stops()[i].position) <= 0.5f) {
-          servicedStop = i;
-          break;
-        }
-      }
+      const float stopDwellLimit =
+          servicedStop != static_cast<size_t>(-1) &&
+                  mRoute.stops()[servicedStop].dwellSeconds >= 0.0f
+              ? mRoute.stops()[servicedStop].dwellSeconds
+              : mStopDwellSecondsLimit;
       const bool wasOpen = mTrain.doorsOpen();
-      mTrain.requestDoorsOpen(true, true);
+      if (atTerminal || mStopDwellSeconds < stopDwellLimit)
+        mTrain.requestDoorsOpen(true, true);
       if (!wasOpen && mTrain.doorsOpen()) {
         mAudioEvents.push({atTerminal ? audio::EventType::TerminalServiced
                                       : audio::EventType::StopArrived,
@@ -405,12 +409,11 @@ void Application::update(float dt) {
         mLastServicedStop = servicedStop;
       }
       if (!atTerminal) {
-        mStopDwellSeconds += dt;
-        if (mStopDwellSeconds >= stopDwellLimit) {
+        mStopDwellSeconds = std::min(mStopDwellSeconds + dt, stopDwellLimit);
+        if (mStopDwellSeconds >= stopDwellLimit && mTrain.doorsOpen()) {
           mTrain.requestDoorsOpen(false, false);
           mAudioEvents.push({audio::EventType::DoorClosed, servicedStop});
           mAudioEvents.push({audio::EventType::TrainDeparted, servicedStop});
-          mStopDwellSeconds = 0.0f;
         }
       }
     } else {
@@ -498,8 +501,13 @@ int Application::run() {
 
     update(dt);
 
-    const sim::Stop& hudStop =
-        mRoute.nextStop(mTrain.position(), mRouteLength);
+    const bool dwellingAtStation =
+        mLastServicedStop < mRoute.stopCount() && mTrain.speed() < 0.05f &&
+        std::abs(mTrain.position() -
+                 mRoute.stops()[mLastServicedStop].position) <= 0.5f;
+    const sim::Stop& hudStop = dwellingAtStation
+                                   ? mRoute.stops()[mLastServicedStop]
+                                   : mRoute.nextStop(mTrain.position(), mRouteLength);
     const float hudDistance =
         std::max(0.0f, hudStop.position - mTrain.position());
     const size_t hudCurrentBlock =
@@ -556,6 +564,7 @@ int Application::run() {
     gameplayHUD.overspeed = !mEditorMode &&
                             mTrain.speed() > gameplayHUD.recommendedSpeedMps + 1.0f &&
                             gameplayHUD.distanceToNextStation > 25.0f;
+    gameplayHUD.serviceComplete = mTerminalServiced;
 
     const bool editorModeBeforeUI = mEditorMode;
     mRenderer.beginEditorFrame();

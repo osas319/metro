@@ -238,6 +238,68 @@ std::vector<Renderer::SceneInstance> Renderer::buildKadikoyScene(
         addModelInstance(SceneModel::StationModule, {0.0f, 0.0f, -moduleCenter});
       }
     }
+
+    // Her durakta tekrarlanan modüllerden ayrışan, yaklaşırken okunabilen
+    // M4 yön bulma panosu ve numaralı istasyon işareti bulunur.
+    const std::array<glm::vec4, 6> stationAccents{{
+        {0.18f, 0.72f, 0.96f, 1.0f}, {0.34f, 0.86f, 0.68f, 1.0f},
+        {0.98f, 0.66f, 0.20f, 1.0f}, {0.94f, 0.40f, 0.36f, 1.0f},
+        {0.66f, 0.54f, 0.96f, 1.0f}, {0.96f, 0.76f, 0.30f, 1.0f}}};
+    const glm::vec4 accent = stationAccents[stationIndex % stationAccents.size()];
+    auto addWayfindingBox = [&](glm::vec3 localPosition, glm::vec3 scale,
+                                glm::vec4 color, float roughness = 0.35f) {
+      if (stationEditorOverride[stationIndex]) {
+        addParentedBox(stationEditorTransforms[stationIndex], localPosition,
+                       scale, color, roughness, 5.0f);
+      } else {
+        localPosition.z -= p;
+        addBox(localPosition, scale, color, roughness, 5.0f);
+      }
+    };
+
+    // Panel, yolcu platformunun arka duvarına bakar; renkli hat şeridi
+    // tünelden yaklaşırken de durağın yerini seçmeyi kolaylaştırır.
+    addWayfindingBox({-4.10f, 2.68f, 0.0f}, {0.09f, 0.62f, 2.35f},
+                     {0.018f, 0.035f, 0.055f, 1.0f});
+    addWayfindingBox({-4.045f, 2.68f, 1.06f}, {0.035f, 0.52f, 0.12f},
+                     accent, 0.22f);
+    addWayfindingBox({-4.045f, 2.98f, 0.0f}, {0.035f, 0.035f, 2.12f},
+                     accent, 0.22f);
+
+    const auto drawDigit = [&](int digit, float centerZ) {
+      // Yedi segmentli iki haneli durak kodu; segmentler duvar düzlemine
+      // paralel yerleşir, böylece hiçbir font assetine bağımlı değildir.
+      static constexpr bool segments[10][7] = {
+          {true, true, true, true, true, true, false},
+          {false, true, true, false, false, false, false},
+          {true, true, false, true, true, false, true},
+          {true, true, true, true, false, false, true},
+          {false, true, true, false, false, true, true},
+          {true, false, true, true, false, true, true},
+          {true, false, true, true, true, true, true},
+          {true, true, true, false, false, false, false},
+          {true, true, true, true, true, true, true},
+          {true, true, true, true, false, true, true}};
+      constexpr float x = -4.015f;
+      constexpr float horizontal = 0.145f;
+      const glm::vec3 positions[7] = {
+          {x, 2.78f, centerZ}, {x, 2.70f, centerZ + horizontal},
+          {x, 2.42f, centerZ + horizontal}, {x, 2.34f, centerZ},
+          {x, 2.42f, centerZ - horizontal}, {x, 2.70f, centerZ - horizontal},
+          {x, 2.56f, centerZ}};
+      const glm::vec3 scales[7] = {
+          {0.025f, 0.028f, 0.22f}, {0.025f, 0.15f, 0.028f},
+          {0.025f, 0.15f, 0.028f}, {0.025f, 0.028f, 0.22f},
+          {0.025f, 0.15f, 0.028f}, {0.025f, 0.15f, 0.028f},
+          {0.025f, 0.028f, 0.22f}};
+      for (int segment = 0; segment < 7; ++segment) {
+        if (segments[digit][segment])
+          addWayfindingBox(positions[segment], scales[segment], accent, 0.20f);
+      }
+    };
+    const size_t stationCode = stationIndex + 1;
+    drawDigit(static_cast<int>((stationCode / 10) % 10), -0.19f);
+    drawDigit(static_cast<int>(stationCode % 10), 0.19f);
   }
 
   // Blok sinyalleri: oyuncuya yaklaşan blokların gerçek simülasyon
