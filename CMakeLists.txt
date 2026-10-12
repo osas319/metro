@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.28)
 
 project(Metro
   VERSION 0.1.0
-  DESCRIPTION "İstanbul M4 metro simülasyonu — özel motor (Vulkan + Wayland)"
+  DESCRIPTION "İstanbul M4 metro simülasyonu — C++20 ve Vulkan"
   LANGUAGES C CXX)
 
 include(CTest)
@@ -113,6 +113,21 @@ target_compile_definitions(metro PRIVATE
   VMA_VULKAN_VERSION=1003000
   METRO_SHADER_DIR="${CMAKE_BINARY_DIR}/shaders"
   IMGUI_IMPL_VULKAN_USE_VOLK)
+
+if(WIN32)
+  # Windows.h makrolarinin std::min/std::max ile cakismasini engelle.
+  target_compile_definitions(metro PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+  target_compile_definitions(metro_imgui PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+
+  # SDL3 dinamik baglandiysa calistirilabilir dosyanin yanina DLL'ini kopyala.
+  if(TARGET SDL3::SDL3-shared)
+    add_custom_command(TARGET metro POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:SDL3::SDL3-shared>"
+        "$<TARGET_FILE_DIR:metro>"
+      VERBATIM)
+  endif()
+endif()
 
 if(METRO_VALIDATION)
   target_compile_definitions(metro PRIVATE METRO_ENABLE_VALIDATION)

@@ -522,7 +522,7 @@ VkShaderModule Renderer::loadShader(const char* filename) {
   std::ifstream file(shaderDir() + "/" + filename, std::ios::binary | std::ios::ate);
   if (!file) {
     throw std::runtime_error(std::string("Shader okunamiyor: ") + shaderDir() + "/" + filename +
-                             " (once 'tools/container.sh build' calistirilmali)");
+                             " (once CMake configure ve build calistirilmali)");
   }
   const std::streamsize size = file.tellg();
   if (size == 0 || size % 4 != 0) {

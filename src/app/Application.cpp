@@ -89,8 +89,7 @@ bool Application::init() {
   mBlockLength = station.routeLength /
                  static_cast<float>(std::max<size_t>(station.blockCount, 1));
 
-  // SDL_VIDEODRIVER=wayland container.sh'te sabitleniyor; burada sadece
-  // hangi driver'ın seçildiğini doğrulayıp log'larız (XWayland'e düşmez).
+  // Platform pencere sistemini SDL3 seçer; seçilen video driver'ını kaydet.
   if (!SDL_Init(SDL_INIT_VIDEO)) {
     METRO_ERROR("SDL_Init: %s", SDL_GetError());
     return false;
@@ -304,8 +303,8 @@ void Application::handleEvent(const SDL_Event& e) {
       break;
     case SDL_EVENT_MOUSE_MOTION:
       // Editör orbit'i event tabanlı kalır. Gameplay freecam ise relative
-      // mouse'u update() içinde doğrudan okur; böylece Wayland/SDL relative
-      // mouse eventlerinin kaybolması freecam bakışını bozmaz.
+      // mouse'u update() içinde doğrudan okur; böylece relative mouse
+      // eventlerinin kaybolması freecam bakışını bozmaz.
       if (!mMouseCaptured && mEditorOrbitHeld) {
         mCamera.yaw += e.motion.xrel * mCamera.mouseSensitivity;
         mCamera.pitch -= e.motion.yrel * mCamera.mouseSensitivity;

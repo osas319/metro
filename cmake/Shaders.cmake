@@ -1,8 +1,14 @@
 # GLSL shader'ları build sırasında SPIR-V'ye derler.
 # Öncelik glslc (shaderc), yoksa glslangValidator (glslang-tools).
 
-find_program(METRO_GLSLC_EXE glslc)
-find_program(METRO_GLSLANG_EXE glslangValidator)
+find_program(METRO_GLSLC_EXE glslc
+  HINTS
+    "$ENV{VULKAN_SDK}/Bin"
+    "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/shaderc")
+find_program(METRO_GLSLANG_EXE glslangValidator
+  HINTS
+    "$ENV{VULKAN_SDK}/Bin"
+    "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/glslang")
 
 if(METRO_GLSLC_EXE)
   set(METRO_SHADER_COMPILER "${METRO_GLSLC_EXE}")

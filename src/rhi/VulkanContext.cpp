@@ -88,9 +88,8 @@ bool VulkanContext::init(SDL_Window* window) {
 }
 
 bool VulkanContext::createInstance(SDL_Window* window, uint32_t apiVersion) {
-  // SDL, Wayland surface için gerekli uzantıları bildirir
-  // (VK_KHR_surface + VK_KHR_wayland_surface). SDL 3.x'te bu liste
-  // pencereden bağımsız statik bir dizidir.
+  // SDL, geçerli platform yüzeyi için gerekli uzantıları bildirir.
+  // SDL 3.x'te bu liste pencere oluşturulmadan önce alınır.
   uint32_t extCount = 0;
   const char* const* sdlExts = SDL_Vulkan_GetInstanceExtensions(&extCount);
   if (sdlExts == nullptr) {
@@ -147,7 +146,7 @@ bool VulkanContext::createInstance(SDL_Window* window, uint32_t apiVersion) {
 }
 
 void VulkanContext::createSurface(SDL_Window* window) {
-  // SDL3: ayırıcı ile (null) oluştur; Wayland'da xdg_surface'a bağlanır.
+  // SDL3 platforma uygun Vulkan yüzeyini oluşturur.
   if (!SDL_Vulkan_CreateSurface(window, mInstance, nullptr, &mSurface)) {
     METRO_ERROR("SDL_Vulkan_CreateSurface: %s", SDL_GetError());
     mSurface = VK_NULL_HANDLE;

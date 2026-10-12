@@ -1,6 +1,7 @@
 # Metro — İstanbul M4 Simülasyonu
 
-Vulkan + native Wayland + C++20 ile geliştirilen, sürüş odaklı İstanbul M4 metro simülasyonu.
+Vulkan + SDL3 + C++20 ile geliştirilen, sürüş odaklı İstanbul M4 metro simülasyonu.
+Linux/Wayland ve Windows 10/11 x64 hedeflenir.
 
 ## Hedef
 
@@ -12,14 +13,14 @@ Vulkan + native Wayland + C++20 ile geliştirilen, sürüş odaklı İstanbul M4
 - blok sinyalizasyonu
 - yolcu hareket altyapısı
 - PBR + HDR + ACES tonemapping
-- native Wayland
+- SDL3 platform penceresi (Linux/Wayland ve Windows)
 - veri odaklı istasyon manifestleri
 - gerçek asset pipeline'ına geçiş için glTF/GLB desteği
 
 ## Mimari
 
 - **Rendering:** Vulkan 1.3, Volk, VMA, GLM
-- **Window/Input:** SDL3 / Wayland
+- **Window/Input:** SDL3 / Wayland / Win32
 - **Physics:** Jolt Physics
 - **ECS:** EnTT
 - **Models:** cgltf / glTF 2.0
@@ -33,6 +34,35 @@ Vulkan + native Wayland + C++20 ile geliştirilen, sürüş odaklı İstanbul M4
 `shaders` GLSL shaderlarını içerir.
 
 ## Geliştirme
+
+### Windows 10/11
+
+Visual Studio 2022'de **Desktop development with C++** iş yükünü, Git'i ve CMake'i
+kurun. Vulkan uyumlu ekran kartı sürücüsü gerekir. Bağımlılıklar vcpkg manifestiyle
+otomatik yüklenir; SDL3'ün Vulkan desteği, Vulkan başlıkları/yükleyicisi ve `glslc`
+shader derleyicisi projeyle eşleşen paketlerden gelir.
+
+PowerShell'de bir kez vcpkg'yi hazırlayın:
+
+```powershell
+git clone https://github.com/microsoft/vcpkg.git "$env:USERPROFILE\vcpkg"
+& "$env:USERPROFILE\vcpkg\bootstrap-vcpkg.bat"
+$env:VCPKG_ROOT = "$env:USERPROFILE\vcpkg"
+```
+
+Ardından repo kökünde Visual Studio Developer PowerShell açıp:
+
+```powershell
+git submodule update --init --recursive
+cmake --preset windows-msvc
+cmake --build --preset windows-release --parallel
+.\build\windows-msvc\Release\metro.exe
+```
+
+Uygulamayı repo kökünden başlatın; istasyon, model ve doku dosyaları göreli
+yollarla yüklenir.
+
+### Linux / Wayland
 
 Host sisteme bağımlılık kurmak yerine geliştirme konteyneri kullanılır:
 

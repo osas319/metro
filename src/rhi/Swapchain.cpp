@@ -57,8 +57,8 @@ void Swapchain::createInternal(const VulkanContext& ctx, SDL_Window* window) {
   mFormat = chosen.format;
 
   // --- Extent ---
-  // Wayland WSI'da currentExtent çoğu zaman pencere boyutudur; 0xFFFFFFFF
-  // "uygulama belirlesin", 0 ise "henüz configure edilmedi" demektir.
+  // WSI 0xFFFFFFFF verirse extent'i uygulama belirler; 0 ise pencere henüz
+  // configure edilmemiştir.
   if (caps.currentExtent.width != 0xFFFFFFFF && caps.currentExtent.width != 0) {
     mExtent = caps.currentExtent;
   } else {
@@ -77,10 +77,10 @@ void Swapchain::createInternal(const VulkanContext& ctx, SDL_Window* window) {
     imageCount = caps.maxImageCount;
   }
 
-  // --- Present mode: FIFO (v-sync; Wayland'da her zaman destekli) ---
+  // --- Present mode: FIFO (Vulkan'da her zaman destekli) ---
   VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
 
-  // --- Composite alpha: Wayland'da opaque desteklenmiyorsa ilk desteklenen ---
+  // --- Composite alpha: opaque desteklenmiyorsa ilk desteklenen ---
   VkCompositeAlphaFlagBitsKHR alpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
   const VkCompositeAlphaFlagsKHR supported = caps.supportedCompositeAlpha;
   if ((supported & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) == 0) {

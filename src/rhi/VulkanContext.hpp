@@ -2,8 +2,8 @@
 // Vulkan instance + fiziksel/v mantıksal cihaz seçimi + kuyruk + VMA.
 //
 // volk kullanımı: tüm hedefte VK_NO_PROTOTYPES tanımlıdır; vk* çağrıları
-// volk'un yüklediği global fonksiyon işaretçilerine gider. Loader .so'suna
-// link yoktur — volk runtime'da dlopen eder.
+// volk'un yüklediği global fonksiyon işaretçilerine gider. Vulkan loader'ı
+// link-time bağımlılığı değildir; Volk çalışma anında platformdan yükler.
 #include <volk.h>
 #include <vk_mem_alloc.h>
 
